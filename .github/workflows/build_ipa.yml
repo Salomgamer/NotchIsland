@@ -1,0 +1,585 @@
+skipInterval: CMTime, completion completionHandler: @escaping () -> Void) {
+                  DispatchQueue.main.async { [weak self] in
+                      if skipInterval.seconds > 0 {
+                          self?.viewModel?.nextTrack()
+                      } else {
+                          self?.viewModel?.previousTrack()
+                      }
+                      self?.pushCurrentFrame()
+                      completionHandler()
+                  }
+              }
+          }
+
+          /// Hosts the visible SampleBufferDisplayView on screen so iOS automatically transitions it into a
+          /// floating Picture-in-Picture Dynamic Island pill the moment the user swipes Home.
+          struct PiPLayerHostView: UIViewRepresentable {
+              let sampleView: SampleBufferDisplayView
+
+              func makeUIView(context: Context) -> UIView {
+                  let container = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 72))
+                  container.backgroundColor = .clear
+                  sampleView.frame = container.bounds
+                  sampleView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                  sampleView.layer.cornerRadius = 26
+                  sampleView.layer.masksToBounds = true
+                  container.addSubview(sampleView)
+                  return container
+              }
+
+              func updateUIView(_ uiView: UIView, context: Context) {
+                  sampleView.frame = uiView.bounds
+              }
+          }
+          EOF_PIP
+
+          cat << 'EOF_NOTCHVIEW' > NotchIsland/NotchIslandView.swift
+          import SwiftUI
+
+          struct NotchIslandView: View {
+              @EnvironmentObject var vm: NotchViewModel
+
+              var body: some View {
+                  VStack(spacing: 0) {
+                      ZStack(alignment: .top) {
+                          // Main Pitch-Black Dynamic Island Container anchored to top edge (y = 0)
+                          RoundedRectangle(cornerRadius: vm.isExpanded ? 38 : 22, style: .continuous)
+                              .fill(Color.black)
+                              .overlay(
+                                  RoundedRectangle(cornerRadius: vm.isExpanded ? 38 : 22, style: .continuous)
+                                      .strokeBorder(
+                                          LinearGradient(
+                                              colors: [
+                                                  Color.white.opacity(vm.isExpanded ? 0.22 : 0.14),
+                                                  Color.cyan.opacity(vm.isExpanded ? 0.35 : 0.18),
+                                                  Color.white.opacity(0.05)
+                                              ],
+                                              startPoint: .topLeading,
+                                              endPoint: .bottomTrailing
+                                          ),
+                                          lineWidth: 1.2
+                                      )
+                              )
+                              .shadow(color: Color.black.opacity(0.75), radius: vm.isExpanded ? 24 : 8, x: 0, y: 10)
+
+                          if vm.isExpanded {
+                              expandedContent
+                                  .padding(.top, 38) // Clears the physical iPhone 11 30pt notch cutout
+                                  .padding(.horizontal, 20)
+                                  .padding(.bottom, 18)
+                                  .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .top)))
+                          } else {
+                              compactWingsContent
+                                  .padding(.horizontal, 12)
+                                  .frame(height: vm.notchHeight)
+                          }
+                      }
+                      .frame(
+                          width: vm.isExpanded ? 382 : (vm.notchWidth + 92),
+                          height: vm.isExpanded ? 236 : vm.notchHeight
+                      )
+                      .contentShape(Rectangle())
+                      .onTapGesture {
+                          vm.toggleExpand()
+                      }
+                      .gesture(
+                          DragGesture(minimumDistance: 12)
+                              .onEnded { value in
+                                  if value.translation.height > 16 && !vm.isExpanded {
+                                      vm.toggleExpand()
+                                  } else if value.translation.height < -16 && vm.isExpanded {
+                                      vm.toggleExpand()
+                                  }
+                              }
+                      )
+                  }
+              }
+
+              // MARK: - Compact Wings Left & Right of the Physical iPhone 11 Notch
+              private var compactWingsContent: some View {
+                  HStack(spacing: 0) {
+                      // Left Wing ( sits just left of the 209pt physical notch or acts as left ear )
+                      HStack(spacing: 5) {
+                          Image(systemName: vm.isPlaying ? "waveform" : "sparkles")
+                              .font(.system(size: 12, weight: .bold))
+                              .foregroundColor(.cyan)
+                              .scaleEffect(vm.isPlaying ? 1.15 : 1.0)
+                          Text(vm.isTimerRunning ? vm.formattedTimer : "LIVE")
+                              .font(.system(size: 11, weight: .bold, design: .monospaced))
+                              .foregroundColor(.white)
+                      }
+                      .frame(width: 44, alignment: .leading)
+
+                      // Space occupied by physical iPhone 11 notch camera/speaker housing
+                      Spacer(minLength: vm.notchWidth - 10)
+
+                      // Right Wing
+                      HStack(spacing: 4) {
+                          Circle()
+                              .fill(vm.isCharging ? Color.green : Color.cyan)
+                              .frame(width: 6, height: 6)
+                          Text("\(vm.batteryLevel)%")
+                              .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                              .foregroundColor(.white.opacity(0.9))
+                      }
+                      .frame(width: 44, alignment: .trailing)
+                  }
+              }
+
+              // MARK: - Expanded Dynamic Island Content (Below the 30pt Notch Cutout)
+              private var expandedContent: some View {
+                  VStack(spacing: 14) {
+                      // Tab Bar Selector
+                      HStack(spacing: 8) {
+                          ForEach(IslandTab.allCases) { tab in
+                              Button {
+                                  vm.selectTab(tab)
+                              } label: {
+                                  HStack(spacing: 5) {
+                                      Image(systemName: tab.icon)
+                                          .font(.system(size: 11, weight: .semibold))
+                                      Text(tab.rawValue)
+                                          .font(.system(size: 11, weight: .semibold))
+                                  }
+                                  .padding(.horizontal, 10)
+                                  .padding(.vertical, 6)
+                                  .background(
+                                      Capsule()
+                                          .fill(vm.selectedTab == tab ? Color.white.opacity(0.18) : Color.white.opacity(0.05))
+                                  )
+                                  .foregroundColor(vm.selectedTab == tab ? .cyan : .gray)
+                              }
+                              .buttonStyle(.plain)
+                          }
+                      }
+
+                      // Active Tab View
+                      Group {
+                          switch vm.selectedTab {
+                          case .media:
+                              mediaTabView
+                          case .timer:
+                              timerTabView
+                          case .system:
+                              systemTabView
+                          case .shelf:
+                              shelfTabView
+                          }
+                      }
+                      .frame(maxWidth: .infinity, maxHeight: .infinity)
+                  }
+              }
+
+              // MARK: - 1. Media Tab
+              private var mediaTabView: some View {
+                  VStack(spacing: 12) {
+                      HStack(spacing: 12) {
+                          RoundedRectangle(cornerRadius: 12, style: .continuous)
+                              .fill(
+                                  LinearGradient(
+                                      colors: [.indigo, .cyan],
+                                      startPoint: .topLeading,
+                                      endPoint: .bottomTrailing
+                                  )
+                              )
+                              .frame(width: 48, height: 48)
+                              .overlay(
+                                  Image(systemName: "music.note")
+                                      .font(.system(size: 22, weight: .bold))
+                                      .foregroundColor(.white)
+                              )
+
+                          VStack(alignment: .leading, spacing: 3) {
+                              Text(vm.trackTitle)
+                                  .font(.system(size: 15, weight: .bold))
+                                  .foregroundColor(.white)
+                                  .lineLimit(1)
+                              Text(vm.trackArtist)
+                                  .font(.system(size: 12, weight: .medium))
+                                  .foregroundColor(.gray)
+                                  .lineLimit(1)
+                          }
+
+                          Spacer()
+
+                          // Animated Equalizer Bars
+                          HStack(spacing: 3) {
+                              ForEach(0..<4, id: \.self) { idx in
+                                  RoundedRectangle(cornerRadius: 2)
+                                      .fill(Color.cyan)
+                                      .frame(width: 3, height: vm.isPlaying ? CGFloat([14, 24, 18, 22][idx]) : 6)
+                                      .animation(
+                                          .easeInOut(duration: 0.35).repeatForever(autoreverses: true).delay(Double(idx) * 0.08),
+                                          value: vm.isPlaying
+                                      )
+                              }
+                          }
+                      }
+
+                      // Progress & Transport Controls
+                      VStack(spacing: 8) {
+                          GeometryReader { geo in
+                              ZStack(alignment: .leading) {
+                                  Capsule()
+                                      .fill(Color.white.opacity(0.14))
+                                      .frame(height: 5)
+                                  Capsule()
+                                      .fill(Color.cyan)
+                                      .frame(width: geo.size.width * vm.trackProgress, height: 5)
+                              }
+                          }
+                          .frame(height: 5)
+
+                          HStack(spacing: 36) {
+                              Button(action: vm.previousTrack) {
+                                  Image(systemName: "backward.fill")
+                                      .font(.system(size: 18, weight: .semibold))
+                                      .foregroundColor(.white)
+                              }
+                              Button(action: vm.togglePlayPause) {
+                                  Image(systemName: vm.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                                      .font(.system(size: 32))
+                                      .foregroundColor(.cyan)
+                              }
+                              Button(action: vm.nextTrack) {
+                                  Image(systemName: "forward.fill")
+                                      .font(.system(size: 18, weight: .semibold))
+                                      .foregroundColor(.white)
+                              }
+                          }
+                      }
+                  }
+              }
+
+              // MARK: - 2. Timer Tab
+              private var timerTabView: some View {
+                  HStack(spacing: 16) {
+                      VStack(alignment: .leading, spacing: 4) {
+                          Text("NOTCH COUNTDOWN")
+                              .font(.system(size: 10, weight: .bold))
+                              .foregroundColor(.orange)
+                          Text(vm.formattedTimer)
+                              .font(.system(size: 34, weight: .bold, design: .monospaced))
+                              .foregroundColor(.white)
+                          HStack(spacing: 8) {
+                              ForEach([60, 300, 900], id: \.self) { preset in
+                                  Button("\(preset / 60)m") {
+                                      vm.resetTimer(seconds: preset)
+                                  }
+                                  .font(.system(size: 11, weight: .semibold))
+                                  .padding(.horizontal, 8)
+                                  .padding(.vertical, 4)
+                                  .background(Capsule().fill(Color.white.opacity(0.1)))
+                                  .foregroundColor(.white)
+                              }
+                          }
+                      }
+
+                      Spacer()
+
+                      HStack(spacing: 12) {
+                          Button(action: vm.toggleTimer) {
+                              Circle()
+                                  .fill(vm.isTimerRunning ? Color.orange : Color.green)
+                                  .frame(width: 48, height: 48)
+                                  .overlay(
+                                      Image(systemName: vm.isTimerRunning ? "pause.fill" : "play.fill")
+                                          .font(.system(size: 20, weight: .bold))
+                                          .foregroundColor(.black)
+                                  )
+                          }
+                          Button {
+                              vm.resetTimer(seconds: vm.timerTotalSeconds)
+                          } label: {
+                              Circle()
+                                  .fill(Color.white.opacity(0.14))
+                                  .frame(width: 44, height: 44)
+                                  .overlay(
+                                      Image(systemName: "arrow.counterclockwise")
+                                          .font(.system(size: 17, weight: .bold))
+                                          .foregroundColor(.white)
+                                  )
+                          }
+                      }
+                  }
+              }
+
+              // MARK: - 3. System HUD Tab
+              private var systemTabView: some View {
+                  HStack(spacing: 12) {
+                      statCard(title: "BATTERY", value: "\(vm.batteryLevel)%", subtitle: vm.isCharging ? "Charging" : "Discharging", icon: "battery.100.bolt", color: .green)
+                      statCard(title: "STORAGE", value: vm.freeDiskGB, subtitle: "Available", icon: "internaldrive.fill", color: .cyan)
+                      statCard(title: "DEVICE", value: "iPhone 11", subtitle: "Notch Active", icon: "iphone.gen2", color: .purple)
+                  }
+              }
+
+              private func statCard(title: String, value: String, subtitle: String, icon: String, color: Color) -> some View {
+                  VStack(alignment: .leading, spacing: 6) {
+                      HStack {
+                          Image(systemName: icon)
+                              .foregroundColor(color)
+                              .font(.system(size: 14, weight: .bold))
+                          Spacer()
+                          Text(title)
+                              .font(.system(size: 9, weight: .bold))
+                              .foregroundColor(.gray)
+                      }
+                      Text(value)
+                          .font(.system(size: 16, weight: .bold, design: .rounded))
+                          .foregroundColor(.white)
+                      Text(subtitle)
+                          .font(.system(size: 10, weight: .medium))
+                          .foregroundColor(.gray)
+                  }
+                  .padding(10)
+                  .frame(maxWidth: .infinity)
+                  .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.07)))
+              }
+
+              // MARK: - 4. Quick Shelf / Clipboard Tab
+              private var shelfTabView: some View {
+                  VStack(alignment: .leading, spacing: 8) {
+                      HStack {
+                          Text(vm.clipboardText)
+                              .font(.system(size: 12, weight: .medium))
+                              .foregroundColor(.white.opacity(0.9))
+                              .lineLimit(2)
+                          Spacer()
+                          Button(action: vm.pasteFromClipboard) {
+                              Label("Paste", systemImage: "doc.on.clipboard.fill")
+                                  .font(.system(size: 11, weight: .bold))
+                                  .padding(.horizontal, 10)
+                                  .padding(.vertical, 6)
+                                  .background(Capsule().fill(Color.cyan))
+                                  .foregroundColor(.black)
+                          }
+                      }
+                      ScrollView(.horizontal, showsIndicators: false) {
+                          HStack(spacing: 8) {
+                              ForEach(vm.quickNotes, id: \.self) { note in
+                                  Text(note)
+                                      .font(.system(size: 11, weight: .medium))
+                                      .padding(.horizontal, 10)
+                                      .padding(.vertical, 5)
+                                      .background(Capsule().fill(Color.white.opacity(0.09)))
+                                      .foregroundColor(.gray)
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+          EOF_NOTCHVIEW
+
+          cat << 'EOF_CONTENT' > NotchIsland/ContentView.swift
+          import SwiftUI
+
+          struct ContentView: View {
+              @EnvironmentObject var vm: NotchViewModel
+              @EnvironmentObject var pipManager: PiPIslandManager
+
+              var body: some View {
+                  ZStack(alignment: .top) {
+                      LinearGradient(
+                          colors: [
+                              Color.black,
+                              Color(red: 0.05, green: 0.07, blue: 0.12),
+                              Color.black
+                          ],
+                          startPoint: .top,
+                          endPoint: .bottom
+                      )
+                      .ignoresSafeArea()
+
+                      ScrollView {
+                          VStack(spacing: 20) {
+                              Spacer().frame(height: vm.isExpanded ? 245 : 58)
+
+                              // Live Audio Detection Status Banner
+                              HStack(spacing: 10) {
+                                  Circle()
+                                      .fill(vm.isPlaying ? Color.green : Color.gray)
+                                      .frame(width: 9, height: 9)
+                                  Text(vm.isPlaying ? "Audio Detected: \(vm.trackTitle)" : "Monitoring System Audio in Background...")
+                                      .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                      .foregroundColor(vm.isPlaying ? .cyan : .gray)
+                                      .lineLimit(1)
+                              }
+                              .padding(.horizontal, 14)
+                              .padding(.vertical, 8)
+                              .background(Capsule().fill(Color.white.opacity(0.07)))
+
+                              // Live Background Floating Island (PiP) Card
+                              VStack(alignment: .leading, spacing: 12) {
+                                  HStack {
+                                      Image(systemName: "pip.enter")
+                                          .font(.system(size: 20, weight: .bold))
+                                          .foregroundColor(.cyan)
+                                      VStack(alignment: .leading, spacing: 2) {
+                                          Text("Background Floating Island (Works Out of App)")
+                                              .font(.system(size: 15, weight: .bold))
+                                              .foregroundColor(.white)
+                                          Text("Swipe up to go Home — this live island automatically pops out over your Home Screen & other apps and reacts whenever Spotify, YouTube, or Music plays audio.")
+                                              .font(.system(size: 12))
+                                              .foregroundColor(.gray)
+                                      }
+                                  }
+
+                                  // Visible inline AVSampleBufferDisplayLayer required by iOS for automatic PiP on swipe Home
+                                  PiPLayerHostView(sampleView: pipManager.hostView)
+                                      .frame(height: 72)
+                                      .frame(maxWidth: .infinity)
+                                      .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                      .overlay(
+                                          RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                              .strokeBorder(Color.cyan.opacity(0.35), lineWidth: 1)
+                                      )
+
+                                  Toggle(isOn: $pipManager.autoStartOnSwipeHome) {
+                                      Text("Auto-Float Island When Swiping Home")
+                                          .font(.system(size: 13, weight: .semibold))
+                                          .foregroundColor(.white)
+                                  }
+                                  .tint(.cyan)
+
+                                  Button {
+                                      pipManager.togglePiP()
+                                  } label: {
+                                      HStack {
+                                          Image(systemName: pipManager.isPiPActive ? "pip.exit" : "pip.enter")
+                                          Text(pipManager.isPiPActive ? "Stop Floating Background Island" : "Pop Out Background Island Now")
+                                              .fontWeight(.bold)
+                                      }
+                                      .frame(maxWidth: .infinity)
+                                      .padding(.vertical, 13)
+                                      .background(
+                                          RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                              .fill(pipManager.isPiPActive ? Color.orange : Color.cyan)
+                                      )
+                                      .foregroundColor(.black)
+                                  }
+                              }
+                              .padding(18)
+                              .background(
+                                  RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                      .fill(Color.white.opacity(0.06))
+                                      .overlay(
+                                          RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                              .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+                                      )
+                              )
+
+                              // Quick Action Triggers for Testing the Notch Island
+                              VStack(alignment: .leading, spacing: 14) {
+                                  Text("NOTCH ISLAND QUICK ACTIONS")
+                                      .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                      .foregroundColor(.gray)
+
+                                  LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                      quickActionTile(title: vm.isExpanded ? "Collapse Notch" : "Expand Notch", subtitle: "Spring physics", icon: "rectangle.expand.vertical", color: .cyan) {
+                                          vm.toggleExpand()
+                                      }
+                                      quickActionTile(title: "Music & Audio", subtitle: vm.trackTitle, icon: "waveform", color: .indigo) {
+                                          vm.selectTab(.media)
+                                      }
+                                      quickActionTile(title: vm.isTimerRunning ? "Pause Timer" : "Start 5m Timer", subtitle: vm.formattedTimer, icon: "timer", color: .orange) {
+                                          vm.selectTab(.timer)
+                                          if !vm.isTimerRunning { vm.toggleTimer() }
+                                      }
+                                      quickActionTile(title: "Paste Clipboard", subtitle: "Pin to Notch Shelf", icon: "doc.on.clipboard", color: .green) {
+                                          vm.selectTab(.shelf)
+                                          vm.pasteFromClipboard()
+                                      }
+                                  }
+                              }
+
+                              // Notch Calibration Slider for iPhone 11
+                              VStack(alignment: .leading, spacing: 10) {
+                                  HStack {
+                                      Text("Notch Cutout Width Calibration")
+                                          .font(.system(size: 13, weight: .semibold))
+                                          .foregroundColor(.white)
+                                      Spacer()
+                                      Text("\(Int(vm.notchWidth)) pt")
+                                          .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                          .foregroundColor(.cyan)
+                                  }
+                                  Slider(value: $vm.notchWidth, in: 160...240, step: 1)
+                                      .tint(.cyan)
+                              }
+                              .padding(16)
+                              .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.05)))
+                          }
+                          .padding(.horizontal, 18)
+                          .padding(.bottom, 40)
+                      }
+
+                      // Interactive Notch Island pinned to the physical top edge (y = 0)
+                      NotchIslandView()
+                          .ignoresSafeArea(edges: .top)
+                  }
+                  .ignoresSafeArea(edges: .top)
+              }
+
+              private func quickActionTile(title: String, subtitle: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
+                  Button(action: action) {
+                      VStack(alignment: .leading, spacing: 8) {
+                          Image(systemName: icon)
+                              .font(.system(size: 18, weight: .bold))
+                              .foregroundColor(color)
+                          Text(title)
+                              .font(.system(size: 14, weight: .bold))
+                              .foregroundColor(.white)
+                          Text(subtitle)
+                              .font(.system(size: 11, weight: .medium))
+                              .foregroundColor(.gray)
+                              .lineLimit(1)
+                      }
+                      .frame(maxWidth: .infinity, alignment: .leading)
+                      .padding(14)
+                      .background(
+                          RoundedRectangle(cornerRadius: 18, style: .continuous)
+                              .fill(Color.white.opacity(0.06))
+                      )
+                  }
+                  .buttonStyle(.plain)
+              }
+          }
+          EOF_CONTENT
+
+      - name: Install XcodeGen & Generate Xcode Project
+        run: |
+          if ! command -v xcodegen &> /dev/null; then
+            brew install xcodegen
+          fi
+          xcodegen generate
+
+      - name: Build Unsigned Release .app for iOS (arm64)
+        run: |
+          xcodebuild clean build \
+            -project NotchIsland.xcodeproj \
+            -scheme NotchIsland \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package .app into Unsigned .ipa
+        run: |
+          APP_PATH=$(find build -name "NotchIsland.app" -type d | head -n 1)
+          echo "Found compiled app at: $APP_PATH"
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/NotchIsland.app
+          codesign --force --deep --sign - Payload/NotchIsland.app || true
+          zip -r9 NotchIsland-Unsigned.ipa Payload
+
+      - name: Upload Unsigned IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NotchIsland-Unsigned-IPA
+          path: NotchIsland-Unsigned.ipa
+          if-no-files-found: error
