@@ -164,11 +164,42 @@ enum SoundEQProfile: String, CaseIterable, Identifiable {
     }
 }
 
+enum FocusProfile: String, CaseIterable, Identifiable {
+    case dnd = "Do Not Disturb"
+    case work = "Work Focus"
+    case sleep = "Sleep Focus"
+    case personal = "Personal"
+    case fitness = "Fitness"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .dnd: return "moon.fill"
+        case .work: return "briefcase.fill"
+        case .sleep: return "bed.double.fill"
+        case .personal: return "person.fill"
+        case .fitness: return "figure.run"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .dnd: return Color(red: 0.68, green: 0.32, blue: 0.95)
+        case .work: return Color.orange
+        case .sleep: return Color.cyan
+        case .personal: return Color(red: 0.18, green: 0.84, blue: 0.38)
+        case .fitness: return Color.red
+        }
+    }
+}
+
 enum DoubleTapAction: String, CaseIterable, Identifiable {
     case playPause = "Play / Pause"
     case nextTrack = "Next Track"
     case toggleMute = "Mute / Unmute"
     case cycleEQ = "Cycle EQ Profile"
+    case cycleFocus = "Cycle Focus (DND)"
     case cycleBrightness = "Cycle Brightness"
     case toggleTorch = "Toggle Torch"
     case toggleSOS = "Toggle SOS Beacon"
@@ -185,6 +216,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         case .nextTrack: return "forward.fill"
         case .toggleMute: return "speaker.slash.fill"
         case .cycleEQ: return "slider.horizontal.3"
+        case .cycleFocus: return "moon.fill"
         case .cycleBrightness: return "sun.max.fill"
         case .toggleTorch: return "flashlight.on.fill"
         case .toggleSOS: return "exclamationmark.shield.fill"
@@ -268,6 +300,9 @@ class IslandState: ObservableObject {
     // MARK: - Double-Tap Action
     @Published var doubleTapAction: DoubleTapAction = .playPause
     @Published var animationProfile: IslandAnimationProfile = .appleBouncy
+
+    // MARK: - Focus & Do Not Disturb State
+    @Published var currentFocus: FocusProfile? = nil
 
     // MARK: - Custom Size Calibration & Presets
     @Published var selectedPreset: DeviceNotchPreset = .iphone11
@@ -757,6 +792,8 @@ class IslandState: ObservableObject {
             }
         case .cycleEQ:
             cycleEQProfile()
+        case .cycleFocus:
+            cycleNextFocus()
         case .cycleBrightness:
             let levels: [Float] = [0.25, 0.50, 0.75, 1.0]
             let current = systemBrightness
@@ -808,6 +845,49 @@ class IslandState: ObservableObject {
                 icon: next.icon,
                 color: theme.color
             )
+        }
+    }
+
+    func toggleFocus(_ focus: FocusProfile) {
+        if currentFocus == focus {
+            currentFocus = nil
+            HapticService.shared.light()
+            triggerNotification(
+                title: "Focus Off",
+                subtitle: "\(focus.rawValue) turned off",
+                icon: focus.icon,
+                color: .gray
+            )
+        } else {
+            currentFocus = focus
+            HapticService.shared.medium()
+            triggerNotification(
+                title: focus.rawValue,
+                subtitle: "Active • Notifications Silenced",
+                icon: focus.icon,
+                color: focus.color
+            )
+        }
+    }
+
+    func cycleNextFocus() {
+        let all = FocusProfile.allCases
+        if let cur = currentFocus, let idx = all.firstIndex(of: cur) {
+            let nextIdx = idx + 1
+            if nextIdx < all.count {
+                toggleFocus(all[nextIdx])
+            } else {
+                currentFocus = nil
+                HapticService.shared.light()
+                triggerNotification(
+                    title: "Focus Off",
+                    subtitle: "All Focus modes disabled",
+                    icon: "moon.slash.fill",
+                    color: .gray
+                )
+            }
+        } else {
+            toggleFocus(.dnd)
         }
     }
 

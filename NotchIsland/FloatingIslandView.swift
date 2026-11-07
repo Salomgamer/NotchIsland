@@ -305,6 +305,10 @@ struct FloatingIslandView: View {
                                 .font(.system(size: 8.5, weight: .bold))
                                 .foregroundColor(.yellow)
                                 .shadow(color: .yellow.opacity(0.8), radius: 2)
+                        } else if let focus = state.currentFocus {
+                            Image(systemName: focus.icon)
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(focus.color)
                         } else if state.isDualActivityActive {
                             HStack(spacing: 2) {
                                 Image(systemName: "timer")
@@ -533,6 +537,26 @@ struct FloatingIslandView: View {
             } else if state.activeNotificationTitle.contains("Activity") || state.activeNotificationTitle.contains("Fitness") {
                 MiniActivityRingsView()
                     .padding(.trailing, 2)
+            } else if state.activeNotificationTitle.contains("Focus") || state.activeNotificationTitle.contains("Disturb") {
+                if state.currentFocus != nil {
+                    Button(action: {
+                        if let cur = state.currentFocus {
+                            state.toggleFocus(cur)
+                        }
+                    }) {
+                        Text("Turn Off")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.purple.opacity(0.45))
+                            .clipShape(Capsule())
+                    }
+                } else {
+                    Circle()
+                        .fill(notifColor)
+                        .frame(width: 6, height: 6)
+                }
             } else {
                 Circle()
                     .fill(notifColor)

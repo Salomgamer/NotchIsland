@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 5.1 • Golden Master")
+                Text("Dynamic Island 5.2 • Golden Master")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -398,6 +398,10 @@ struct ContentView: View {
 
                 testTriggerButton(title: "🎯 Activity Rings", color: .red) {
                     state.testSimulateFitness()
+                }
+
+                testTriggerButton(title: "🌙 Do Not Disturb", color: Color(red: 0.68, green: 0.32, blue: 0.95)) {
+                    state.toggleFocus(.dnd)
                 }
             }
         }
@@ -1836,7 +1840,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 5.1 Sheet
+// MARK: - What's New in Dynamic Notch 5.2 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1851,7 +1855,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 5.1")
+                    Text("Dynamic Notch 5.2")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("GOLDEN MASTER EDITION")
@@ -1863,6 +1867,13 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "moon.fill",
+                            color: Color(red: 0.68, green: 0.32, blue: 0.95),
+                            title: "Focus Modes & Do Not Disturb",
+                            desc: "Interactive Focus switcher (DND, Work, Sleep, Fitness) with compact glowing glyph and in-island dismiss card."
+                        )
+
                         featureRow(
                             icon: "figure.run",
                             color: Color(red: 1.0, green: 0.25, blue: 0.35),
