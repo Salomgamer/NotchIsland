@@ -511,6 +511,8 @@ class IslandState: ObservableObject {
             break
         case .media:
             break
+        case .flashlight:
+            break
         case .call:
             callDuration = 0
             isCallActive = false

@@ -521,12 +521,81 @@ struct ContentView: View {
 
             case .silent:
                 silentControls
+
+            case .flashlight:
+                flashlightInteractiveControls
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(white: 0.08))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: - Flashlight Interactive Controls
+    private var flashlightInteractiveControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "flashlight.on.fill")
+                    .foregroundColor(.yellow)
+                Text("iOS 18 FLASHLIGHT ISLAND")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text("\(Int(torch.torchLevel * 100))% Beam")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundColor(.yellow)
+            }
+
+            HStack(spacing: 8) {
+                Button(action: { torch.toggleTorch() }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: torch.isTorchOn ? "power" : "flashlight.on.fill")
+                        Text(torch.isTorchOn ? "Turn Off" : "Turn On")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(torch.isTorchOn ? .black : .white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(torch.isTorchOn ? Color.yellow : Color(white: 0.16))
+                    .clipShape(Capsule())
+                }
+
+                Button(action: { torch.toggleSOS() }) {
+                    Text(torch.isSOSActive ? "Stop SOS" : "SOS Strobe")
+                        .font(.system(size: 11, weight: .heavy))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(torch.isSOSActive ? Color.red : Color.red.opacity(0.35))
+                        .clipShape(Capsule())
+                }
+            }
+
+            HStack(spacing: 6) {
+                Text("Beam:")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.gray)
+                ForEach([0.25, 0.50, 0.75, 1.0], id: \.self) { lvl in
+                    Button(action: {
+                        torch.setTorchLevel(Float(lvl))
+                    }) {
+                        Text("\(Int(lvl * 100))%")
+                            .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                            .foregroundColor(abs(Double(torch.torchLevel) - lvl) < 0.08 ? .black : .white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                abs(Double(torch.torchLevel) - lvl) < 0.08
+                                    ? Color.yellow
+                                    : Color(white: 0.16)
+                            )
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Blank Controls
