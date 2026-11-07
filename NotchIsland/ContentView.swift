@@ -6,49 +6,48 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.07, green: 0.07, blue: 0.08)
+            Color(red: 0.05, green: 0.05, blue: 0.06)
                 .ignoresSafeArea()
 
-            VStack(spacing: 28) {
+            VStack(spacing: 22) {
                 // Header
-                VStack(spacing: 6) {
+                VStack(spacing: 4) {
                     Text("Notch Island")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
 
-                    Text("Dynamic Island for iPhone 11")
-                        .font(.system(size: 15, weight: .medium))
+                    Text("Precision Dynamic Island for iPhone 11")
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.gray)
                 }
-                .padding(.top, 20)
+                .padding(.top, 16)
 
-                // Simulated Notch & Island Preview
-                VStack(spacing: 12) {
-                    Text("LIVE PREVIEW")
-                        .font(.system(size: 11, weight: .bold))
+                // Live Preview with Simulated Notch
+                VStack(spacing: 10) {
+                    Text("LIVE PILL PREVIEW")
+                        .font(.system(size: 10.5, weight: .bold))
                         .foregroundColor(.gray.opacity(0.8))
                         .kerning(1.2)
 
                     ZStack {
-                        // Background card
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .fill(Color(white: 0.12))
-                            .frame(height: 120)
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(Color(white: 0.11))
+                            .frame(height: 100)
 
                         VStack(spacing: 0) {
-                            // Simulated Notch Top
+                            // iPhone 11 Physical Notch Shape
                             Path { path in
-                                path.move(to: CGPoint(x: 100, y: 0))
-                                path.addLine(to: CGPoint(x: 130, y: 24))
-                                path.addLine(to: CGPoint(x: 270, y: 24))
-                                path.addLine(to: CGPoint(x: 300, y: 0))
+                                path.move(to: CGPoint(x: 110, y: 0))
+                                path.addLine(to: CGPoint(x: 135, y: 22))
+                                path.addLine(to: CGPoint(x: 265, y: 22))
+                                path.addLine(to: CGPoint(x: 290, y: 0))
                             }
                             .fill(Color.black)
-                            .frame(height: 24)
+                            .frame(height: 22)
 
                             Spacer()
 
-                            // Floating Island UI
+                            // Compact Island Pill
                             FloatingIslandView(state: state)
 
                             Spacer()
@@ -57,31 +56,59 @@ struct ContentView: View {
                     .padding(.horizontal, 20)
                 }
 
-                // Mode Selector
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("CHOOSE ACTIVITY")
-                        .font(.system(size: 11, weight: .bold))
+                // Size Switcher
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("ISLAND PROFILE")
+                        .font(.system(size: 10.5, weight: .bold))
                         .foregroundColor(.gray.opacity(0.8))
                         .kerning(1.2)
                         .padding(.horizontal, 24)
 
-                    HStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        ForEach(IslandSize.allCases, id: \.self) { sizeOption in
+                            Button(action: {
+                                state.setSize(sizeOption)
+                            }) {
+                                Text(sizeOption == .mini ? "Ultra-Slim" : (sizeOption == .compact ? "Compact" : "Standard"))
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(state.size == sizeOption ? .black : .white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(state.size == sizeOption ? Color.white : Color(white: 0.16))
+                                    )
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+
+                // Activity Mode Selector
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("ACTIVITY TYPE")
+                        .font(.system(size: 10.5, weight: .bold))
+                        .foregroundColor(.gray.opacity(0.8))
+                        .kerning(1.2)
+                        .padding(.horizontal, 24)
+
+                    HStack(spacing: 10) {
                         ForEach(IslandMode.allCases, id: \.self) { mode in
                             Button(action: {
                                 state.setMode(mode)
                             }) {
-                                VStack(spacing: 8) {
+                                HStack(spacing: 6) {
                                     Image(systemName: iconForMode(mode))
-                                        .font(.system(size: 18, weight: .semibold))
+                                        .font(.system(size: 14, weight: .semibold))
                                     Text(mode.rawValue)
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.system(size: 12.5, weight: .medium))
                                 }
                                 .foregroundColor(state.mode == mode ? .black : .white)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
+                                .padding(.vertical, 12)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .fill(state.mode == mode ? Color.white : Color(white: 0.16))
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(state.mode == mode ? Color.orange : Color(white: 0.16))
                                 )
                             }
                         }
@@ -91,30 +118,30 @@ struct ContentView: View {
 
                 Spacer()
 
-                // Launch / Stop Button
-                VStack(spacing: 12) {
+                // Launch / Dismiss Button
+                VStack(spacing: 10) {
                     Button(action: {
                         pip.toggle()
                     }) {
-                        HStack(spacing: 10) {
+                        HStack(spacing: 8) {
                             Image(systemName: pip.isPiPActive ? "stop.fill" : "play.fill")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 15, weight: .bold))
                             Text(pip.isPiPActive ? "Dismiss Island Overlay" : "Launch Floating Island")
-                                .font(.system(size: 17, weight: .bold, design: .rounded))
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
                         }
                         .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(pip.isPiPActive ? Color.red : Color.orange)
+                        .frame(height: 52)
+                        .background(pip.isPiPActive ? Color.red : Color.white)
                         .clipShape(Capsule())
                     }
                     .padding(.horizontal, 24)
 
-                    Text("Tip: When it pops up, drag the pill directly under your notch!")
-                        .font(.system(size: 12))
+                    Text("When launched, swipe Home and snap the pill directly under your notch.")
+                        .font(.system(size: 11))
                         .foregroundColor(.gray)
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 20)
 
                 // Invisible PiP Anchor
                 PiPAnchorView()

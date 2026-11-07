@@ -27,21 +27,23 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
     }
 
     func attach(to containerView: UIView) {
-        // Prevent duplicate attachments
         if anchorSourceView.superview != nil { return }
 
-        anchorSourceView.frame = CGRect(x: 0, y: 0, width: 216, height: 48)
+        let state = IslandState.shared
+        let initialSize = CGSize(width: state.islandWidth, height: state.islandHeight)
+
+        anchorSourceView.frame = CGRect(origin: .zero, size: initialSize)
         anchorSourceView.backgroundColor = .clear
         containerView.addSubview(anchorSourceView)
 
-        let islandView = FloatingIslandView(state: IslandState.shared)
+        let islandView = FloatingIslandView(state: state)
         let host = UIHostingController(rootView: islandView)
         host.view.frame = anchorSourceView.bounds
         host.view.backgroundColor = .clear
         self.hostingController = host
 
         let videoCallVC = AVPictureInPictureVideoCallViewController()
-        videoCallVC.preferredContentSize = CGSize(width: 216, height: 48)
+        videoCallVC.preferredContentSize = initialSize
         videoCallVC.view.addSubview(host.view)
         self.pipVideoCallVC = videoCallVC
 
@@ -56,9 +58,21 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         self.pipController = controller
     }
 
+    func updateSize() {
+        let state = IslandState.shared
+        let newSize = CGSize(width: state.islandWidth, height: state.islandHeight)
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.anchorSourceView.frame = CGRect(origin: .zero, size: newSize)
+            self.hostingController?.view.frame = CGRect(origin: .zero, size: newSize)
+            self.pipVideoCallVC?.preferredContentSize = newSize
+        }
+    }
+
     func start() {
         guard let controller = pipController, controller.isPictureInPicturePossible else {
-            print("PiP is not currently possible. Ensure device supports video PiP.")
+            print("PiP is not currently possible.")
             return
         }
         controller.startPictureInPicture()

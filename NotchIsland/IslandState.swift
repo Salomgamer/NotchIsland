@@ -4,26 +4,65 @@ import Combine
 enum IslandMode: String, CaseIterable {
     case timer = "Timer"
     case media = "Music"
-    case battery = "Status"
+    case battery = "Battery"
+}
+
+enum IslandSize: String, CaseIterable {
+    case mini = "Ultra-Slim (130×28)"
+    case compact = "Compact (148×32)"
+    case standard = "Standard (184×34)"
 }
 
 class IslandState: ObservableObject {
     static let shared = IslandState()
 
     @Published var mode: IslandMode = .timer
-    @Published var title: String = "Focus Session"
-    @Published var subtitle: String = "25:00 remaining"
-    @Published var iconName: String = "timer"
-    @Published var progress: Double = 0.0
-    @Published var accentColor: Color = .orange
+    @Published var size: IslandSize = .compact
 
-    // Internal timer tracking
+    @Published var title: String = "Focus"
+    @Published var subtitle: String = "25:00"
+    @Published var centerText: String = "Focus"
+    @Published var progress: Double = 0.0
+    @Published var remainingSeconds: Double = 1500
+    @Published var totalSeconds: Double = 1500
+    @Published var batteryPercentage: Int = 100
+    @Published var isCharging: Bool = true
+
     private var timerCancellable: AnyCancellable?
-    private var totalSeconds: Double = 1500 // 25 mins
-    private var remainingSeconds: Double = 1500
+
+    var islandWidth: CGFloat {
+        switch size {
+        case .mini: return 130
+        case .compact: return 148
+        case .standard: return 184
+        }
+    }
+
+    var islandHeight: CGFloat {
+        switch size {
+        case .mini: return 28
+        case .compact: return 32
+        case .standard: return 34
+        }
+    }
+
+    var showCenterText: Bool {
+        return size != .mini
+    }
+
+    var timerFormatted: String {
+        let mins = Int(remainingSeconds) / 60
+        let secs = Int(remainingSeconds) % 60
+        return String(format: "%d:%02d", mins, secs)
+    }
 
     init() {
         setMode(.timer)
+    }
+
+    func setSize(_ newSize: IslandSize) {
+        self.size = newSize
+        PiPIslandManager.shared.updateSize()
     }
 
     func setMode(_ newMode: IslandMode) {
@@ -32,32 +71,21 @@ class IslandState: ObservableObject {
 
         switch newMode {
         case .timer:
-            title = "Focus Session"
-            subtitle = "25:00 remaining"
-            iconName = "timer"
-            accentColor = .orange
-            progress = 0.0
+            centerText = size == .standard ? "Focus Session" : ""
             startDemoTimer()
 
         case .media:
-            title = "Starboy"
-            subtitle = "The Weeknd"
-            iconName = "waveform"
-            accentColor = .green
-            progress = 0.42
+            centerText = "Starboy"
 
         case .battery:
             UIDevice.current.isBatteryMonitoringEnabled = true
             let level = UIDevice.current.batteryLevel
-            let batteryPct = level >= 0 ? Int(level * 100) : 100
-            let isCharging = UIDevice.current.batteryState == .charging || UIDevice.current.batteryState == .full
-
-            title = "iPhone 11"
-            subtitle = isCharging ? "Charging • \(batteryPct)%" : "\(batteryPct)% Remaining"
-            iconName = isCharging ? "bolt.fill" : "battery.75"
-            accentColor = isCharging ? .green : .cyan
-            progress = Double(batteryPct) / 100.0
+            batteryPercentage = level >= 0 ? Int(level * 100) : 88
+            isCharging = UIDevice.current.batteryState == .charging || UIDevice.current.batteryState == .full
+            centerText = isCharging ? "Charging" : ""
         }
+
+        PiPIslandManager.shared.updateSize()
     }
 
     private func startDemoTimer() {
@@ -71,9 +99,6 @@ class IslandState: ObservableObject {
                 guard let self = self else { return }
                 if self.remainingSeconds > 0 {
                     self.remainingSeconds -= 1
-                    let mins = Int(self.remainingSeconds) / 60
-                    let secs = Int(self.remainingSeconds) % 60
-                    self.subtitle = String(format: "%02d:%02d remaining", mins, secs)
                     self.progress = (self.totalSeconds - self.remainingSeconds) / self.totalSeconds
                 }
             }
