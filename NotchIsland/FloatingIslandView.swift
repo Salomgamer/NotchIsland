@@ -17,8 +17,18 @@ struct FloatingIslandView: View {
                 // Dynamic ambient glow border
                 if state.mode == .media, let glowColor = nowPlaying.artworkAccentColor {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(glowColor.opacity(0.45), lineWidth: 1.2)
-                        .shadow(color: glowColor.opacity(0.50), radius: 6, x: 0, y: 0)
+                        .stroke(glowColor.opacity(0.50), lineWidth: 1.2)
+                        .shadow(color: glowColor.opacity(0.55), radius: 6, x: 0, y: 0)
+                        .padding(0.5)
+                } else if state.isCharging {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(Color.green.opacity(0.55), lineWidth: 1.2)
+                        .shadow(color: Color.green.opacity(0.50), radius: 6, x: 0, y: 0)
+                        .padding(0.5)
+                } else if BatteryService.shared.isLowPowerMode {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(Color.yellow.opacity(0.50), lineWidth: 1.0)
+                        .shadow(color: Color.yellow.opacity(0.40), radius: 5, x: 0, y: 0)
                         .padding(0.5)
                 } else {
                     // Subtle Apple-style gloss border
@@ -46,6 +56,9 @@ struct FloatingIslandView: View {
             .contentShape(Rectangle())
             .onTapGesture {
                 state.toggleExpanded()
+            }
+            .onLongPressGesture(minimumDuration: 0.6) {
+                state.cycleNextMode()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -811,21 +824,22 @@ struct EqualizerWaveformView: View {
     @State private var animating = false
 
     var body: some View {
-        HStack(spacing: 1.8) {
-            bar(minHeight: 3, maxHeight: 11, delay: 0.0)
-            bar(minHeight: 9, maxHeight: 4, delay: 0.12)
-            bar(minHeight: 4, maxHeight: 12, delay: 0.06)
+        HStack(spacing: 1.6) {
+            bar(minHeight: 3, maxHeight: 11, duration: 0.38, delay: 0.0)
+            bar(minHeight: 10, maxHeight: 4, duration: 0.28, delay: 0.12)
+            bar(minHeight: 4, maxHeight: 12, duration: 0.42, delay: 0.06)
+            bar(minHeight: 8, maxHeight: 3, duration: 0.32, delay: 0.18)
         }
         .frame(height: 12)
         .onAppear { animating = true }
     }
 
-    private func bar(minHeight: CGFloat, maxHeight: CGFloat, delay: Double) -> some View {
+    private func bar(minHeight: CGFloat, maxHeight: CGFloat, duration: Double, delay: Double) -> some View {
         RoundedRectangle(cornerRadius: 0.8)
             .fill(color)
-            .frame(width: 1.8, height: animating ? maxHeight : minHeight)
+            .frame(width: 1.6, height: animating ? maxHeight : minHeight)
             .animation(
-                Animation.easeInOut(duration: 0.38)
+                Animation.easeInOut(duration: duration)
                     .repeatForever(autoreverses: true)
                     .delay(delay),
                 value: animating

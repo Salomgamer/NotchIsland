@@ -325,6 +325,33 @@ class IslandState: ObservableObject {
         PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
     }
 
+    func cycleNextMode() {
+        HapticService.shared.heavy()
+        let all = IslandMode.allCases
+        if let idx = all.firstIndex(of: mode) {
+            let nextIdx = (idx + 1) % all.count
+            let nextMode = all[nextIdx]
+            setMode(nextMode)
+            triggerNotification(
+                title: nextMode.rawValue,
+                subtitle: "Mode Switched",
+                icon: iconForMode(nextMode),
+                color: theme.color
+            )
+        }
+    }
+
+    func iconForMode(_ mode: IslandMode) -> String {
+        switch mode {
+        case .media: return "music.note"
+        case .call: return "phone.fill"
+        case .timer: return "timer"
+        case .stopwatch: return "stopwatch"
+        case .battery: return "battery.100.bolt"
+        case .silent: return "bell.badge.fill"
+        }
+    }
+
     func setSize(_ newSize: IslandSize) {
         self.size = newSize
         self.useCustomSize = false

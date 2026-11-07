@@ -978,14 +978,7 @@ struct ContentView: View {
     }
 
     private func iconForMode(_ mode: IslandMode) -> String {
-        switch mode {
-        case .media: return "music.note"
-        case .call: return "phone.fill"
-        case .timer: return "timer"
-        case .stopwatch: return "stopwatch"
-        case .battery: return "battery.100.bolt"
-        case .silent: return "bell.badge.fill"
-        }
+        return state.iconForMode(mode)
     }
 }
 
