@@ -17,15 +17,17 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>6.0</string>
+    <string>6.1</string>
     <key>CFBundleVersion</key>
-    <string>6.0</string>
+    <string>6.1</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSAppleMusicUsageDescription</key>
     <string>Dynamic Notch displays real-time now-playing media titles, artists, and playback status.</string>
     <key>NSCameraUsageDescription</key>
     <string>Dynamic Notch uses the flashlight to indicate active torch status.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Dynamic Notch uses your wallpaper to create an authentic transparent liquid glass effect behind the floating island.</string>
     <key>UIBackgroundModes</key>
     <array>
         <string>audio</string>

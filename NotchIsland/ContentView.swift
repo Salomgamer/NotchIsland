@@ -7,7 +7,10 @@ struct ContentView: View {
     @ObservedObject var battery = BatteryService.shared
     @ObservedObject var bgEngine = BackgroundEngine.shared
     @ObservedObject var torch = TorchService.shared
+    @ObservedObject var wallpaper = WallpaperService.shared
     @State private var showingWhatsNew: Bool = false
+    @State private var showingImagePicker: Bool = false
+    @State private var selectedWallpaperImage: UIImage? = nil
 
     var body: some View {
         ZStack {
@@ -39,6 +42,9 @@ struct ContentView: View {
 
                     // Accent Theme Picker
                     themeSection
+
+                    // Transparent Liquid Glass Wallpaper Engine
+                    liquidGlassWallpaperSection
 
                     // Island Background Style Picker
                     backgroundSection
@@ -74,6 +80,9 @@ struct ContentView: View {
         .sheet(isPresented: $showingWhatsNew) {
             WhatsNewView(isPresented: $showingWhatsNew, themeColor: state.theme.color)
         }
+        .sheet(isPresented: $showingImagePicker) {
+            ImagePickerRepresentable(selectedImage: $selectedWallpaperImage)
+        }
     }
 
     // MARK: - Header Bar
@@ -84,7 +93,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 6.0 • Adaptive Device Engine")
+                Text("Dynamic Island 6.1 • Liquid Glass Engine")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1291,6 +1300,190 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Transparent Liquid Glass Wallpaper Engine Section
+    private var liquidGlassWallpaperSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "drop.fill")
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                Text("LIQUID GLASS WALLPAPER ENGINE")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.2)
+                Spacer()
+                if wallpaper.hasCustomWallpaper {
+                    Text("Photo Active")
+                        .font(.system(size: 9.5, weight: .heavy, design: .rounded))
+                        .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.green.opacity(0.18))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.horizontal, 4)
+
+            Text("Select your wallpaper from Photos to create an optical illusion of transparent liquid glass floating perfectly over your home screen under the physical notch.")
+                .font(.system(size: 11, weight: .regular))
+                .foregroundColor(.gray)
+                .lineSpacing(2)
+
+            // Wallpaper Action Bar
+            HStack(spacing: 10) {
+                Button(action: {
+                    HapticService.shared.medium()
+                    showingImagePicker = true
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.system(size: 12, weight: .bold))
+                        Text(wallpaper.hasCustomWallpaper ? "Change Wallpaper" : "Choose Wallpaper from Photos")
+                            .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(LinearGradient(colors: [Color.blue, Color(red: 0.0, green: 0.75, blue: 1.0)], startPoint: .leading, endPoint: .trailing))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+
+                if wallpaper.hasCustomWallpaper {
+                    Button(action: {
+                        wallpaper.clearCustomWallpaper()
+                    }) {
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.red)
+                            .frame(width: 36, height: 36)
+                            .background(Color.red.opacity(0.15))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                }
+            }
+
+            // Slice Preview & State
+            if let slice = wallpaper.croppedSlice {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Notch Glass Alignment:")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(.gray)
+                        Image(uiImage: slice)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 140, height: 32)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text("Style Active:")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(.gray)
+                        Button(action: {
+                            state.backgroundStyle = .liquidWallpaperGlass
+                            HapticService.shared.selection()
+                        }) {
+                            Text(state.backgroundStyle == .liquidWallpaperGlass ? "✓ Liquid Glass Active" : "Apply Liquid Glass")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(state.backgroundStyle == .liquidWallpaperGlass ? .black : .white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(state.backgroundStyle == .liquidWallpaperGlass ? Color(red: 0.0, green: 0.85, blue: 1.0) : Color.white.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            } else {
+                // Built-in Liquid Presets
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Liquid Glass Presets:")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.gray)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(WallpaperPreset.allCases) { preset in
+                                Button(action: {
+                                    wallpaper.selectedPreset = preset
+                                    state.backgroundStyle = .liquidWallpaperGlass
+                                    HapticService.shared.selection()
+                                }) {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: preset.icon)
+                                            .font(.system(size: 10, weight: .bold))
+                                        Text(preset.rawValue)
+                                            .font(.system(size: 11, weight: .semibold))
+                                    }
+                                    .foregroundColor(wallpaper.selectedPreset == preset && state.backgroundStyle == .liquidWallpaperGlass ? .black : .white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            .fill(wallpaper.selectedPreset == preset && state.backgroundStyle == .liquidWallpaperGlass ? Color(red: 0.0, green: 0.85, blue: 1.0) : Color(white: 0.14))
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Divider().background(Color.white.opacity(0.1))
+
+            // Glass Tuning Sliders
+            VStack(spacing: 8) {
+                HStack {
+                    Text("Liquid Blur: \(Int(wallpaper.glassBlurRadius))pt")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.gray)
+                    Spacer()
+                    Slider(value: $wallpaper.glassBlurRadius, in: 5...30, step: 1)
+                        .frame(width: 170)
+                }
+
+                HStack {
+                    Text("Glass Tint: \(Int(wallpaper.glassOpacity * 100))%")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.gray)
+                    Spacer()
+                    Slider(value: $wallpaper.glassOpacity, in: 0.20...0.95, step: 0.05)
+                        .frame(width: 170)
+                }
+
+                HStack {
+                    Text("Specular Sheen: \(Int(wallpaper.specularSheen * 100))%")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.gray)
+                    Spacer()
+                    Slider(value: $wallpaper.specularSheen, in: 0.0...1.0, step: 0.05)
+                        .frame(width: 170)
+                }
+
+                Toggle(isOn: $wallpaper.liquidShimmer) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(.cyan)
+                        Text("Dynamic Liquid Caustic Shimmer")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .cyan))
+            }
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
     // MARK: - Background Customization Section
     private var backgroundSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -1901,10 +2094,10 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 6.0")
+                    Text("Dynamic Notch 6.1")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
-                    Text("ADAPTIVE DEVICE ENGINE")
+                    Text("LIQUID GLASS & IN-PIP ACTIONS")
                         .font(.system(size: 10, weight: .black))
                         .foregroundColor(themeColor)
                         .kerning(1.5)
@@ -1914,24 +2107,24 @@ struct WhatsNewView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
                         featureRow(
-                            icon: "phone.and.waveform.fill",
-                            color: .green,
-                            title: "CallKit Live Call Observation",
-                            desc: "Automatically adapts when phone calls arrive: pulsating ringtone haptics, ringing wobble badge, Accept/Decline capsule buttons, and live elapsed timer."
+                            icon: "drop.fill",
+                            color: Color(red: 0.0, green: 0.85, blue: 1.0),
+                            title: "Transparent Liquid Glass Wallpaper",
+                            desc: "Uses your home screen wallpaper to render a genuine transparent liquid glass notch pill with fluid refraction, specular highlights, and caustic shimmer."
                         )
 
                         featureRow(
-                            icon: "bell.badge.fill",
+                            icon: "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left",
                             color: themeColor,
-                            title: "Smart Notification Auto-Expansion",
-                            desc: "Notch dynamically expands on system events (charger connect/disconnect, screenshot capture, thermal alerts, audio devices, clipboard) and auto-collapses."
+                            title: "In-PiP Interactive Actions Center",
+                            desc: "Tapping the floating island expands directly on your home screen without opening any app, showing complete interactive controls (Play/Pause, Torch, Timer, Silent, Collapse)."
                         )
 
                         featureRow(
-                            icon: "bolt.fill",
+                            icon: "eye.fill",
                             color: .green,
-                            title: "Hardware Power State Adaptation",
-                            desc: "Real-time adapter detection notifying you of charging wattage and battery transitions seamlessly."
+                            title: "Universal Multi-Activity Auto-Detection",
+                            desc: "Seamlessly detects every activity (Calls, Music, Torch, Voice Memo, Timer, Stopwatch, Navigation, Sports) and switches interfaces instantly."
                         )
 
                         featureRow(

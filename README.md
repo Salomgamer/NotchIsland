@@ -2,12 +2,29 @@
 
 [![iOS 15.0+](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Version 6.0](https://img.shields.io/badge/DynamicNotch-v6.0_Adaptive-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v6.0)
+[![Version 6.1](https://img.shields.io/badge/DynamicNotch-v6.1_LiquidGlass-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v6.1)
 [![License MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
 **Dynamic Notch** brings the real **Apple Dynamic Island** experience to the iPhone 11, iPhone XR, iPhone 12, iPhone 13, and all notched iOS devices. 
 
-Sitting invisibly flush under the physical camera notch, Dynamic Notch dynamically adapts to real-time device activity: incoming telephone and VoIP calls, notification auto-expansion, live media streaming, hardware battery & charger state transitions, screenshots, and system volume/brightness HUDs.
+Sitting invisibly flush under the physical camera notch, Dynamic Notch features a **Transparent Liquid Glass Wallpaper Engine**, in-place Picture-in-Picture expansion with interactive controls without ever opening or leaving to full screen, and universal real-time activity adaptation.
+
+---
+
+## What's New in v6.1 (Transparent Liquid Glass & In-PiP Actions)
+
+* **Transparent Liquid Glass Wallpaper Engine**:
+  * Users can select their home screen / lock screen wallpaper directly from Photos.
+  * Dynamically extracts and aligns the top slice beneath the physical notch.
+  * Renders with fluid optical blur, dual specular reflection sheen, meniscus highlight gradients, and caustic liquid shimmer.
+  * Creates an optical illusion of a 100% transparent liquid glass notch floating seamlessly over your wallpaper.
+  * Includes 5 built-in liquid glass presets (Astral OLED, Liquid Prism, Ocean Glass, Frosted Acrylic, Sunset Amber) with custom blur, glass tint, and specular sliders.
+* **In-PiP Interactive Actions Center**:
+  * Tapping the notch expands directly inside Picture-in-Picture without opening the Dynamic Notch app or switching away from your active screen.
+  * Interactive in-place actions: Play/Pause music, toggle Torch, start 25m Focus Timer, toggle Silent mode, adjust volume, and collapse chevron.
+  * Tapping album artwork toggles play/pause in place instead of launching external apps.
+* **Universal Multi-Activity Auto-Detection**:
+  * Detects and auto-switches interfaces for every activity: Phone & VoIP Calls, Media streaming, Torch, Voice Memo recording, Focus Timer, Stopwatch, Navigation, and Live Sports.
 
 ---
 

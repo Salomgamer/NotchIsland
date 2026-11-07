@@ -63,6 +63,7 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
 }
 
 enum IslandBackgroundStyle: String, CaseIterable, Identifiable {
+    case liquidWallpaperGlass = "Liquid Wallpaper Glass"
     case oledBlack = "OLED Black"
     case frostedGlass = "Frosted Glass"
     case artworkAdaptive = "Artwork Adaptive"
@@ -77,6 +78,7 @@ enum IslandBackgroundStyle: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
+        case .liquidWallpaperGlass: return "drop.fill"
         case .oledBlack: return "circle.fill"
         case .frostedGlass: return "aqi.medium"
         case .artworkAdaptive: return "wand.and.stars"
@@ -310,7 +312,7 @@ class IslandState: ObservableObject {
     }
 
     // MARK: - Background Customization
-    @Published var backgroundStyle: IslandBackgroundStyle = .oledBlack
+    @Published var backgroundStyle: IslandBackgroundStyle = .liquidWallpaperGlass
     @Published var backgroundOpacity: Double = 1.0
 
     // MARK: - Double-Tap Action
@@ -374,12 +376,14 @@ class IslandState: ObservableObject {
     }
 
     // MARK: - Navigation HUD State
+    @Published var isNavigationActive: Bool = false
     @Published var navInstruction: String = "Turn Right onto Apple Park Way"
     @Published var navDistance: String = "In 300 ft"
     @Published var navETA: String = "12:45 PM • 14 min"
     @Published var navSpeedLimit: Int = 45
 
     // MARK: - Live Sports State
+    @Published var isSportsActive: Bool = false
     @Published var sportsHomeTeam: String = "RMA"
     @Published var sportsAwayTeam: String = "FCB"
     @Published var sportsHomeScore: Int = 2
@@ -414,7 +418,9 @@ class IslandState: ObservableObject {
         if isShowingNotification { return 232 }
         if isExpanded {
             if mode == .call { return 242 }
-            return 224
+            if mode == .media { return 228 }
+            if mode == .blank { return 236 }
+            return 226
         }
         if useCustomSize { return customWidth }
         switch size {
@@ -428,7 +434,9 @@ class IslandState: ObservableObject {
         if isShowingNotification { return 66 }
         if isExpanded {
             if mode == .call { return 78 }
-            return 68
+            if mode == .media { return 74 }
+            if mode == .blank { return 72 }
+            return 70
         }
         if useCustomSize { return customHeight }
         switch size {
@@ -719,7 +727,7 @@ class IslandState: ObservableObject {
             return
         }
 
-        // 4. Stopwatch Running
+        // 6. Stopwatch Running
         if isStopwatchRunning {
             if mode != .stopwatch {
                 setMode(.stopwatch)
@@ -727,11 +735,27 @@ class IslandState: ObservableObject {
             return
         }
 
-        // 5. Idle: Gracefully return to Blank mode after brief grace period
+        // 7. Navigation Turn-by-Turn Active
+        if isNavigationActive {
+            if mode != .navigation {
+                setMode(.navigation)
+            }
+            return
+        }
+
+        // 8. Live Sports Active
+        if isSportsActive {
+            if mode != .sports {
+                setMode(.sports)
+            }
+            return
+        }
+
+        // 9. Idle: Gracefully return to Blank / Liquid Glass mode after brief grace period
         if mode == .media && !isMediaPlaying {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
                 guard let self = self, self.autoSwitchModes else { return }
-                if !self.isMediaPlaying && !self.isCallActive && !self.isStopwatchRunning {
+                if !self.isMediaPlaying && !self.isCallActive && !self.isStopwatchRunning && !self.isNavigationActive && !self.isSportsActive {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
                         self.setMode(.blank)
                     }
@@ -740,7 +764,7 @@ class IslandState: ObservableObject {
             return
         }
 
-        if mode != .blank && !isCallActive && !isMediaPlaying && !isStopwatchRunning {
+        if mode != .blank && !isCallActive && !CallService.shared.hasActiveCall && !isMediaPlaying && !isStopwatchRunning && !isNavigationActive && !isSportsActive {
             setMode(.blank)
         }
     }
@@ -957,22 +981,36 @@ class IslandState: ObservableObject {
 
     private var lastToggleTime: Date = Date.distantPast
 
+    func expand() {
+        guard !isExpanded else { return }
+        HapticService.shared.medium()
+        withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
+            self.isExpanded = true
+        }
+        PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+    }
+
+    func collapse() {
+        guard isExpanded || isShowingNotification else { return }
+        HapticService.shared.light()
+        notificationDismissWorkItem?.cancel()
+        withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
+            self.isExpanded = false
+            self.isShowingNotification = false
+        }
+        PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+    }
+
     func toggleExpanded() {
         let now = Date()
         guard now.timeIntervalSince(lastToggleTime) > 0.25 else { return }
         lastToggleTime = now
 
-        HapticService.shared.medium()
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
-            if self.isShowingNotification {
-                self.notificationDismissWorkItem?.cancel()
-                self.isShowingNotification = false
-                self.isExpanded = false
-            } else {
-                self.isExpanded.toggle()
-            }
+        if isExpanded {
+            collapse()
+        } else {
+            expand()
         }
-        PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
     }
 
     // MARK: - Live Notification Auto-Expansion

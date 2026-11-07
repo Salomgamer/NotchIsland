@@ -15,8 +15,25 @@ struct FloatingIslandView: View {
                 // Configurable Pill Background (OLED, Frosted Glass, Artwork Adaptive, etc.)
                 pillBackground
 
-                // Dynamic ambient glow border
-                if state.mode == .media, let glowColor = nowPlaying.artworkAccentColor {
+                // Dynamic ambient glow border / liquid glass edge
+                if state.backgroundStyle == .liquidWallpaperGlass {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.65),
+                                    Color.white.opacity(0.18),
+                                    Color.cyan.opacity(0.35),
+                                    Color.white.opacity(0.45)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.2
+                        )
+                        .shadow(color: Color.white.opacity(0.25), radius: 4, x: 0, y: 0)
+                        .padding(0.5)
+                } else if state.mode == .media, let glowColor = nowPlaying.artworkAccentColor {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .stroke(glowColor.opacity(0.50), lineWidth: 1.2)
                         .shadow(color: glowColor.opacity(0.55), radius: 6, x: 0, y: 0)
@@ -61,7 +78,11 @@ struct FloatingIslandView: View {
                 state.handleDoubleTap()
             }
             .onTapGesture(count: 1) {
-                state.toggleExpanded()
+                if !state.isExpanded {
+                    state.expand()
+                } else {
+                    state.collapse()
+                }
             }
             .onLongPressGesture(minimumDuration: 0.6) {
                 state.cycleNextMode()
@@ -78,6 +99,9 @@ struct FloatingIslandView: View {
     @ViewBuilder
     private var pillBackground: some View {
         switch state.backgroundStyle {
+        case .liquidWallpaperGlass:
+            LiquidGlassBackgroundView()
+
         case .oledBlack:
             Color.black
                 .opacity(state.backgroundOpacity)
@@ -609,97 +633,117 @@ struct FloatingIslandView: View {
         }
     }
 
-    // MARK: - Expanded Blank / Stealth Status
+    // MARK: - Expanded Blank / Liquid Glass Quick Actions HUD
     private var expandedBlankContent: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.12))
-                    .frame(width: 30, height: 30)
-                Image(systemName: "applelogo")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
-            }
+        VStack(spacing: 7) {
+            // Header Row: Notch logo, Battery & Route info, and Collapse Chevron Button
+            HStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.15))
+                        .frame(width: 26, height: 26)
+                    Image(systemName: "drop.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Dynamic Notch")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Dynamic Notch")
+                        .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
 
-                HStack(spacing: 4) {
-                    Text("\(state.batteryPercentage)%")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundColor(batteryColor)
+                    HStack(spacing: 3) {
+                        Text("\(state.batteryPercentage)%")
+                            .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                            .foregroundColor(batteryColor)
 
-                    Image(systemName: state.isCharging ? "bolt.fill" : "battery.100")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(batteryColor)
+                        Image(systemName: state.isCharging ? "bolt.fill" : "battery.100")
+                            .font(.system(size: 8.5, weight: .semibold))
+                            .foregroundColor(batteryColor)
 
-                    Text("• \(nowPlaying.currentRouteName)")
-                        .font(.system(size: 9.5, weight: .medium))
-                        .foregroundColor(.gray)
-                        .lineLimit(1)
-
-                    HStack(spacing: 2) {
-                        Image(systemName: "wifi")
-                            .font(.system(size: 7.5, weight: .bold))
-                            .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
-                        Text("Online")
-                            .font(.system(size: 8, weight: .semibold))
+                        Text("• \(nowPlaying.currentRouteName)")
+                            .font(.system(size: 9, weight: .medium))
                             .foregroundColor(.gray)
+                            .lineLimit(1)
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1.5)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(Capsule())
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // In-PiP Collapse Button
+                Button(action: {
+                    state.collapse()
+                }) {
+                    Image(systemName: "chevron.compact.up")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white.opacity(0.75))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.white.opacity(0.14))
+                        .clipShape(Capsule())
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 5) {
-                // Flashlight
+            // In-PiP Interactive Actions Bar (Never leaves or opens external apps)
+            HStack(spacing: 6) {
+                // 1. Music Play/Pause Quick Toggle (in-place)
+                Button(action: {
+                    NowPlayingService.shared.togglePlayPause()
+                    HapticService.shared.medium()
+                }) {
+                    HStack(spacing: 3) {
+                        Image(systemName: nowPlaying.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 9, weight: .bold))
+                        Text(nowPlaying.isPlaying ? "Pause" : "Play")
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .frame(height: 25)
+                    .background(Color(red: 0.18, green: 0.82, blue: 0.38))
+                    .clipShape(Capsule())
+                }
+
+                // 2. Flashlight Toggle (in-place)
                 Button(action: {
                     TorchService.shared.toggleTorch()
                 }) {
-                    Image(systemName: TorchService.shared.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(TorchService.shared.isTorchOn ? .black : .white)
-                        .padding(6)
-                        .background(TorchService.shared.isTorchOn ? Color.yellow : Color.white.opacity(0.15))
-                        .clipShape(Circle())
+                    HStack(spacing: 3) {
+                        Image(systemName: TorchService.shared.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                            .font(.system(size: 9, weight: .bold))
+                        Text(TorchService.shared.isTorchOn ? "Torch On" : "Torch")
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(TorchService.shared.isTorchOn ? .black : .white)
+                    .padding(.horizontal, 8)
+                    .frame(height: 25)
+                    .background(TorchService.shared.isTorchOn ? Color.yellow : Color.white.opacity(0.18))
+                    .clipShape(Capsule())
                 }
 
-                // Spotify Quick Launch
+                // 3. Focus Timer Quick Start (in-place)
                 Button(action: {
-                    launchURL("spotify://")
+                    state.setTimerPreset(minutes: 25)
                 }) {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(Color(red: 0.12, green: 0.84, blue: 0.38))
-                        .padding(6)
-                        .background(Color.white.opacity(0.15))
-                        .clipShape(Circle())
+                    HStack(spacing: 3) {
+                        Image(systemName: "timer")
+                            .font(.system(size: 9, weight: .bold))
+                        Text("25m")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .frame(height: 25)
+                    .background(Color.orange)
+                    .clipShape(Capsule())
                 }
 
-                // YouTube Quick Launch
+                // 4. Silent Switch Quick Toggle (in-place)
                 Button(action: {
-                    launchURL("youtube://")
+                    state.toggleSilentMode()
                 }) {
-                    Image(systemName: "play.rectangle.fill")
+                    Image(systemName: state.isSilentOn ? "bell.slash.fill" : "bell.fill")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(Color(red: 1.0, green: 0.15, blue: 0.15))
-                        .padding(6)
-                        .background(Color.white.opacity(0.15))
-                        .clipShape(Circle())
-                }
-
-                // Switch to Music & Battery Mode
-                Button(action: {
-                    state.setMode(.media)
-                }) {
-                    Image(systemName: "music.note")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(state.isSilentOn ? .red : .green)
                         .padding(6)
                         .background(Color.white.opacity(0.15))
                         .clipShape(Circle())
@@ -707,7 +751,7 @@ struct FloatingIslandView: View {
             }
         }
         .padding(.horizontal, 11)
-        .padding(.vertical, 8)
+        .padding(.vertical, 7)
     }
 
     // MARK: - Expanded iOS 18 Flashlight Island
@@ -846,9 +890,10 @@ struct FloatingIslandView: View {
     // MARK: - Expanded Media
     private var expandedMediaContent: some View {
         VStack(spacing: 6) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Button(action: {
-                    openPlayingApp()
+                    nowPlaying.togglePlayPause()
+                    HapticService.shared.medium()
                 }) {
                     if let artwork = nowPlaying.artworkImage {
                         ZStack(alignment: .bottomTrailing) {
@@ -944,16 +989,29 @@ struct FloatingIslandView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                PillBatteryView(
-                    percentage: state.batteryPercentage,
-                    isCharging: state.isCharging,
-                    isLowPower: BatteryService.shared.isLowPowerMode,
-                    color: batteryColor
-                )
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.white.opacity(0.10))
-                .clipShape(Capsule())
+                HStack(spacing: 4) {
+                    PillBatteryView(
+                        percentage: state.batteryPercentage,
+                        isCharging: state.isCharging,
+                        isLowPower: BatteryService.shared.isLowPowerMode,
+                        color: batteryColor
+                    )
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 3)
+                    .background(Color.white.opacity(0.10))
+                    .clipShape(Capsule())
+
+                    Button(action: {
+                        state.collapse()
+                    }) {
+                        Image(systemName: "chevron.compact.up")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white.opacity(0.75))
+                            .padding(4)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Circle())
+                    }
+                }
             }
 
             HStack(spacing: 12) {
@@ -1741,6 +1799,72 @@ struct FloatingIslandView: View {
             UIApplication.shared.open(url, options: [:], completionHandler: nil)
         } else {
             HapticService.shared.light()
+        }
+    }
+}
+
+// MARK: - Liquid Glass Wallpaper Background
+struct LiquidGlassBackgroundView: View {
+    @ObservedObject var wallpaper = WallpaperService.shared
+    @ObservedObject var state = IslandState.shared
+    @State private var shimmerOffset: CGFloat = -1.2
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                // 1. Wallpaper slice if custom wallpaper chosen
+                if let slice = wallpaper.croppedSlice {
+                    Image(uiImage: slice)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .blur(radius: wallpaper.glassBlurRadius)
+                        .opacity(wallpaper.glassOpacity)
+                } else {
+                    // Built-in liquid glass dynamic gradient
+                    wallpaper.selectedPreset.gradient
+                        .opacity(wallpaper.glassOpacity)
+                }
+
+                // 2. Liquid Glass Darkening/Translucency Tint
+                Color.black.opacity(0.28 * (1.0 - wallpaper.glassOpacity))
+
+                // 3. Specular Surface Reflection Sheen (Curved meniscus highlights)
+                LinearGradient(
+                    stops: [
+                        .init(color: Color.white.opacity(0.38 * wallpaper.specularSheen), location: 0.0),
+                        .init(color: Color.white.opacity(0.10 * wallpaper.specularSheen), location: 0.32),
+                        .init(color: Color.clear, location: 0.52),
+                        .init(color: Color.white.opacity(0.14 * wallpaper.specularSheen), location: 1.0)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                // 4. Subtle Liquid Caustic Light Band
+                if wallpaper.liquidShimmer {
+                    LinearGradient(
+                        colors: [
+                            Color.clear,
+                            Color.white.opacity(0.18 * wallpaper.specularSheen),
+                            Color.cyan.opacity(0.12 * wallpaper.specularSheen),
+                            Color.clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .rotationEffect(.degrees(25))
+                    .offset(x: shimmerOffset * geo.size.width * 2)
+                    .animation(
+                        Animation.easeInOut(duration: 4.8)
+                            .repeatForever(autoreverses: false),
+                        value: shimmerOffset
+                    )
+                    .onAppear {
+                        shimmerOffset = 1.2
+                    }
+                }
+            }
         }
     }
 }

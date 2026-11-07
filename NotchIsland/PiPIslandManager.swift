@@ -124,7 +124,9 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
     }
 
     @objc private func handlePiPTap() {
-        IslandState.shared.toggleExpanded()
+        if !IslandState.shared.isExpanded {
+            IslandState.shared.expand()
+        }
     }
 
     // MARK: - AVPictureInPictureControllerDelegate
@@ -132,12 +134,15 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         _ pictureInPictureController: AVPictureInPictureController,
         restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
     ) {
-        // Intercept click: DO NOT open app full screen! Instead, expand/collapse the floating island in place!
-        HapticService.shared.medium()
-        IslandState.shared.toggleExpanded()
-
-        // Passing false tells iOS NOT to open or restore the app interface!
+        // Intercept tap: DO NOT open app full screen! Always expand/collapse the floating island in-place!
         completionHandler(false)
+
+        HapticService.shared.medium()
+        if !IslandState.shared.isExpanded {
+            IslandState.shared.expand()
+        } else {
+            IslandState.shared.collapse()
+        }
 
         // Keep PiP floating continuously
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
