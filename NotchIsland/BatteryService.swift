@@ -12,6 +12,10 @@ class BatteryService: ObservableObject {
     @Published var chargingWatts: Int? = nil
     @Published var timeToFullMinutes: Int? = nil
     @Published var powerSourceType: String = "Battery"
+    @Published var voltageVolts: Double? = nil
+    @Published var amperageMilliAmps: Int? = nil
+    @Published var cycleCount: Int? = nil
+    @Published var batteryTempCelsius: Double? = nil
 
     private var timer: Timer?
 
@@ -121,6 +125,22 @@ class BatteryService: ObservableObject {
 
                     if let sourceState = desc["Power Source State"] as? String {
                         self.powerSourceType = sourceState
+                    }
+
+                    if let mv = desc["Voltage"] as? Int, mv > 0 {
+                        self.voltageVolts = Double(mv) / 1000.0
+                    }
+
+                    if let ma = desc["Amperage"] as? Int {
+                        self.amperageMilliAmps = ma
+                    }
+
+                    if let cycles = desc["Cycle Count"] as? Int, cycles > 0 {
+                        self.cycleCount = cycles
+                    }
+
+                    if let tempRaw = desc["Temperature"] as? Int, tempRaw > 0 {
+                        self.batteryTempCelsius = tempRaw > 1000 ? Double(tempRaw) / 100.0 : Double(tempRaw) / 10.0
                     }
                     return
                 }

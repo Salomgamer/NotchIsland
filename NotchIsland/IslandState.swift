@@ -73,6 +73,26 @@ enum IslandBackgroundStyle: String, CaseIterable, Identifiable {
     }
 }
 
+enum DoubleTapAction: String, CaseIterable, Identifiable {
+    case playPause = "Play / Pause"
+    case nextTrack = "Next Track"
+    case toggleTorch = "Toggle Torch"
+    case toggleSilent = "Toggle Silent"
+    case expandCollapse = "Expand / Collapse"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .playPause: return "playpause.fill"
+        case .nextTrack: return "forward.fill"
+        case .toggleTorch: return "flashlight.on.fill"
+        case .toggleSilent: return "bell.slash.fill"
+        case .expandCollapse: return "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left"
+        }
+    }
+}
+
 enum AccentTheme: String, CaseIterable {
     case spotifyGreen = "Spotify Green"
     case appleOrange = "Apple Orange"
@@ -103,6 +123,9 @@ class IslandState: ObservableObject {
     // MARK: - Background Customization
     @Published var backgroundStyle: IslandBackgroundStyle = .oledBlack
     @Published var backgroundOpacity: Double = 1.0
+
+    // MARK: - Double-Tap Action
+    @Published var doubleTapAction: DoubleTapAction = .playPause
 
     // MARK: - Custom Size Calibration & Presets
     @Published var selectedPreset: DeviceNotchPreset = .iphone11
@@ -387,6 +410,22 @@ class IslandState: ObservableObject {
             icon: isSilentOn ? "bell.slash.fill" : "bell.fill",
             color: isSilentOn ? .red : .green
         )
+    }
+
+    func handleDoubleTap() {
+        HapticService.shared.doubleTapHaptic()
+        switch doubleTapAction {
+        case .playPause:
+            NowPlayingService.shared.togglePlayPause()
+        case .nextTrack:
+            NowPlayingService.shared.nextTrack()
+        case .toggleTorch:
+            TorchService.shared.toggleTorch()
+        case .toggleSilent:
+            toggleSilentMode()
+        case .expandCollapse:
+            toggleExpanded()
+        }
     }
 
     private var lastToggleTime: Date = Date.distantPast

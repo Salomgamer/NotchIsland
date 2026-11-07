@@ -54,7 +54,10 @@ struct FloatingIslandView: View {
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .shadow(color: .black.opacity(0.65), radius: 8, x: 0, y: 3)
             .contentShape(Rectangle())
-            .onTapGesture {
+            .onTapGesture(count: 2) {
+                state.handleDoubleTap()
+            }
+            .onTapGesture(count: 1) {
                 state.toggleExpanded()
             }
             .onLongPressGesture(minimumDuration: 0.6) {
@@ -647,41 +650,89 @@ struct FloatingIslandView: View {
 
     // MARK: - Expanded Battery
     private var expandedBatteryContent: some View {
-        HStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .fill(batteryColor.opacity(0.22))
-                    .frame(width: 30, height: 30)
-                Image(systemName: state.isCharging ? "bolt.fill" : "battery.100")
-                    .font(.system(size: 13, weight: .bold))
+        let bs = BatteryService.shared
+        return VStack(spacing: 5) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(batteryColor.opacity(0.22))
+                        .frame(width: 30, height: 30)
+                    Image(systemName: state.isCharging ? "bolt.fill" : (bs.isLowPowerMode ? "battery.100.bolt" : "battery.100"))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(batteryColor)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("iPhone 11 Battery")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+
+                    HStack(spacing: 4) {
+                        Text(state.isCharging ? "Fast Charging" : (bs.isLowPowerMode ? "Low Power Saver" : "Healthy Discharge"))
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                            .foregroundColor(batteryColor)
+
+                        if let watts = bs.chargingWatts {
+                            Text("• \(watts)W")
+                                .font(.system(size: 9.5, weight: .bold))
+                                .foregroundColor(.green)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text("\(state.batteryPercentage)%")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundColor(batteryColor)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("iPhone 11 Battery")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-
-                HStack(spacing: 4) {
-                    Text(state.isCharging ? "Fast Charging • \(state.batteryPercentage)%" : "\(state.batteryPercentage)% Remaining (Exact 1%)")
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
-                        .foregroundColor(batteryColor)
-
-                    if let watts = BatteryService.shared.chargingWatts {
-                        Text("• \(watts)W")
-                            .font(.system(size: 9.5, weight: .bold))
-                            .foregroundColor(.green)
+            // Real-Time Hardware Readouts Row (Voltage, Amperage, Temp, Cycles)
+            HStack(spacing: 8) {
+                if let v = bs.voltageVolts {
+                    HStack(spacing: 2) {
+                        Image(systemName: "bolt.badge.a")
+                            .font(.system(size: 7.5))
+                        Text(String(format: "%.2fV", v))
+                            .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
                     }
+                    .foregroundColor(.white.opacity(0.8))
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("\(state.batteryPercentage)%")
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundColor(batteryColor)
+                if let ma = bs.amperageMilliAmps {
+                    HStack(spacing: 2) {
+                        Image(systemName: "speedometer")
+                            .font(.system(size: 7.5))
+                        Text("\(ma > 0 ? "+" : "")\(ma)mA")
+                            .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
+                    }
+                    .foregroundColor(ma > 0 ? .green : .white.opacity(0.8))
+                }
+
+                if let temp = bs.batteryTempCelsius {
+                    HStack(spacing: 2) {
+                        Image(systemName: "thermometer")
+                            .font(.system(size: 7.5))
+                        Text(String(format: "%.1f°C", temp))
+                            .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
+                    }
+                    .foregroundColor(.white.opacity(0.8))
+                }
+
+                if let cycles = bs.cycleCount {
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 7.5))
+                        Text("\(cycles) cyc")
+                            .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
+                    }
+                    .foregroundColor(.white.opacity(0.8))
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 4)
         }
         .padding(.horizontal, 11)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Expanded Silent

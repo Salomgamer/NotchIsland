@@ -39,6 +39,9 @@ struct ContentView: View {
                     // Island Background Style Picker
                     backgroundSection
 
+                    // Gesture Actions (Double-Tap & Long-Press)
+                    gesturesSection
+
                     // Device Notch Sizing Presets
                     notchPresetsSection
 
@@ -771,6 +774,65 @@ struct ContentView: View {
                     .frame(width: 180)
             }
             .padding(.top, 2)
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: - Gestures & Interactions Section
+    private var gesturesSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "hand.tap.fill")
+                    .foregroundColor(state.theme.color)
+                Text("GESTURE ACTIONS")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.2)
+                Spacer()
+                Text("Double-Tap: \(state.doubleTapAction.rawValue)")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(state.theme.color)
+            }
+            .padding(.horizontal, 4)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(DoubleTapAction.allCases) { action in
+                        Button(action: {
+                            HapticService.shared.selection()
+                            state.doubleTapAction = action
+                        }) {
+                            HStack(spacing: 5) {
+                                Image(systemName: action.icon)
+                                    .font(.system(size: 11, weight: .bold))
+                                Text(action.rawValue)
+                                    .font(.system(size: 11.5, weight: .semibold))
+                            }
+                            .foregroundColor(state.doubleTapAction == action ? .black : .white)
+                            .padding(.horizontal, 11)
+                            .padding(.vertical, 7)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(state.doubleTapAction == action ? state.theme.color : Color(white: 0.13))
+                            )
+                        }
+                    }
+                }
+            }
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("• Single Tap: Expand / Collapse Island")
+                    Text("• Double Tap: \(state.doubleTapAction.rawValue)")
+                    Text("• Long Press: Cycle Activities (Music, Timer, Call, etc.)")
+                }
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 4)
         }
         .padding(13)
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -31,6 +31,20 @@ class HapticService {
         selectionFeedback.selectionChanged()
     }
 
+    func chargeHaptic() {
+        mediumImpact.impactOccurred()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+            self?.heavyImpact.impactOccurred()
+        }
+    }
+
+    func doubleTapHaptic() {
+        lightImpact.impactOccurred()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
+            self?.mediumImpact.impactOccurred()
+        }
+    }
+
     func success() {
         notificationFeedback.notificationOccurred(.success)
     }
