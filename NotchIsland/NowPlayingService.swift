@@ -5,6 +5,34 @@ import Combine
 import MediaPlayer
 import AVFoundation
 
+enum AudioRouteType: String {
+    case airPods = "AirPods"
+    case airPodsPro = "AirPods Pro"
+    case airPodsMax = "AirPods Max"
+    case beats = "Beats"
+    case headphones = "Headphones"
+    case carPlay = "CarPlay"
+    case airPlay = "AirPlay"
+    case speaker = "iPhone Speaker"
+
+    var iconName: String {
+        switch self {
+        case .airPods: return "airpods"
+        case .airPodsPro: return "airpodspro"
+        case .airPodsMax: return "airpodsmax"
+        case .beats: return "headphones"
+        case .headphones: return "headphones"
+        case .carPlay: return "car.fill"
+        case .airPlay: return "airplayaudio"
+        case .speaker: return "speaker.wave.2.fill"
+        }
+    }
+
+    var isExternalOrHeadphones: Bool {
+        return self != .speaker
+    }
+}
+
 class NowPlayingService: ObservableObject {
     static let shared = NowPlayingService()
 
@@ -21,6 +49,11 @@ class NowPlayingService: ObservableObject {
     @Published var trackDuration: Double = 0.0
     @Published var trackElapsedTime: Double = 0.0
     @Published var trackProgress: Double = 0.35
+
+    // Audio Output Route & Accessories
+    @Published var currentRouteType: AudioRouteType = .speaker
+    @Published var currentRouteName: String = "iPhone Speaker"
+    private var previousRouteName: String = "iPhone Speaker"
 
     var elapsedFormatted: String {
         guard trackDuration > 0 else { return "0:00" }
@@ -107,6 +140,80 @@ class NowPlayingService: ObservableObject {
         ) { [weak self] _ in
             self?.queryNowPlaying()
         }
+
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notif in
+            self?.handleAudioRouteChange(notif)
+        }
+
+        detectCurrentAudioRoute(notifyIfNew: false)
+    }
+
+    private func handleAudioRouteChange(_ notif: Notification) {
+        detectCurrentAudioRoute(notifyIfNew: true)
+    }
+
+    func detectCurrentAudioRoute(notifyIfNew: Bool) {
+        let route = AVAudioSession.sharedInstance().currentRoute
+
+        var detectedName = "iPhone Speaker"
+        var detectedType: AudioRouteType = .speaker
+
+        for output in route.outputs {
+            let name = output.portName
+            let portType = output.portType
+
+            if portType == .bluetoothA2DP || portType == .bluetoothLE || portType == .bluetoothHFP || portType == .headphones {
+                detectedName = name
+                let lower = name.lowercased()
+                if lower.contains("pro") {
+                    detectedType = .airPodsPro
+                } else if lower.contains("max") {
+                    detectedType = .airPodsMax
+                } else if lower.contains("airpod") {
+                    detectedType = .airPods
+                } else if lower.contains("beats") {
+                    detectedType = .beats
+                } else {
+                    detectedType = .headphones
+                }
+                break
+            } else if portType == .airPlay {
+                detectedName = name
+                detectedType = .airPlay
+                break
+            } else if portType == .carAudio {
+                detectedName = name
+                detectedType = .carPlay
+                break
+            }
+        }
+
+        let changed = (self.currentRouteName != detectedName)
+        self.currentRouteName = detectedName
+        self.currentRouteType = detectedType
+
+        if changed && notifyIfNew {
+            if detectedType.isExternalOrHeadphones {
+                IslandState.shared.triggerNotification(
+                    title: detectedName,
+                    subtitle: "\(detectedType.rawValue) Connected • Stereo Audio",
+                    icon: detectedType.iconName,
+                    color: Color(red: 0.18, green: 0.84, blue: 0.38)
+                )
+            } else if previousRouteName != "iPhone Speaker" {
+                IslandState.shared.triggerNotification(
+                    title: "Audio Disconnected",
+                    subtitle: "Switched to iPhone Speaker",
+                    icon: "speaker.wave.1.fill",
+                    color: .orange
+                )
+            }
+            self.previousRouteName = detectedName
+        }
     }
 
     func startMonitoring() {
@@ -182,7 +289,12 @@ class NowPlayingService: ObservableObject {
 
                         // Trigger auto-expand on track change
                         if isNewTrack {
-                            IslandState.shared.triggerNotification(title: t, subtitle: "\(trackArtist ?? detectedApp) • \(detectedApp)")
+                            IslandState.shared.triggerNotification(
+                                title: t,
+                                subtitle: "\(trackArtist ?? detectedApp) • \(detectedApp)",
+                                icon: "music.note",
+                                color: self.artworkAccentColor
+                            )
                         }
                         return
                     }
@@ -262,7 +374,12 @@ class NowPlayingService: ObservableObject {
             }
 
             if isNewTrack {
-                IslandState.shared.triggerNotification(title: itemTitle, subtitle: item.artist ?? "Apple Music")
+                IslandState.shared.triggerNotification(
+                    title: itemTitle,
+                    subtitle: item.artist ?? "Apple Music",
+                    icon: "music.note",
+                    color: self.artworkAccentColor
+                )
             }
         } else if isAudioActive {
             if self.title == "No Music Playing" || self.title.isEmpty {
@@ -349,5 +466,19 @@ class NowPlayingService: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             self?.queryNowPlaying()
         }
+    }
+
+    func seek(toProgress progress: Double) {
+        guard trackDuration > 0 else { return }
+        let clamped = max(0.0, min(1.0, progress))
+        let targetTime = trackDuration * clamped
+        self.trackElapsedTime = targetTime
+        self.trackProgress = clamped
+
+        if let sendCmd = self.sendCommandFunc {
+            _ = sendCmd(56, ["kMRMediaRemoteOptionPlaybackPosition": targetTime])
+        }
+        MPMusicPlayerController.systemMusicPlayer.currentPlaybackTime = targetTime
+        HapticService.shared.light()
     }
 }

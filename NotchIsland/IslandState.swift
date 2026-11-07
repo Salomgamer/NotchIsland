@@ -18,6 +18,37 @@ enum IslandSize: String, CaseIterable {
     case expanded = "Expanded (216×68)"
 }
 
+enum DeviceNotchPreset: String, CaseIterable, Identifiable {
+    case iphone11 = "iPhone 11 / XR"
+    case iphone12 = "iPhone 12 / 12 Pro"
+    case iphone13 = "iPhone 13 / 14"
+    case custom = "Custom Notch"
+
+    var id: String { rawValue }
+
+    var dimensions: (width: CGFloat, height: CGFloat, cornerRadius: CGFloat) {
+        switch self {
+        case .iphone11:
+            return (width: 156, height: 36, cornerRadius: 18)
+        case .iphone12:
+            return (width: 150, height: 35, cornerRadius: 17.5)
+        case .iphone13:
+            return (width: 138, height: 34, cornerRadius: 17)
+        case .custom:
+            return (width: 156, height: 36, cornerRadius: 18)
+        }
+    }
+
+    var badge: String {
+        switch self {
+        case .iphone11: return "156×36"
+        case .iphone12: return "150×35"
+        case .iphone13: return "138×34"
+        case .custom: return "Custom"
+        }
+    }
+}
+
 enum AccentTheme: String, CaseIterable {
     case spotifyGreen = "Spotify Green"
     case appleOrange = "Apple Orange"
@@ -45,7 +76,8 @@ class IslandState: ObservableObject {
     @Published var isExpanded: Bool = false
     @Published var isMultipurpose: Bool = true
 
-    // MARK: - Custom Size Calibration
+    // MARK: - Custom Size Calibration & Presets
+    @Published var selectedPreset: DeviceNotchPreset = .iphone11
     @Published var useCustomSize: Bool = false
     @Published var customWidth: CGFloat = 156
     @Published var customHeight: CGFloat = 36
@@ -54,6 +86,8 @@ class IslandState: ObservableObject {
     // MARK: - Notification Banner State
     @Published var activeNotificationTitle: String = ""
     @Published var activeNotificationSubtitle: String = ""
+    @Published var activeNotificationIcon: String = "bell.badge.fill"
+    @Published var activeNotificationColor: Color? = nil
     @Published var isShowingNotification: Bool = false
     private var notificationDismissWorkItem: DispatchWorkItem?
 
@@ -152,7 +186,12 @@ class IslandState: ObservableObject {
 
             // Low battery alert trigger at 20%
             if prev > 20 && newPct <= 20 && !self.isCharging {
-                self.triggerNotification(title: "Low Battery", subtitle: "\(newPct)% • Connect Charger")
+                self.triggerNotification(
+                    title: "Low Battery",
+                    subtitle: "\(newPct)% • Connect Charger",
+                    icon: "battery.25",
+                    color: .red
+                )
             }
         }.store(in: &cancellables)
 
@@ -168,7 +207,12 @@ class IslandState: ObservableObject {
             }
 
             if !wasCharging && charging {
-                self.triggerNotification(title: "Charging Started", subtitle: "\(self.batteryPercentage)% • Fast Charging")
+                self.triggerNotification(
+                    title: "Charging Started",
+                    subtitle: "\(self.batteryPercentage)% • Fast Charging",
+                    icon: "bolt.fill",
+                    color: .green
+                )
             }
         }.store(in: &cancellables)
 
@@ -259,12 +303,35 @@ class IslandState: ObservableObject {
         PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
     }
 
+    func applyPreset(_ preset: DeviceNotchPreset) {
+        self.selectedPreset = preset
+        let dims = preset.dimensions
+        self.customWidth = dims.width
+        self.customHeight = dims.height
+        self.customCornerRadius = dims.cornerRadius
+        self.useCustomSize = true
+        HapticService.shared.selection()
+        PiPIslandManager.shared.updateSize(width: dims.width, height: dims.height)
+    }
+
     func updateCustomCalibration(width: CGFloat, height: CGFloat, cornerRadius: CGFloat) {
         self.customWidth = width
         self.customHeight = height
         self.customCornerRadius = cornerRadius
         self.useCustomSize = true
+        self.selectedPreset = .custom
         PiPIslandManager.shared.updateSize(width: width, height: height)
+    }
+
+    func toggleSilentMode() {
+        self.isSilentOn.toggle()
+        HapticService.shared.medium()
+        triggerNotification(
+            title: isSilentOn ? "Silent Mode" : "Ring Mode",
+            subtitle: isSilentOn ? "Mute Active • Haptics Only" : "Sound Enabled • Ringing",
+            icon: isSilentOn ? "bell.slash.fill" : "bell.fill",
+            color: isSilentOn ? .red : .green
+        )
     }
 
     func toggleExpanded() {
@@ -279,13 +346,20 @@ class IslandState: ObservableObject {
     }
 
     // MARK: - Live Notification Auto-Expansion
-    func triggerNotification(title: String, subtitle: String) {
+    func triggerNotification(
+        title: String,
+        subtitle: String,
+        icon: String = "bell.badge.fill",
+        color: Color? = nil
+    ) {
         notificationDismissWorkItem?.cancel()
         HapticService.shared.medium()
 
         DispatchQueue.main.async {
             self.activeNotificationTitle = title
             self.activeNotificationSubtitle = subtitle
+            self.activeNotificationIcon = icon
+            self.activeNotificationColor = color
             self.isShowingNotification = true
             withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
                 self.isExpanded = true
@@ -318,7 +392,12 @@ class IslandState: ObservableObject {
                     self.isTimerRunning = false
                     AudioServicesPlayAlertSound(1005)
                     AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
-                    self.triggerNotification(title: "Focus Complete", subtitle: "Session finished!")
+                    self.triggerNotification(
+                        title: "Focus Complete",
+                        subtitle: "Session finished!",
+                        icon: "timer",
+                        color: .orange
+                    )
                 }
             }
     }

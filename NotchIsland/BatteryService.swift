@@ -7,6 +7,7 @@ class BatteryService: ObservableObject {
 
     @Published var percentage: Int = 100
     @Published var isCharging: Bool = false
+    @Published var isLowPowerMode: Bool = ProcessInfo.processInfo.isLowPowerModeEnabled
     @Published var isAccurateHardwareRead: Bool = false
     @Published var chargingWatts: Int? = nil
     @Published var timeToFullMinutes: Int? = nil
@@ -41,6 +42,32 @@ class BatteryService: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             self?.updateBattery()
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name.NSProcessInfoPowerStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            let isLow = ProcessInfo.processInfo.isLowPowerModeEnabled
+            let wasLow = self.isLowPowerMode
+            self.isLowPowerMode = isLow
+            if isLow && !wasLow {
+                IslandState.shared.triggerNotification(
+                    title: "Low Power Mode On",
+                    subtitle: "Battery Saver Active • \(self.percentage)%",
+                    icon: "battery.100",
+                    color: .yellow
+                )
+            } else if !isLow && wasLow {
+                IslandState.shared.triggerNotification(
+                    title: "Low Power Mode Off",
+                    subtitle: "Full Performance Restored",
+                    icon: "battery.100",
+                    color: .green
+                )
+            }
         }
 
         // Fast 1.0s polling for continuous exact tracking

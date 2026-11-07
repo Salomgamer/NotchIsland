@@ -6,6 +6,7 @@ struct ContentView: View {
     @ObservedObject var nowPlaying = NowPlayingService.shared
     @ObservedObject var battery = BatteryService.shared
     @ObservedObject var bgEngine = BackgroundEngine.shared
+    @ObservedObject var torch = TorchService.shared
 
     var body: some View {
         ZStack {
@@ -23,6 +24,9 @@ struct ContentView: View {
                     // Primary Launch / Dismiss Button
                     launchButton
 
+                    // Connected Audio Route & Flashlight Quick Bar
+                    quickStatusSection
+
                     // Activity Mode Switcher (All 6 features)
                     activitySelector
 
@@ -32,8 +36,8 @@ struct ContentView: View {
                     // Accent Theme Picker
                     themeSection
 
-                    // Notch Sizing Profile
-                    notchProfileSection
+                    // Device Notch Sizing Presets
+                    notchPresetsSection
 
                     // Notch Precision Calibrator
                     notchCalibratorSection
@@ -67,6 +71,19 @@ struct ContentView: View {
             }
 
             Spacer()
+
+            if battery.isLowPowerMode {
+                HStack(spacing: 4) {
+                    Image(systemName: "battery.100.bolt")
+                    Text("Low Power")
+                }
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.black)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(Color.yellow)
+                .clipShape(Capsule())
+            }
 
             // Always-On Engine Indicator
             HStack(spacing: 6) {
@@ -140,6 +157,56 @@ struct ContentView: View {
             .background(pip.isPiPActive ? Color.red : state.theme.color)
             .clipShape(Capsule())
             .shadow(color: (pip.isPiPActive ? Color.red : state.theme.color).opacity(0.35), radius: 10, x: 0, y: 4)
+        }
+    }
+
+    // MARK: - Quick Status & Accessories
+    private var quickStatusSection: some View {
+        HStack(spacing: 10) {
+            // Audio Destination / AirPods Card
+            HStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(nowPlaying.currentRouteType.isExternalOrHeadphones ? Color.green.opacity(0.25) : Color.white.opacity(0.12))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: nowPlaying.currentRouteType.iconName)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(nowPlaying.currentRouteType.isExternalOrHeadphones ? .green : .white)
+                }
+
+                VStack(alignment: .leading, spacing: 1.5) {
+                    Text(nowPlaying.currentRouteName)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    Text(nowPlaying.currentRouteType.rawValue)
+                        .font(.system(size: 9.5, weight: .medium))
+                        .foregroundColor(.gray)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color(white: 0.10))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            // Flashlight Quick Toggle
+            Button(action: {
+                torch.toggleTorch()
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: torch.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                        .font(.system(size: 13, weight: .bold))
+                    Text(torch.isTorchOn ? "On" : "Torch")
+                        .font(.system(size: 11.5, weight: .bold))
+                }
+                .foregroundColor(torch.isTorchOn ? .black : .white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
+                .background(torch.isTorchOn ? Color.yellow : Color(white: 0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: torch.isTorchOn ? Color.yellow.opacity(0.4) : .clear, radius: 8)
+            }
         }
     }
 
@@ -290,6 +357,26 @@ struct ContentView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "bell.badge.fill")
                         Text("Test Pop")
+                    }
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color(white: 0.18))
+                    .clipShape(Capsule())
+                }
+
+                Button(action: {
+                    state.triggerNotification(
+                        title: "AirPods Pro Connected",
+                        subtitle: "High-Fidelity Stereo Audio",
+                        icon: "airpodspro",
+                        color: Color(red: 0.18, green: 0.84, blue: 0.38)
+                    )
+                }) {
+                    HStack(spacing: 3) {
+                        Image(systemName: "airpodspro")
+                        Text("AirPods")
                     }
                     .font(.system(size: 10.5, weight: .semibold))
                     .foregroundColor(.white)
@@ -578,9 +665,7 @@ struct ContentView: View {
                 .foregroundColor(.gray)
 
             Button(action: {
-                withAnimation {
-                    state.isSilentOn.toggle()
-                }
+                state.toggleSilentMode()
             }) {
                 Text(state.isSilentOn ? "Switch to Ring Mode" : "Switch to Silent Mode")
                     .font(.system(size: 11, weight: .semibold))
@@ -630,30 +715,50 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Notch Sizing Profiles
-    private var notchProfileSection: some View {
+    // MARK: - Device Notch Presets
+    private var notchPresetsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("NOTCH PROFILE")
-                .font(.system(size: 10.5, weight: .bold))
-                .foregroundColor(.gray.opacity(0.8))
-                .kerning(1.2)
-                .padding(.horizontal, 4)
+            HStack {
+                Text("DEVICE NOTCH PRESETS")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.gray.opacity(0.8))
+                    .kerning(1.2)
+                Spacer()
+                Text(state.selectedPreset.badge)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(state.theme.color)
+            }
+            .padding(.horizontal, 4)
 
-            HStack(spacing: 8) {
-                ForEach(IslandSize.allCases, id: \.self) { sizeOption in
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(DeviceNotchPreset.allCases) { preset in
                     Button(action: {
-                        HapticService.shared.selection()
-                        state.setSize(sizeOption)
+                        state.applyPreset(preset)
                     }) {
-                        Text(sizeOption.rawValue)
-                            .font(.system(size: 11.5, weight: .semibold))
-                            .foregroundColor(state.size == sizeOption ? .black : .white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 9)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(state.size == sizeOption ? Color.white : Color(white: 0.13))
-                            )
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(state.selectedPreset == preset ? state.theme.color : Color.gray.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(preset.rawValue)
+                                    .font(.system(size: 11, weight: .bold))
+                                Text(preset.badge)
+                                    .font(.system(size: 9.5))
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(state.selectedPreset == preset ? Color(white: 0.18) : Color(white: 0.11))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(state.selectedPreset == preset ? state.theme.color.opacity(0.8) : Color.clear, lineWidth: 1)
+                        )
                     }
                 }
             }

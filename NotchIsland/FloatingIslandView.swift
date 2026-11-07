@@ -113,18 +113,28 @@ struct FloatingIslandView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Trailing: Multipurpose Equalizer + Exact Battery Together
-            HStack(spacing: 4) {
+            // Trailing: Multipurpose Equalizer + Route + Exact Battery Together
+            HStack(spacing: 3.5) {
                 if state.mode == .call {
                     if state.isCallActive {
+                        Circle()
+                            .fill(Color.orange)
+                            .frame(width: 4.5, height: 4.5)
                         VoiceWaveformView(color: Color.green)
                     } else {
                         Image(systemName: "phone.fill")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.green)
                     }
-                } else if nowPlaying.isPlaying {
-                    EqualizerWaveformView(color: subtitleColor)
+                } else {
+                    if nowPlaying.currentRouteType.isExternalOrHeadphones {
+                        Image(systemName: nowPlaying.currentRouteType.iconName)
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundColor(subtitleColor)
+                    }
+                    if nowPlaying.isPlaying {
+                        EqualizerWaveformView(color: subtitleColor)
+                    }
                 }
 
                 HStack(spacing: 2) {
@@ -132,7 +142,7 @@ struct FloatingIslandView: View {
                         .font(.system(size: 9.5, weight: .bold, design: .rounded))
                         .foregroundColor(batteryColor)
 
-                    Image(systemName: state.isCharging ? "bolt.fill" : "battery.100")
+                    Image(systemName: state.isCharging ? "bolt.fill" : (BatteryService.shared.isLowPowerMode ? "battery.100.bolt" : "battery.100"))
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundColor(batteryColor)
                 }
@@ -178,14 +188,15 @@ struct FloatingIslandView: View {
 
     // MARK: - Notification Auto-Expanded Content
     private var notificationExpandedContent: some View {
-        HStack(spacing: 10) {
+        let notifColor = state.activeNotificationColor ?? subtitleColor
+        return HStack(spacing: 10) {
             ZStack {
                 Circle()
-                    .fill(subtitleColor.opacity(0.25))
+                    .fill(notifColor.opacity(0.25))
                     .frame(width: 28, height: 28)
-                Image(systemName: "bell.badge.fill")
+                Image(systemName: state.activeNotificationIcon)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(subtitleColor)
+                    .foregroundColor(notifColor)
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -202,7 +213,7 @@ struct FloatingIslandView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Circle()
-                .fill(subtitleColor)
+                .fill(notifColor)
                 .frame(width: 6, height: 6)
         }
         .padding(.horizontal, 12)
@@ -264,13 +275,17 @@ struct FloatingIslandView: View {
                             .foregroundColor(subtitleColor)
                             .lineLimit(1)
 
-                        HStack(spacing: 2) {
+                        HStack(spacing: 3) {
                             Circle()
                                 .fill(subtitleColor)
                                 .frame(width: 3, height: 3)
-                            Text(nowPlaying.sourceAppName)
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundColor(.white.opacity(0.8))
+                            Image(systemName: nowPlaying.currentRouteType.iconName)
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(subtitleColor)
+                            Text(nowPlaying.currentRouteName)
+                                .font(.system(size: 8.5, weight: .bold))
+                                .foregroundColor(.white.opacity(0.85))
+                                .lineLimit(1)
                         }
                     }
                 }
@@ -314,13 +329,21 @@ struct FloatingIslandView: View {
                         ZStack(alignment: .leading) {
                             Capsule()
                                 .fill(Color.white.opacity(0.20))
-                                .frame(height: 3)
+                                .frame(height: 4)
                             Capsule()
                                 .fill(subtitleColor)
-                                .frame(width: max(4, geo.size.width * CGFloat(nowPlaying.trackProgress)), height: 3)
+                                .frame(width: max(4, geo.size.width * CGFloat(nowPlaying.trackProgress)), height: 4)
                         }
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { val in
+                                    let pct = max(0.0, min(1.0, Double(val.location.x / geo.size.width)))
+                                    nowPlaying.seek(toProgress: pct)
+                                }
+                        )
                     }
-                    .frame(height: 3)
+                    .frame(height: 4)
 
                     HStack {
                         Text(nowPlaying.elapsedFormatted)
@@ -362,7 +385,12 @@ struct FloatingIslandView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 if state.isCallActive {
-                    VoiceWaveformView(color: Color.green)
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(Color.orange)
+                            .frame(width: 5, height: 5)
+                        VoiceWaveformView(color: Color.green)
+                    }
                 }
             }
 
@@ -596,13 +624,17 @@ struct FloatingIslandView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(state.isSilentOn ? "MUTED" : "RING")
-                .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                .foregroundColor(state.isSilentOn ? Color.red : Color.green)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background((state.isSilentOn ? Color.red : Color.green).opacity(0.2))
-                .clipShape(Capsule())
+            Button(action: {
+                state.toggleSilentMode()
+            }) {
+                Text(state.isSilentOn ? "MUTED" : "RING")
+                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .foregroundColor(state.isSilentOn ? Color.red : Color.green)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background((state.isSilentOn ? Color.red : Color.green).opacity(0.2))
+                    .clipShape(Capsule())
+            }
         }
         .padding(.horizontal, 11)
         .padding(.vertical, 8)
@@ -613,7 +645,9 @@ struct FloatingIslandView: View {
     }
 
     private var batteryColor: Color {
-        if state.isCharging {
+        if BatteryService.shared.isLowPowerMode {
+            return Color(red: 1.0, green: 0.84, blue: 0.0) // Apple Low Power Mode Yellow
+        } else if state.isCharging {
             return .green
         } else if state.batteryPercentage <= 10 {
             return .red
@@ -644,6 +678,7 @@ struct AppSourceIconView: View {
 
     private var appColor: Color {
         let lower = source.lowercased()
+        if lower.contains("youtube music") { return Color(red: 1.0, green: 0.0, blue: 0.15) }
         if lower.contains("youtube") { return Color(red: 1.0, green: 0.0, blue: 0.0) } // YouTube Red
         if lower.contains("spotify") { return Color(red: 0.12, green: 0.84, blue: 0.38) } // Spotify Green
         if lower.contains("safari") { return Color(red: 0.0, green: 0.48, blue: 1.0) } // Safari Blue
@@ -652,6 +687,8 @@ struct AppSourceIconView: View {
         if lower.contains("soundcloud") { return Color(red: 1.0, green: 0.45, blue: 0.0) } // SoundCloud Orange
         if lower.contains("netflix") { return Color(red: 0.89, green: 0.04, blue: 0.08) } // Netflix Red
         if lower.contains("twitch") { return Color(red: 0.57, green: 0.27, blue: 1.0) } // Twitch Purple
+        if lower.contains("deezer") { return Color(red: 0.65, green: 0.15, blue: 0.95) }
+        if lower.contains("audible") { return Color(red: 0.98, green: 0.55, blue: 0.0) }
         return Color(red: 0.18, green: 0.84, blue: 0.38)
     }
 
@@ -665,6 +702,7 @@ struct AppSourceIconView: View {
         if lower.contains("soundcloud") { return "cloud.fill" }
         if lower.contains("netflix") { return "tv.fill" }
         if lower.contains("twitch") { return "video.fill" }
+        if lower.contains("audible") { return "book.fill" }
         return "music.note"
     }
 }
