@@ -17,6 +17,26 @@ class NowPlayingService: ObservableObject {
     @Published var hasMediaPermission: Bool = false
     @Published var lastSyncTime: Date = Date()
 
+    // Real-Time Playback Progress
+    @Published var trackDuration: Double = 0.0
+    @Published var trackElapsedTime: Double = 0.0
+    @Published var trackProgress: Double = 0.35
+
+    var elapsedFormatted: String {
+        guard trackDuration > 0 else { return "0:00" }
+        let m = Int(trackElapsedTime) / 60
+        let s = Int(trackElapsedTime) % 60
+        return String(format: "%d:%02d", m, s)
+    }
+
+    var remainingFormatted: String {
+        guard trackDuration > 0 else { return "-0:00" }
+        let remaining = max(0, trackDuration - trackElapsedTime)
+        let m = Int(remaining) / 60
+        let s = Int(remaining) % 60
+        return String(format: "-%d:%02d", m, s)
+    }
+
     private var previousTrackTitle: String = ""
     private var pollTimer: Timer?
 
@@ -98,10 +118,18 @@ class NowPlayingService: ObservableObject {
         )
 
         pollTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: true) { [weak self] _ in
+            self?.tickPlayback()
             self?.queryNowPlaying()
         }
 
         queryNowPlaying()
+    }
+
+    private func tickPlayback() {
+        if isPlaying && trackDuration > 0 && trackElapsedTime < trackDuration {
+            trackElapsedTime += 0.8
+            trackProgress = min(1.0, max(0.0, trackElapsedTime / trackDuration))
+        }
     }
 
     @objc func queryNowPlaying() {
@@ -125,6 +153,17 @@ class NowPlayingService: ObservableObject {
                     self.sourceAppName = detectedApp
 
                     let rate = (dict["kMRMediaRemoteNowPlayingInfoPlaybackRate"] as? Double) ?? 1.0
+
+                    // Duration and Elapsed Time
+                    if let dur = (dict["kMRMediaRemoteNowPlayingInfoDuration"] as? Double) ?? (dict["duration"] as? Double), dur > 0 {
+                        self.trackDuration = dur
+                    }
+                    if let el = (dict["kMRMediaRemoteNowPlayingInfoElapsedTime"] as? Double) ?? (dict["elapsedTime"] as? Double) {
+                        self.trackElapsedTime = el
+                        if self.trackDuration > 0 {
+                            self.trackProgress = min(1.0, max(0.0, el / self.trackDuration))
+                        }
+                    }
 
                     if let t = trackTitle, !t.isEmpty {
                         let isNewTrack = (self.previousTrackTitle != t) && !self.previousTrackTitle.isEmpty
@@ -208,6 +247,12 @@ class NowPlayingService: ObservableObject {
             self.artist = item.artist ?? "Apple Music"
             self.sourceAppName = "Apple Music"
             self.isPlaying = (player.playbackState == .playing) || isAudioActive
+            self.trackDuration = item.playbackDuration
+            self.trackElapsedTime = player.currentPlaybackTime
+            if self.trackDuration > 0 {
+                self.trackProgress = min(1.0, max(0.0, self.trackElapsedTime / self.trackDuration))
+            }
+
             if let artwork = item.artwork {
                 let img = artwork.image(at: CGSize(width: 64, height: 64))
                 self.artworkImage = img
@@ -233,6 +278,9 @@ class NowPlayingService: ObservableObject {
             self.artworkImage = nil
             self.artworkAccentColor = nil
             self.previousTrackTitle = ""
+            self.trackDuration = 0
+            self.trackElapsedTime = 0
+            self.trackProgress = 0
         }
     }
 

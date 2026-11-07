@@ -8,10 +8,12 @@ class BatteryService: ObservableObject {
     @Published var percentage: Int = 100
     @Published var isCharging: Bool = false
     @Published var isAccurateHardwareRead: Bool = false
+    @Published var chargingWatts: Int? = nil
+    @Published var timeToFullMinutes: Int? = nil
+    @Published var powerSourceType: String = "Battery"
 
     private var timer: Timer?
 
-    // Function signatures for IOKit power source APIs
     typealias IOPSCopyPowerSourcesInfoFunc = @convention(c) () -> Unmanaged<CFTypeRef>?
     typealias IOPSCopyPowerSourcesListFunc = @convention(c) (CFTypeRef) -> Unmanaged<CFArray>?
     typealias IOPSGetPowerSourceDescriptionFunc = @convention(c) (CFTypeRef, CFTypeRef) -> Unmanaged<CFDictionary>?
@@ -48,7 +50,6 @@ class BatteryService: ObservableObject {
     }
 
     private func resolveIOKit() {
-        // Resolve from dynamic namespace
         let handle = dlopen(nil, RTLD_NOW)
         if let sInfo = dlsym(handle, "IOPSCopyPowerSourcesInfo"),
            let sList = dlsym(handle, "IOPSCopyPowerSourcesList"),
@@ -81,6 +82,19 @@ class BatteryService: ObservableObject {
                     } else if let state = desc["Power Source State"] as? String {
                         self.isCharging = (state == "AC Power")
                     }
+
+                    if let adapter = desc["AdapterDetails"] as? [String: Any],
+                       let watts = adapter["Watts"] as? Int {
+                        self.chargingWatts = watts
+                    }
+
+                    if let timeToFull = desc["Time to Full Charge"] as? Int, timeToFull > 0 && timeToFull < 1000 {
+                        self.timeToFullMinutes = timeToFull
+                    }
+
+                    if let sourceState = desc["Power Source State"] as? String {
+                        self.powerSourceType = sourceState
+                    }
                     return
                 }
             }
@@ -96,5 +110,7 @@ class BatteryService: ObservableObject {
         let state = UIDevice.current.batteryState
         self.isCharging = (state == .charging || state == .full)
         self.isAccurateHardwareRead = false
+        self.chargingWatts = nil
+        self.timeToFullMinutes = nil
     }
 }

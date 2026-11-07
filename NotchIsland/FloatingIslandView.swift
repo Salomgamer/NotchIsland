@@ -309,17 +309,29 @@ struct FloatingIslandView: View {
                         .foregroundColor(.white.opacity(0.9))
                 }
 
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.white.opacity(0.20))
-                            .frame(height: 3)
-                        Capsule()
-                            .fill(subtitleColor)
-                            .frame(width: max(4, geo.size.width * CGFloat(state.mediaProgress)), height: 3)
+                VStack(spacing: 2) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.20))
+                                .frame(height: 3)
+                            Capsule()
+                                .fill(subtitleColor)
+                                .frame(width: max(4, geo.size.width * CGFloat(nowPlaying.trackProgress)), height: 3)
+                        }
+                    }
+                    .frame(height: 3)
+
+                    HStack {
+                        Text(nowPlaying.elapsedFormatted)
+                            .font(.system(size: 7.5, weight: .medium, design: .monospaced))
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Text(nowPlaying.remainingFormatted)
+                            .font(.system(size: 7.5, weight: .medium, design: .monospaced))
+                            .foregroundColor(.gray)
                     }
                 }
-                .frame(height: 3)
             }
         }
         .padding(.horizontal, 11)
@@ -539,9 +551,18 @@ struct FloatingIslandView: View {
                 Text("iPhone 11 Battery")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
-                Text(state.isCharging ? "Fast Charging • \(state.batteryPercentage)%" : "\(state.batteryPercentage)% Remaining (Exact 1%)")
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
-                    .foregroundColor(batteryColor)
+
+                HStack(spacing: 4) {
+                    Text(state.isCharging ? "Fast Charging • \(state.batteryPercentage)%" : "\(state.batteryPercentage)% Remaining (Exact 1%)")
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundColor(batteryColor)
+
+                    if let watts = BatteryService.shared.chargingWatts {
+                        Text("• \(watts)W")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(.green)
+                    }
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
