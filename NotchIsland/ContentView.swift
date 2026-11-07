@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 4.1 • iPhone 11")
+                Text("Dynamic Island 4.2 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -339,6 +339,22 @@ struct ContentView: View {
                 testTriggerButton(title: "📞 Incoming Call", color: .green) {
                     state.testSimulateIncomingCall()
                 }
+
+                testTriggerButton(title: "👤 Face ID Verified", color: .green) {
+                    state.testSimulateFaceID()
+                }
+
+                testTriggerButton(title: "📡 AirDrop File", color: .blue) {
+                    state.testSimulateAirDrop()
+                }
+
+                testTriggerButton(title: "📶 Personal Hotspot", color: .green) {
+                    state.testSimulateHotspot()
+                }
+
+                testTriggerButton(title: "🎙️ Voice Memo", color: .red) {
+                    state.testSimulateVoiceMemo()
+                }
             }
         }
         .padding(13)
@@ -409,7 +425,7 @@ struct ContentView: View {
             }
             .padding(.horizontal, 4)
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(IslandMode.allCases, id: \.self) { mode in
                     Button(action: {
                         let generator = UISelectionFeedbackGenerator()
@@ -448,6 +464,9 @@ struct ContentView: View {
 
             case .call:
                 callControls
+
+            case .recording:
+                recordingControls
 
             case .timer:
                 timerControls
@@ -732,6 +751,44 @@ struct ContentView: View {
                             .background(Color(white: 0.16))
                             .clipShape(Circle())
                     }
+                }
+            }
+        }
+    }
+
+    // MARK: - Voice Memo Controls
+    private var recordingControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "record.circle.fill")
+                    .foregroundColor(.red)
+                Text("Voice Memo Recording")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                Spacer()
+                Text(state.isRecordingActive ? "RECORDING" : "STANDBY")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(state.isRecordingActive ? .red : .gray)
+            }
+
+            Text("Duration: \(state.recordingTimeFormatted) • Stereo 48kHz Linear PCM")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.white)
+
+            HStack {
+                Button(action: {
+                    state.toggleRecording()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: state.isRecordingActive ? "stop.fill" : "record.circle")
+                        Text(state.isRecordingActive ? "Stop Recording" : "Start Voice Memo")
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.red)
+                    .clipShape(Capsule())
                 }
             }
         }
@@ -1443,7 +1500,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 4.1 Sheet
+// MARK: - What's New in Dynamic Notch 4.2 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1458,7 +1515,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 4.1")
+                    Text("Dynamic Notch 4.2")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                 }
@@ -1467,8 +1524,29 @@ struct WhatsNewView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
                         featureRow(
-                            icon: "music.note.list",
+                            icon: "record.circle.fill",
+                            color: .red,
+                            title: "Native Voice Memo Recording",
+                            desc: "Live blinking recording indicator, animated audio waveform, and elapsed timer counter directly in the floating notch."
+                        )
+
+                        featureRow(
+                            icon: "speaker.wave.3.fill",
                             color: themeColor,
+                            title: "Interactive Draggable Volume Bar",
+                            desc: "Slide your finger directly across the Volume HUD in the notch to raise or lower audio volume in real-time."
+                        )
+
+                        featureRow(
+                            icon: "flask.fill",
+                            color: .yellow,
+                            title: "Expanded Test Lab (14 Scenarios)",
+                            desc: "Simulate Face ID verification, AirDrop file receipt, Personal Hotspot connection, charging surge, and thermal alerts."
+                        )
+
+                        featureRow(
+                            icon: "music.note.list",
+                            color: .cyan,
                             title: "Universal Media & App Badges",
                             desc: "Real-time sync with Spotify, YouTube, Stremio, Safari, and Apple Music with branded source app badges."
                         )
@@ -1476,20 +1554,13 @@ struct WhatsNewView: View {
                         featureRow(
                             icon: "airpodspro",
                             color: .green,
-                            title: "Direct In-Island AirPlay Routing",
+                            title: "AirPods Battery & Audio Route Switcher",
                             desc: "Embedded AVRoutePickerView lets you switch audio output and view connected AirPods battery without opening the app."
                         )
 
                         featureRow(
-                            icon: "flask.fill",
-                            color: .yellow,
-                            title: "Dynamic Island Test Lab",
-                            desc: "One-tap simulator to preview charging surge, AirPods connect, low battery, 100% full preservation, thermal warning, and volume HUD."
-                        )
-
-                        featureRow(
                             icon: "waveform.path.ecg",
-                            color: .cyan,
+                            color: .purple,
                             title: "4 Visualizer Styles & Speed Control",
                             desc: "Classic Bars, Voice Waveform, Breathing Dot, and Neon Frequency Shimmer with adjustable Gentle, Balanced, or Energetic speeds."
                         )
@@ -1499,13 +1570,6 @@ struct WhatsNewView: View {
                             color: .green,
                             title: "IOKit Hardware Diagnostics",
                             desc: "True raw battery voltage, charging wattage, temperature, and cycle count pulled directly from device firmware."
-                        )
-
-                        featureRow(
-                            icon: "exclamationmark.shield.fill",
-                            color: .red,
-                            title: "Emergency SOS Beacon",
-                            desc: "International Morse code light strobe for emergencies, accessible directly via custom double-tap gestures."
                         )
                     }
                     .padding(.horizontal, 20)

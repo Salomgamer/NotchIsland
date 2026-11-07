@@ -7,6 +7,7 @@ enum IslandMode: String, CaseIterable {
     case blank = "Blank / Stealth"
     case media = "Music & Battery"
     case call = "Call HUD"
+    case recording = "Voice Memo"
     case timer = "Timer"
     case stopwatch = "Stopwatch"
     case battery = "Battery"
@@ -217,6 +218,17 @@ class IslandState: ObservableObject {
     @Published var isSpeakerOn: Bool = false
     private var callTimer: AnyCancellable?
 
+    // MARK: - Voice Memo Recording State
+    @Published var isRecordingActive: Bool = false
+    @Published var recordingDuration: Int = 34
+    private var recordingTimer: AnyCancellable?
+
+    var recordingTimeFormatted: String {
+        let m = recordingDuration / 60
+        let s = recordingDuration % 60
+        return String(format: "%02d:%02d", m, s)
+    }
+
     // MARK: - Timer State
     @Published var remainingSeconds: Double = 1500
     @Published var totalSeconds: Double = 1500
@@ -410,6 +422,22 @@ class IslandState: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.8, execute: item)
     }
 
+    func setSystemVolume(_ level: Float) {
+        self.systemVolume = max(0.0, min(1.0, level))
+        self.volumeHUDDismissItem?.cancel()
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+            self.isShowingVolumeHUD = true
+        }
+        let item = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                self.isShowingVolumeHUD = false
+            }
+        }
+        self.volumeHUDDismissItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8, execute: item)
+    }
+
     func setMode(_ newMode: IslandMode) {
         self.mode = newMode
         switch newMode {
@@ -420,6 +448,11 @@ class IslandState: ObservableObject {
         case .call:
             callDuration = 0
             isCallActive = false
+        case .recording:
+            if !isRecordingActive {
+                isRecordingActive = true
+                startRecordingTimer()
+            }
         case .timer:
             startTimer()
         case .stopwatch:
@@ -439,6 +472,14 @@ class IslandState: ObservableObject {
         if isCallActive || callerName == "Incoming Call" {
             if mode != .call {
                 setMode(.call)
+            }
+            return
+        }
+
+        // 2. Voice Memo Recording Active
+        if isRecordingActive {
+            if mode != .recording {
+                setMode(.recording)
             }
             return
         }
@@ -506,6 +547,7 @@ class IslandState: ObservableObject {
         case .blank: return "eye.slash.fill"
         case .media: return "music.note"
         case .call: return "phone.fill"
+        case .recording: return "record.circle.fill"
         case .timer: return "timer"
         case .stopwatch: return "stopwatch"
         case .battery: return "battery.100.bolt"
@@ -843,6 +885,78 @@ class IslandState: ObservableObject {
             isCallActive = false
             setMode(.call)
             isExpanded = true
+        }
+    }
+
+    // MARK: - Voice Memo Recording Actions
+    func toggleRecording() {
+        HapticService.shared.heavy()
+        isRecordingActive.toggle()
+        if isRecordingActive {
+            startRecordingTimer()
+            triggerNotification(
+                title: "Voice Memo",
+                subtitle: "Recording Active • 48kHz Stereo",
+                icon: "record.circle.fill",
+                color: .red
+            )
+        } else {
+            recordingTimer?.cancel()
+            triggerNotification(
+                title: "Voice Memo Saved",
+                subtitle: "Saved to Library (\(recordingTimeFormatted))",
+                icon: "checkmark.circle.fill",
+                color: .green
+            )
+        }
+    }
+
+    func startRecordingTimer() {
+        recordingTimer?.cancel()
+        recordingTimer = Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self, self.isRecordingActive else { return }
+                self.recordingDuration += 1
+            }
+    }
+
+    // MARK: - Expanded Test Lab Simulators
+    func testSimulateFaceID() {
+        HapticService.shared.success()
+        triggerNotification(
+            title: "Face ID",
+            subtitle: "Verified Successfully",
+            icon: "faceid",
+            color: Color(red: 0.18, green: 0.84, blue: 0.38)
+        )
+    }
+
+    func testSimulateAirDrop() {
+        HapticService.shared.medium()
+        triggerNotification(
+            title: "AirDrop",
+            subtitle: "Receiving 4 Photos from Sarah...",
+            icon: "antenna.radiowaves.left.and.right",
+            color: Color(red: 0.0, green: 0.55, blue: 1.0)
+        )
+    }
+
+    func testSimulateHotspot() {
+        HapticService.shared.success()
+        triggerNotification(
+            title: "Personal Hotspot",
+            subtitle: "MacBook Pro Connected • 1 Device",
+            icon: "personalhotspot",
+            color: Color(red: 0.18, green: 0.84, blue: 0.38)
+        )
+    }
+
+    func testSimulateVoiceMemo() {
+        if !isRecordingActive {
+            toggleRecording()
+        } else {
+            toggleRecording()
         }
     }
 }

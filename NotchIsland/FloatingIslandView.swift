@@ -173,13 +173,21 @@ struct FloatingIslandView: View {
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(Color.white.opacity(0.25))
-                        .frame(height: 4.5)
+                        .frame(height: 5)
                     Capsule()
                         .fill(state.theme.color)
-                        .frame(width: max(4, geo.size.width * CGFloat(state.systemVolume)), height: 4.5)
+                        .frame(width: max(4, geo.size.width * CGFloat(state.systemVolume)), height: 5)
                 }
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { val in
+                            let pct = max(0.0, min(1.0, Float(val.location.x / geo.size.width)))
+                            state.setSystemVolume(pct)
+                        }
+                )
             }
-            .frame(height: 5)
+            .frame(height: 12)
 
             Text("\(Int(state.systemVolume * 100))%")
                 .font(.system(size: 9.5, weight: .bold, design: .rounded))
@@ -202,16 +210,16 @@ struct FloatingIslandView: View {
                 // Center: Song Name & Source/Artist
                 VStack(alignment: .leading, spacing: 0.5) {
                     MarqueeText(
-                        text: state.mode == .call ? state.callerName : state.mediaTitle,
+                        text: state.mode == .call ? state.callerName : (state.mode == .recording ? "Voice Memo" : state.mediaTitle),
                         font: .system(size: 10.5, weight: .bold, design: .rounded),
                         color: .white
                     )
                     .frame(height: 13)
 
                     HStack(spacing: 3) {
-                        Text(state.mode == .call ? state.callerSubtitle : state.mediaArtist)
+                        Text(state.mode == .call ? state.callerSubtitle : (state.mode == .recording ? state.recordingTimeFormatted : state.mediaArtist))
                             .font(.system(size: 8.5, weight: .semibold, design: .rounded))
-                            .foregroundColor(subtitleColor)
+                            .foregroundColor(state.mode == .recording ? .red : subtitleColor)
                             .lineLimit(1)
                             .truncationMode(.tail)
                     }
@@ -231,6 +239,8 @@ struct FloatingIslandView: View {
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundColor(.green)
                         }
+                    } else if state.mode == .recording {
+                        VoiceWaveformView(color: Color.red)
                     } else {
                         if state.isDualActivityActive {
                             HStack(spacing: 2) {
@@ -279,7 +289,16 @@ struct FloatingIslandView: View {
     // MARK: - Song Cover Thumbnail with App Icon
     @ViewBuilder
     private var songCoverThumbnail: some View {
-        if state.mode == .call {
+        if state.mode == .recording {
+            ZStack {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 22, height: 22)
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 8, height: 8)
+            }
+        } else if state.mode == .call {
             ZStack {
                 Circle()
                     .fill(state.isCallActive ? Color.green : Color.orange)
@@ -356,6 +375,9 @@ struct FloatingIslandView: View {
 
         case .call:
             expandedCallContent
+
+        case .recording:
+            expandedRecordingContent
 
         case .timer:
             expandedTimerContent
@@ -703,6 +725,45 @@ struct FloatingIslandView: View {
         }
         .padding(.horizontal, 11)
         .padding(.vertical, 6)
+    }
+
+    // MARK: - Expanded Voice Memo Recording
+    private var expandedRecordingContent: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.red.opacity(0.22))
+                    .frame(width: 30, height: 30)
+                Image(systemName: "record.circle.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.red)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Voice Memo")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                Text(state.recordingTimeFormatted)
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundColor(.red)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VoiceWaveformView(color: .red)
+
+            Button(action: {
+                state.toggleRecording()
+            }) {
+                Image(systemName: state.isRecordingActive ? "stop.fill" : "record.circle")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(7)
+                    .background(Color.red)
+                    .clipShape(Circle())
+            }
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Expanded Timer
