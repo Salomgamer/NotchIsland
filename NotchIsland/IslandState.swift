@@ -7,6 +7,8 @@ enum IslandMode: String, CaseIterable {
     case blank = "Blank / Stealth"
     case media = "Music & Battery"
     case call = "Call HUD"
+    case navigation = "Apple Maps"
+    case sports = "Live Sports"
     case recording = "Voice Memo"
     case timer = "Timer"
     case stopwatch = "Stopwatch"
@@ -229,6 +231,21 @@ class IslandState: ObservableObject {
         return String(format: "%02d:%02d", m, s)
     }
 
+    // MARK: - Navigation HUD State
+    @Published var navInstruction: String = "Turn Right onto Apple Park Way"
+    @Published var navDistance: String = "In 300 ft"
+    @Published var navETA: String = "12:45 PM • 14 min"
+    @Published var navSpeedLimit: Int = 45
+
+    // MARK: - Live Sports State
+    @Published var sportsHomeTeam: String = "RMA"
+    @Published var sportsAwayTeam: String = "FCB"
+    @Published var sportsHomeScore: Int = 2
+    @Published var sportsAwayScore: Int = 1
+    @Published var sportsMatchTime: String = "78'"
+    @Published var sportsLeague: String = "Champions League • Semi-Final"
+    @Published var sportsScorers: String = "Vini Jr. 23', Jude 67' • Robert 41'"
+
     // MARK: - Timer State
     @Published var remainingSeconds: Double = 1500
     @Published var totalSeconds: Double = 1500
@@ -448,6 +465,10 @@ class IslandState: ObservableObject {
         case .call:
             callDuration = 0
             isCallActive = false
+        case .navigation:
+            break
+        case .sports:
+            break
         case .recording:
             if !isRecordingActive {
                 isRecordingActive = true
@@ -547,6 +568,8 @@ class IslandState: ObservableObject {
         case .blank: return "eye.slash.fill"
         case .media: return "music.note"
         case .call: return "phone.fill"
+        case .navigation: return "arrow.turn.up.right"
+        case .sports: return "sportscourt.fill"
         case .recording: return "record.circle.fill"
         case .timer: return "timer"
         case .stopwatch: return "stopwatch"

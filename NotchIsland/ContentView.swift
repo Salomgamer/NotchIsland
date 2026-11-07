@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 4.2 • iPhone 11")
+                Text("Dynamic Island 4.3 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -355,6 +355,26 @@ struct ContentView: View {
                 testTriggerButton(title: "🎙️ Voice Memo", color: .red) {
                     state.testSimulateVoiceMemo()
                 }
+
+                testTriggerButton(title: "🗺️ Turn Right (300ft)", color: .green) {
+                    state.setMode(.navigation)
+                    state.triggerNotification(
+                        title: "Turn Right in 300 ft",
+                        subtitle: "Apple Park Way • ETA 12:45 PM",
+                        icon: "arrow.turn.up.right",
+                        color: Color(red: 0.18, green: 0.84, blue: 0.38)
+                    )
+                }
+
+                testTriggerButton(title: "⚽ RMA 2 - 1 FCB", color: .green) {
+                    state.setMode(.sports)
+                    state.triggerNotification(
+                        title: "GOAL! Real Madrid",
+                        subtitle: "RMA 2 - 1 FCB • Bellingham 67'",
+                        icon: "sportscourt.fill",
+                        color: .green
+                    )
+                }
             }
         }
         .padding(13)
@@ -464,6 +484,12 @@ struct ContentView: View {
 
             case .call:
                 callControls
+
+            case .navigation:
+                navigationControls
+
+            case .sports:
+                sportsControls
 
             case .recording:
                 recordingControls
@@ -751,6 +777,128 @@ struct ContentView: View {
                             .background(Color(white: 0.16))
                             .clipShape(Circle())
                     }
+                }
+            }
+        }
+    }
+
+    // MARK: - Navigation Controls (Apple Maps)
+    private var navigationControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "arrow.turn.up.right")
+                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                Text("Apple Maps Turn-by-Turn Navigation")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                Spacer()
+                Text("ACTIVE ROUTE")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(.green)
+            }
+
+            Text("\(state.navInstruction) • \(state.navDistance)")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.white)
+
+            HStack(spacing: 8) {
+                Button(action: {
+                    state.navInstruction = "Turn Right onto Apple Park Way"
+                    state.navDistance = "In 300 ft"
+                    state.triggerNotification(
+                        title: "Turn Right in 300 ft",
+                        subtitle: "Apple Park Way • ETA 12:45 PM",
+                        icon: "arrow.turn.up.right",
+                        color: Color(red: 0.18, green: 0.84, blue: 0.38)
+                    )
+                }) {
+                    Text("Turn Right")
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color(red: 0.18, green: 0.84, blue: 0.38))
+                        .clipShape(Capsule())
+                }
+
+                Button(action: {
+                    state.navInstruction = "Merge Left onto I-280 North"
+                    state.navDistance = "In 1.2 mi"
+                    state.triggerNotification(
+                        title: "Merge Left in 1.2 mi",
+                        subtitle: "I-280 North • San Francisco",
+                        icon: "arrow.triangle.merge",
+                        color: Color(red: 0.18, green: 0.84, blue: 0.38)
+                    )
+                }) {
+                    Text("Highway Merge")
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color(white: 0.16))
+                        .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
+    // MARK: - Live Sports Controls
+    private var sportsControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "sportscourt.fill")
+                    .foregroundColor(.green)
+                Text("Live Sports Scoreboard")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                Spacer()
+                Text("LIVE MATCH")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(.green)
+            }
+
+            Text("\(state.sportsLeague): \(state.sportsHomeTeam) \(state.sportsHomeScore) - \(state.sportsAwayScore) \(state.sportsAwayTeam) (\(state.sportsMatchTime))")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.white)
+
+            HStack(spacing: 8) {
+                Button(action: {
+                    state.sportsHomeScore += 1
+                    HapticService.shared.success()
+                    state.triggerNotification(
+                        title: "GOAL! Real Madrid",
+                        subtitle: "\(state.sportsHomeTeam) \(state.sportsHomeScore) - \(state.sportsAwayScore) \(state.sportsAwayTeam) (Jude 82')",
+                        icon: "sportscourt.fill",
+                        color: .green
+                    )
+                }) {
+                    Text("+1 Goal Home")
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.green)
+                        .clipShape(Capsule())
+                }
+
+                Button(action: {
+                    state.sportsAwayScore += 1
+                    HapticService.shared.warning()
+                    state.triggerNotification(
+                        title: "GOAL! Barcelona",
+                        subtitle: "\(state.sportsHomeTeam) \(state.sportsHomeScore) - \(state.sportsAwayScore) \(state.sportsAwayTeam) (Lewandowski 85')",
+                        icon: "sportscourt.fill",
+                        color: .yellow
+                    )
+                }) {
+                    Text("+1 Goal Away")
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color(white: 0.16))
+                        .clipShape(Capsule())
                 }
             }
         }
@@ -1500,7 +1648,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 4.2 Sheet
+// MARK: - What's New in Dynamic Notch 4.3 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1515,7 +1663,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 4.2")
+                    Text("Dynamic Notch 4.3")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                 }
@@ -1523,6 +1671,20 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "arrow.turn.up.right",
+                            color: Color(red: 0.18, green: 0.84, blue: 0.38),
+                            title: "Apple Maps Navigation HUD",
+                            desc: "Turn-by-turn green highway navigation shield with distance readout, street name, speed limit badge, and live ETA."
+                        )
+
+                        featureRow(
+                            icon: "sportscourt.fill",
+                            color: .green,
+                            title: "Live Sports Scoreboard",
+                            desc: "Real-time match scoring (e.g. RMA 2 - 1 FCB), live game clock, goal scorer ticker, and stadium details directly in the notch."
+                        )
+
                         featureRow(
                             icon: "record.circle.fill",
                             color: .red,
@@ -1540,8 +1702,8 @@ struct WhatsNewView: View {
                         featureRow(
                             icon: "flask.fill",
                             color: .yellow,
-                            title: "Expanded Test Lab (14 Scenarios)",
-                            desc: "Simulate Face ID verification, AirDrop file receipt, Personal Hotspot connection, charging surge, and thermal alerts."
+                            title: "Expanded Test Lab (16 Scenarios)",
+                            desc: "Simulate Maps turns, Live football goals, Face ID, AirDrop, Personal Hotspot, charger surge, and thermal alerts with a single tap."
                         )
 
                         featureRow(
@@ -1556,20 +1718,6 @@ struct WhatsNewView: View {
                             color: .green,
                             title: "AirPods Battery & Audio Route Switcher",
                             desc: "Embedded AVRoutePickerView lets you switch audio output and view connected AirPods battery without opening the app."
-                        )
-
-                        featureRow(
-                            icon: "waveform.path.ecg",
-                            color: .purple,
-                            title: "4 Visualizer Styles & Speed Control",
-                            desc: "Classic Bars, Voice Waveform, Breathing Dot, and Neon Frequency Shimmer with adjustable Gentle, Balanced, or Energetic speeds."
-                        )
-
-                        featureRow(
-                            icon: "speedometer",
-                            color: .green,
-                            title: "IOKit Hardware Diagnostics",
-                            desc: "True raw battery voltage, charging wattage, temperature, and cycle count pulled directly from device firmware."
                         )
                     }
                     .padding(.horizontal, 20)

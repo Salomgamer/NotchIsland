@@ -210,16 +210,16 @@ struct FloatingIslandView: View {
                 // Center: Song Name & Source/Artist
                 VStack(alignment: .leading, spacing: 0.5) {
                     MarqueeText(
-                        text: state.mode == .call ? state.callerName : (state.mode == .recording ? "Voice Memo" : state.mediaTitle),
+                        text: compactTitleText,
                         font: .system(size: 10.5, weight: .bold, design: .rounded),
                         color: .white
                     )
                     .frame(height: 13)
 
                     HStack(spacing: 3) {
-                        Text(state.mode == .call ? state.callerSubtitle : (state.mode == .recording ? state.recordingTimeFormatted : state.mediaArtist))
+                        Text(compactSubtitleText)
                             .font(.system(size: 8.5, weight: .semibold, design: .rounded))
-                            .foregroundColor(state.mode == .recording ? .red : subtitleColor)
+                            .foregroundColor(state.mode == .recording ? .red : (state.mode == .navigation ? Color(red: 0.18, green: 0.84, blue: 0.38) : subtitleColor))
                             .lineLimit(1)
                             .truncationMode(.tail)
                     }
@@ -241,6 +241,27 @@ struct FloatingIslandView: View {
                         }
                     } else if state.mode == .recording {
                         VoiceWaveformView(color: Color.red)
+                    } else if state.mode == .navigation {
+                        Text(state.navDistance)
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1.5)
+                            .background(Color.green.opacity(0.2))
+                            .clipShape(Capsule())
+                    } else if state.mode == .sports {
+                        HStack(spacing: 2.5) {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 4, height: 4)
+                            Text(state.sportsMatchTime)
+                                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                                .foregroundColor(.green)
+                        }
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1.5)
+                        .background(Color.green.opacity(0.2))
+                        .clipShape(Capsule())
                     } else {
                         if state.isDualActivityActive {
                             HStack(spacing: 2) {
@@ -289,7 +310,24 @@ struct FloatingIslandView: View {
     // MARK: - Song Cover Thumbnail with App Icon
     @ViewBuilder
     private var songCoverThumbnail: some View {
-        if state.mode == .recording {
+        if state.mode == .navigation {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color(red: 0.12, green: 0.78, blue: 0.38))
+                    .frame(width: 22, height: 22)
+                Image(systemName: "arrow.turn.up.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        } else if state.mode == .sports {
+            ZStack {
+                Circle()
+                    .fill(Color(white: 0.20))
+                    .frame(width: 22, height: 22)
+                Text("⚽")
+                    .font(.system(size: 11))
+            }
+        } else if state.mode == .recording {
             ZStack {
                 Circle()
                     .fill(Color.red)
@@ -375,6 +413,12 @@ struct FloatingIslandView: View {
 
         case .call:
             expandedCallContent
+
+        case .navigation:
+            expandedNavigationContent
+
+        case .sports:
+            expandedSportsContent
 
         case .recording:
             expandedRecordingContent
@@ -605,9 +649,13 @@ struct FloatingIslandView: View {
                             .font(.system(size: 7.5, weight: .medium, design: .monospaced))
                             .foregroundColor(.gray)
                         Spacer()
-                        Text(nowPlaying.remainingFormatted)
+                        Text(nowPlaying.showRemainingTime ? nowPlaying.remainingFormatted : nowPlaying.durationFormatted)
                             .font(.system(size: 7.5, weight: .medium, design: .monospaced))
                             .foregroundColor(.gray)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                nowPlaying.toggleTimeDisplay()
+                            }
                     }
                 }
 
@@ -1051,6 +1099,128 @@ struct FloatingIslandView: View {
         }
         .padding(.horizontal, 11)
         .padding(.vertical, 8)
+    }
+
+    // MARK: - Expanded Navigation Content (Apple Maps)
+    private var expandedNavigationContent: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(red: 0.12, green: 0.78, blue: 0.38))
+                    .frame(width: 32, height: 32)
+                Image(systemName: "arrow.turn.up.right")
+                    .font(.system(size: 15, weight: .heavy))
+                    .foregroundColor(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(state.navInstruction)
+                    .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+
+                HStack(spacing: 4) {
+                    Text(state.navDistance)
+                        .font(.system(size: 10, weight: .heavy, design: .rounded))
+                        .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                    Text("• \(state.navETA)")
+                        .font(.system(size: 9.5, weight: .medium))
+                        .foregroundColor(.gray)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Speed Limit Sign
+            ZStack {
+                Circle()
+                    .stroke(Color.red, lineWidth: 2)
+                    .frame(width: 24, height: 24)
+                Text("\(state.navSpeedLimit)")
+                    .font(.system(size: 9, weight: .heavy, design: .rounded))
+                    .foregroundColor(.white)
+            }
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Expanded Live Sports Content
+    private var expandedSportsContent: some View {
+        VStack(spacing: 4) {
+            HStack {
+                Text(state.sportsLeague)
+                    .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                    .foregroundColor(.gray)
+                Spacer()
+                HStack(spacing: 3) {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 4, height: 4)
+                    Text(state.sportsMatchTime)
+                        .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                        .foregroundColor(.green)
+                }
+            }
+
+            HStack(spacing: 12) {
+                // Team Home
+                HStack(spacing: 6) {
+                    Text("⚽")
+                        .font(.system(size: 12))
+                    Text(state.sportsHomeTeam)
+                        .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                    Text("\(state.sportsHomeScore)")
+                        .font(.system(size: 15, weight: .heavy, design: .rounded))
+                        .foregroundColor(state.sportsHomeScore > state.sportsAwayScore ? .green : .white)
+                }
+
+                Text("-")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.gray)
+
+                // Team Away
+                HStack(spacing: 6) {
+                    Text("\(state.sportsAwayScore)")
+                        .font(.system(size: 15, weight: .heavy, design: .rounded))
+                        .foregroundColor(state.sportsAwayScore > state.sportsHomeScore ? .green : .white)
+                    Text(state.sportsAwayTeam)
+                        .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                Spacer()
+            }
+
+            HStack {
+                Text(state.sportsScorers)
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundColor(.gray.opacity(0.85))
+                    .lineLimit(1)
+                Spacer()
+            }
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 6)
+    }
+
+    private var compactTitleText: String {
+        switch state.mode {
+        case .call: return state.callerName
+        case .navigation: return state.navInstruction
+        case .sports: return "\(state.sportsHomeTeam) \(state.sportsHomeScore) - \(state.sportsAwayScore) \(state.sportsAwayTeam)"
+        case .recording: return "Voice Memo"
+        default: return state.mediaTitle
+        }
+    }
+
+    private var compactSubtitleText: String {
+        switch state.mode {
+        case .call: return state.callerSubtitle
+        case .navigation: return state.navETA
+        case .sports: return "\(state.sportsMatchTime) • Live"
+        case .recording: return state.recordingTimeFormatted
+        default: return state.mediaArtist
+        }
     }
 
     private var subtitleColor: Color {

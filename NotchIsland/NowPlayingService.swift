@@ -54,6 +54,7 @@ class NowPlayingService: ObservableObject {
     @Published var currentRouteType: AudioRouteType = .speaker
     @Published var currentRouteName: String = "iPhone Speaker"
     @Published var accessoryBattery: Int? = nil
+    @Published var showRemainingTime: Bool = true
     private var previousRouteName: String = "iPhone Speaker"
 
     var elapsedFormatted: String {
@@ -69,6 +70,18 @@ class NowPlayingService: ObservableObject {
         let m = Int(remaining) / 60
         let s = Int(remaining) % 60
         return String(format: "-%d:%02d", m, s)
+    }
+
+    var durationFormatted: String {
+        guard trackDuration > 0 else { return "0:00" }
+        let m = Int(trackDuration) / 60
+        let s = Int(trackDuration) % 60
+        return String(format: "%d:%02d", m, s)
+    }
+
+    func toggleTimeDisplay() {
+        showRemainingTime.toggle()
+        HapticService.shared.selection()
     }
 
     private var previousTrackTitle: String = ""
