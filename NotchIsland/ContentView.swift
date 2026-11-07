@@ -603,10 +603,10 @@ struct ContentView: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Spotify / EeveeSpotify Setup:")
+                Text("Spotify / EeveeSpotify iOS Sync:")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundColor(.white)
-                Text("In Spotify Settings > Devices, turn ON 'Device Broadcast Status' so track titles stream to Dynamic Notch.")
+                Text("Dynamic Notch streams directly from iOS system media routing and hardware audio session. No broadcast settings needed.")
                     .font(.system(size: 10))
                     .foregroundColor(.gray)
             }
