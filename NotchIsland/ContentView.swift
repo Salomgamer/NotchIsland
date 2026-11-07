@@ -4,6 +4,7 @@ struct ContentView: View {
     @ObservedObject var state = IslandState.shared
     @ObservedObject var pip = PiPIslandManager.shared
     @ObservedObject var nowPlaying = NowPlayingService.shared
+    @ObservedObject var battery = BatteryService.shared
     @ObservedObject var bgEngine = BackgroundEngine.shared
 
     var body: some View {
@@ -12,7 +13,7 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
+                VStack(spacing: 16) {
                     // Top App Bar
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
@@ -41,13 +42,13 @@ struct ContentView: View {
                         .background(Color(white: 0.12))
                         .clipShape(Capsule())
                     }
-                    .padding(.top, 12)
+                    .padding(.top, 10)
 
                     // Full-width Live Floater Preview with Simulated Notch & Active PiP Anchor
                     ZStack {
                         RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .fill(Color(white: 0.10))
-                            .frame(height: 130)
+                            .frame(height: 125)
 
                         VStack(spacing: 0) {
                             // iPhone 11 Physical Notch Shape
@@ -97,10 +98,73 @@ struct ContentView: View {
                         .shadow(color: (pip.isPiPActive ? Color.red : Color(red: 0.18, green: 0.84, blue: 0.38)).opacity(0.40), radius: 10, x: 0, y: 5)
                     }
 
+                    // Permissions & Accuracy Sync Box
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Image(systemName: "checkmark.shield.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+
+                            Text("SYSTEM PERMISSIONS & ACCURACY")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white)
+
+                            Spacer()
+
+                            if nowPlaying.hasMediaPermission {
+                                Text("Active ✓")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                            }
+                        }
+
+                        Button(action: {
+                            nowPlaying.requestAllPermissions()
+                        }) {
+                            HStack {
+                                Image(systemName: nowPlaying.hasMediaPermission ? "checkmark.circle.fill" : "lock.open.fill")
+                                    .foregroundColor(nowPlaying.hasMediaPermission ? .green : .white)
+                                Text(nowPlaying.hasMediaPermission ? "Permissions Granted & Synchronized" : "Grant Music & System Permissions")
+                                    .font(.system(size: 12.5, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 12)
+                            .background(Color(white: 0.15))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+
+                        // Spotify Device Broadcast Tip
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "info.circle.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.green)
+                                .padding(.top, 1)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Spotify / EeveeSpotify Setup:")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                                Text("In Spotify Settings > Devices, turn ON 'Device Broadcast Status' so Spotify continuously shares track titles with Notch Island.")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(white: 0.09))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
                     // Lock Under Notch Banner
                     HStack(spacing: 12) {
                         Image(systemName: "lock.shield.fill")
-                            .font(.system(size: 22))
+                            .font(.system(size: 20))
                             .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
 
                         VStack(alignment: .leading, spacing: 2) {
@@ -108,18 +172,18 @@ struct ContentView: View {
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.white)
                             Text("Launch floater, swipe Home, then drag to top-center. It snaps magnetically under the physical notch.")
-                                .font(.system(size: 11))
+                                .font(.system(size: 10.5))
                                 .foregroundColor(.gray)
                         }
                     }
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 11)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(white: 0.10))
+                    .background(Color(white: 0.09))
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                     // Notch Profile Switcher
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("NOTCH PROFILE")
                             .font(.system(size: 10.5, weight: .bold))
                             .foregroundColor(.gray.opacity(0.8))
@@ -136,9 +200,9 @@ struct ContentView: View {
                                         .font(.system(size: 12, weight: .semibold))
                                         .foregroundColor(state.size == sizeOption ? .black : .white)
                                         .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 11)
+                                        .padding(.vertical, 10)
                                         .background(
-                                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
                                                 .fill(state.size == sizeOption ? Color.white : Color(white: 0.14))
                                         )
                                 }
@@ -147,7 +211,7 @@ struct ContentView: View {
                     }
 
                     // Live Activity Switcher
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("LIVE ACTIVITY")
                             .font(.system(size: 10.5, weight: .bold))
                             .foregroundColor(.gray.opacity(0.8))
@@ -168,7 +232,7 @@ struct ContentView: View {
                                     }
                                     .foregroundColor(state.mode == mode ? .black : .white)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
+                                    .padding(.vertical, 11)
                                     .background(
                                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                                             .fill(state.mode == mode ? (mode == .media ? Color(red: 0.18, green: 0.84, blue: 0.38) : Color.orange) : Color(white: 0.14))
@@ -181,6 +245,9 @@ struct ContentView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 36)
             }
+        }
+        .onAppear {
+            nowPlaying.checkPermissions()
         }
     }
 

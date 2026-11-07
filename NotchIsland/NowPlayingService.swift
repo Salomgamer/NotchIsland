@@ -2,48 +2,82 @@ import Foundation
 import UIKit
 import Combine
 import MediaPlayer
+import UserNotifications
 
 class NowPlayingService: ObservableObject {
     static let shared = NowPlayingService()
 
     @Published var title: String = "No Music Playing"
-    @Published var artist: String = "Play Spotify or Music"
+    @Published var artist: String = "Play Spotify or Apple Music"
     @Published var isPlaying: Bool = false
     @Published var artworkImage: UIImage?
+    @Published var hasMediaPermission: Bool = false
+    @Published var hasNotificationPermission: Bool = false
 
     private var pollTimer: Timer?
 
-    // Function signature for MRMediaRemoteGetNowPlayingInfo
     typealias MRGetNowPlayingInfoFunction = @convention(c) (DispatchQueue, @escaping ([String: Any]?) -> Void) -> Void
     typealias MRRegisterNotificationsFunction = @convention(c) (DispatchQueue) -> Void
 
     private var getNowPlayingInfoFunc: MRGetNowPlayingInfoFunction?
 
     init() {
-        loadMediaRemote()
+        checkPermissions()
+        resolveMediaRemote()
         startMonitoring()
     }
 
-    private func loadMediaRemote() {
-        let path = "/System/Library/PrivateFrameworks/MediaRemote.framework"
-        guard let bundleURL = URL(string: "file://\(path)"),
-              let bundle = CFBundleCreate(kCFAllocatorDefault, bundleURL as CFURL) else {
-            print("[NowPlayingService] MediaRemote framework bundle unavailable, using MediaPlayer fallback.")
+    func checkPermissions() {
+        hasMediaPermission = (MPMediaLibrary.authorizationStatus() == .authorized)
+
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                self.hasNotificationPermission = (settings.authorizationStatus == .authorized)
+            }
+        }
+    }
+
+    func requestAllPermissions(completion: @escaping () -> Void = {}) {
+        // 1. Request Apple Music & Media Library Permission
+        MPMediaLibrary.requestAuthorization { [weak self] status in
+            DispatchQueue.main.async {
+                self?.hasMediaPermission = (status == .authorized)
+                self?.queryNowPlaying()
+            }
+        }
+
+        // 2. Request Notification Permission for live updates
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] granted, _ in
+            DispatchQueue.main.async {
+                self?.hasNotificationPermission = granted
+                completion()
+            }
+        }
+    }
+
+    private func resolveMediaRemote() {
+        // Use dyld shared cache lookup with fallback to global namespace
+        var handle = dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_NOW)
+        if handle == nil {
+            handle = dlopen(nil, RTLD_NOW)
+        }
+
+        guard let validHandle = handle else {
+            print("[NowPlayingService] Could not resolve MediaRemote handle")
             return
         }
 
-        if let ptr = CFBundleGetFunctionPointerForName(bundle, "MRMediaRemoteGetNowPlayingInfo" as CFString) {
-            self.getNowPlayingInfoFunc = unsafeBitCast(ptr, to: MRGetNowPlayingInfoFunction.self)
+        if let symInfo = dlsym(validHandle, "MRMediaRemoteGetNowPlayingInfo") {
+            self.getNowPlayingInfoFunc = unsafeBitCast(symInfo, to: MRGetNowPlayingInfoFunction.self)
         }
 
-        if let regPtr = CFBundleGetFunctionPointerForName(bundle, "MRMediaRemoteRegisterForNowPlayingNotifications" as CFString) {
-            let registerFunc = unsafeBitCast(regPtr, to: MRRegisterNotificationsFunction.self)
+        if let symReg = dlsym(validHandle, "MRMediaRemoteRegisterForNowPlayingNotifications") {
+            let registerFunc = unsafeBitCast(symReg, to: MRRegisterNotificationsFunction.self)
             registerFunc(DispatchQueue.main)
         }
     }
 
     func startMonitoring() {
-        // Listen to MediaRemote system notifications (fires when Spotify / EeveeSpotify changes track)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(queryNowPlaying),
@@ -51,7 +85,6 @@ class NowPlayingService: ObservableObject {
             object: nil
         )
 
-        // Continuous fast poll (every 1.0 second) to ensure instant sync
         pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.queryNowPlaying()
         }
@@ -83,7 +116,6 @@ class NowPlayingService: ObservableObject {
                     return
                 }
 
-                // If MediaRemote returned empty, check MPMusicPlayerController
                 self.checkMPMusicFallback()
             }
         } else {
@@ -101,7 +133,6 @@ class NowPlayingService: ObservableObject {
                 self.artworkImage = artwork.image(at: CGSize(width: 48, height: 48))
             }
         } else {
-            // Idle state when nothing is playing
             if self.title.isEmpty || self.title == "Starboy" {
                 self.title = "No Music Playing"
                 self.artist = "Play track in Spotify"
