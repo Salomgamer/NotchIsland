@@ -840,7 +840,7 @@ class IslandState: ObservableObject {
         case .cycleVisualizer:
             cycleNextVisualizer()
         case .cycleTheme:
-            let all = IslandTheme.allCases
+            let all = AccentTheme.allCases
             if let idx = all.firstIndex(of: theme) {
                 let next = all[(idx + 1) % all.count]
                 self.theme = next
