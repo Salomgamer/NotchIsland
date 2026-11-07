@@ -980,10 +980,18 @@ class IslandState: ObservableObject {
     }
 
     func setTimerPreset(minutes: Int) {
-        totalSeconds = Double(minutes * 60)
-        remainingSeconds = totalSeconds
+        let secs = Double(minutes * 60)
+        totalSeconds = secs
+        remainingSeconds = secs
         isTimerRunning = true
         startTimer()
+        HapticService.shared.medium()
+        triggerNotification(
+            title: minutes == 25 ? "Pomodoro Active" : "\(minutes)m Timer Started",
+            subtitle: "Focus Session Countdown",
+            icon: "timer",
+            color: .orange
+        )
     }
 
     func toggleTimer() {
@@ -1006,20 +1014,6 @@ class IslandState: ObservableObject {
         remainingSeconds = totalSeconds
         isTimerRunning = false
         HapticService.shared.medium()
-    }
-
-    func setTimerPreset(minutes: Int) {
-        let secs = Double(minutes * 60)
-        self.totalSeconds = secs
-        self.remainingSeconds = secs
-        self.isTimerRunning = true
-        HapticService.shared.medium()
-        triggerNotification(
-            title: minutes == 25 ? "Pomodoro Active" : "\(minutes)m Timer Started",
-            subtitle: "Focus Session Countdown",
-            icon: "timer",
-            color: .orange
-        )
     }
 
     // MARK: - Stopwatch Logic
