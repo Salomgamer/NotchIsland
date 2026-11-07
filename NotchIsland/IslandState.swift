@@ -16,18 +16,20 @@ enum IslandSize: String, CaseIterable {
 class IslandState: ObservableObject {
     static let shared = IslandState()
 
-    @Published var mode: IslandMode = .timer
+    @Published var mode: IslandMode = .media
     @Published var size: IslandSize = .compact
 
-    @Published var title: String = "Focus Session"
-    @Published var subtitle: String = "25:00 remaining"
+    @Published var title: String = "No Music Playing"
+    @Published var subtitle: String = "Play Spotify or Music"
     @Published var progress: Double = 0.0
     @Published var remainingSeconds: Double = 1500
     @Published var totalSeconds: Double = 1500
-    @Published var batteryPercentage: Int = 88
-    @Published var isCharging: Bool = true
+    @Published var batteryPercentage: Int = 100
+    @Published var isCharging: Bool = false
 
     private var timerCancellable: AnyCancellable?
+    private var nowPlayingCancellables = Set<AnyCancellable>()
+    private var batteryTimer: Timer?
 
     var islandWidth: CGFloat {
         switch size {
@@ -52,14 +54,51 @@ class IslandState: ObservableObject {
     }
 
     init() {
-        self.mode = .timer
+        self.mode = .media
         self.size = .compact
-        self.title = "Focus Session"
-        self.subtitle = "25:00 remaining"
-        self.remainingSeconds = 1500
-        self.totalSeconds = 1500
-        self.progress = 0.0
-        startDemoTimer()
+
+        // Enable battery monitoring immediately for real-time accuracy
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        updateBatteryState()
+
+        // Observe battery notifications
+        NotificationCenter.default.addObserver(
+            forName: UIDevice.batteryLevelDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateBatteryState()
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: UIDevice.batteryStateDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateBatteryState()
+        }
+
+        // Fast timer for real-time battery & state sync
+        batteryTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.updateBatteryState()
+            self?.syncModeState()
+        }
+
+        // Observe real Spotify / EeveeSpotify now playing updates
+        let np = NowPlayingService.shared
+        np.$title.receive(on: DispatchQueue.main).sink { [weak self] newTitle in
+            if self?.mode == .media {
+                self?.title = newTitle
+            }
+        }.store(in: &nowPlayingCancellables)
+
+        np.$artist.receive(on: DispatchQueue.main).sink { [weak self] newArtist in
+            if self?.mode == .media {
+                self?.subtitle = newArtist
+            }
+        }.store(in: &nowPlayingCancellables)
+
+        setMode(.media)
     }
 
     func setSize(_ newSize: IslandSize) {
@@ -77,18 +116,42 @@ class IslandState: ObservableObject {
             startDemoTimer()
 
         case .media:
-            title = "Starboy"
-            subtitle = "The Weeknd"
-            progress = 0.45
+            let np = NowPlayingService.shared
+            title = np.title
+            subtitle = np.artist
+            progress = 0.5
 
         case .battery:
-            UIDevice.current.isBatteryMonitoringEnabled = true
-            let level = UIDevice.current.batteryLevel
-            batteryPercentage = level >= 0 ? Int(level * 100) : 88
-            isCharging = UIDevice.current.batteryState == .charging || UIDevice.current.batteryState == .full
+            updateBatteryState()
             title = "iPhone 11"
-            subtitle = isCharging ? "Fast Charging • \(batteryPercentage)%" : "\(batteryPercentage)% Remaining"
+            subtitle = isCharging ? "Charging • \(batteryPercentage)%" : "\(batteryPercentage)% Remaining"
             progress = Double(batteryPercentage) / 100.0
+        }
+    }
+
+    private func updateBatteryState() {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        let rawLevel = UIDevice.current.batteryLevel
+        if rawLevel >= 0 {
+            // Precise 1% rounding
+            self.batteryPercentage = Int(round(rawLevel * 100.0))
+        }
+
+        let state = UIDevice.current.batteryState
+        self.isCharging = (state == .charging || state == .full)
+
+        if mode == .battery {
+            self.title = "iPhone 11"
+            self.subtitle = isCharging ? "Charging • \(batteryPercentage)%" : "\(batteryPercentage)% Remaining"
+            self.progress = Double(batteryPercentage) / 100.0
+        }
+    }
+
+    private func syncModeState() {
+        if mode == .media {
+            let np = NowPlayingService.shared
+            if self.title != np.title { self.title = np.title }
+            if self.subtitle != np.artist { self.subtitle = np.artist }
         }
     }
 

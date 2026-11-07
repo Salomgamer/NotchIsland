@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FloatingIslandView: View {
     @ObservedObject var state: IslandState
+    @ObservedObject var nowPlaying = NowPlayingService.shared
 
     var body: some View {
         ZStack {
@@ -11,11 +12,11 @@ struct FloatingIslandView: View {
 
             // Subtle Apple-style gloss border
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
                 .padding(0.5)
 
             // Centered Island Content
-            HStack(spacing: 10) {
+            HStack(spacing: 9) {
                 // Leading Accessory
                 leadingAccessory
 
@@ -25,11 +26,13 @@ struct FloatingIslandView: View {
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                         .lineLimit(1)
+                        .truncationMode(.tail)
 
                     Text(state.subtitle)
                         .font(.system(size: 10, weight: .medium, design: .rounded))
-                        .foregroundColor(.gray)
+                        .foregroundColor(subtitleColor)
                         .lineLimit(1)
+                        .truncationMode(.tail)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -40,6 +43,13 @@ struct FloatingIslandView: View {
             .padding(.vertical, 6)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var subtitleColor: Color {
+        if state.mode == .media && nowPlaying.isPlaying {
+            return Color(red: 0.18, green: 0.84, blue: 0.38) // Spotify Green
+        }
+        return Color.gray
     }
 
     // MARK: - Leading Accessory
@@ -57,24 +67,44 @@ struct FloatingIslandView: View {
             }
 
         case .media:
-            ZStack {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color(red: 0.95, green: 0.22, blue: 0.35))
+            if let artwork = nowPlaying.artworkImage {
+                Image(uiImage: artwork)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
                     .frame(width: 26, height: 26)
-                Image(systemName: "music.note")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            } else {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(Color(red: 0.12, green: 0.84, blue: 0.38)) // Spotify Green
+                        .frame(width: 26, height: 26)
+                    Image(systemName: "music.note")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.black)
+                }
             }
 
         case .battery:
             ZStack {
                 Circle()
-                    .fill(Color.green.opacity(0.22))
+                    .fill(batteryColor.opacity(0.22))
                     .frame(width: 26, height: 26)
-                Image(systemName: "bolt.fill")
+                Image(systemName: state.isCharging ? "bolt.fill" : "battery.100")
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.green)
+                    .foregroundColor(batteryColor)
             }
+        }
+    }
+
+    private var batteryColor: Color {
+        if state.isCharging {
+            return .green
+        } else if state.batteryPercentage <= 10 {
+            return .red
+        } else if state.batteryPercentage <= 20 {
+            return .orange
+        } else {
+            return .green
         }
     }
 
@@ -101,10 +131,10 @@ struct FloatingIslandView: View {
             HStack(spacing: 3) {
                 Text("\(state.batteryPercentage)%")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.green)
-                Image(systemName: "battery.100.bolt")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.green)
+                    .foregroundColor(batteryColor)
+                Image(systemName: state.isCharging ? "bolt.fill" : "battery.25")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(batteryColor)
             }
         }
     }
