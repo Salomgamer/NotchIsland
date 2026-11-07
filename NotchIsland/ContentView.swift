@@ -71,7 +71,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 2.0 • iPhone 11")
+                Text("Dynamic Island 3.0 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -155,7 +155,7 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 Image(systemName: pip.isPiPActive ? "stop.fill" : "play.fill")
                     .font(.system(size: 17, weight: .bold))
-                Text(pip.isPiPActive ? "Dismiss Floating Island" : "Launch Dynamic Notch 2.0")
+                Text(pip.isPiPActive ? "Dismiss Floating Island" : "Launch Dynamic Notch 3.0")
                     .font(.system(size: 17, weight: .bold, design: .rounded))
             }
             .foregroundColor(.black)
