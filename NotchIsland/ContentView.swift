@@ -628,3 +628,18 @@ struct ContentView: View {
         }
     }
 }
+
+// MARK: - Active PiP Source Anchor
+struct PiPAnchorRepresentable: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .clear
+        DispatchQueue.main.async {
+            PiPIslandManager.shared.attach(to: view)
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
+
