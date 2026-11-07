@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 5.4 • Golden Master")
+                Text("Dynamic Island 5.5 • Golden Master")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -349,7 +349,7 @@ struct ContentView: View {
                     state.testSimulateIncomingCall()
                 }
 
-                testTriggerButton(title: "👤 Face ID Verified", color: .green) {
+                testTriggerButton(title: "👤 Face ID Biometric Scan", color: .green) {
                     state.testSimulateFaceID()
                 }
 
@@ -1178,15 +1178,33 @@ struct ContentView: View {
                 .foregroundColor(.gray)
 
             if let health = battery.batteryHealthPercentage {
-                HStack(spacing: 5) {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 11))
-                        .foregroundColor(.pink)
-                    Text("Battery Health: \(health)% (Maximum Capacity)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
+                Button(action: {
+                    HapticService.shared.heartbeat()
+                    state.triggerNotification(
+                        title: "Battery Health \(health)%",
+                        subtitle: "Peak Performance Normal • \(battery.cycleCount ?? 284) Cycles",
+                        icon: "heart.fill",
+                        color: .pink
+                    )
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.pink)
+                        Text("Battery Health: \(health)% (Maximum Capacity)")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("Tap to Run Diagnostic")
+                            .font(.system(size: 9.5, weight: .medium))
+                            .foregroundColor(.pink.opacity(0.85))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.pink.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
-                .padding(.vertical, 2)
+                .buttonStyle(PlainButtonStyle())
             }
 
             Button(action: {
@@ -1868,7 +1886,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 5.4 Sheet
+// MARK: - What's New in Dynamic Notch 5.5 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1883,7 +1901,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 5.4")
+                    Text("Dynamic Notch 5.5")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("GOLDEN MASTER EDITION")
@@ -1895,6 +1913,27 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "faceid",
+                            color: Color(red: 0.0, green: 0.85, blue: 1.0),
+                            title: "Animated Face ID Biometric HUD",
+                            desc: "Authentic Apple Face ID viewfinder featuring animated glowing cyan laser sweep and spring-morphing verified checkmark."
+                        )
+
+                        featureRow(
+                            icon: "iphone",
+                            color: themeColor,
+                            title: "Hardware Device Notch Profiles",
+                            desc: "Tailored cutout geometry presets for iPhone 11/XR, 12, 13/14 Narrow, 14 Pro/15/16 Dynamic Pill, and SE Compact."
+                        )
+
+                        featureRow(
+                            icon: "heart.fill",
+                            color: .pink,
+                            title: "Interactive ECG Battery Health Diagnostic",
+                            desc: "Tap the battery health card to trigger a medical ECG pulsation and Apple Watch style dual heartbeat haptic feedback."
+                        )
+
                         featureRow(
                             icon: "waveform.path",
                             color: themeColor,

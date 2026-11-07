@@ -71,6 +71,14 @@ class HapticService: ObservableObject {
         }
     }
 
+    func heartbeat() {
+        guard strength != .muted else { return }
+        medium()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) { [weak self] in
+            self?.heavy()
+        }
+    }
+
     func silentSwitchHaptic(isSilent: Bool) {
         guard strength != .muted else { return }
         if isSilent {

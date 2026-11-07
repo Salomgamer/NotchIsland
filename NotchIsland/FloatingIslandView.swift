@@ -528,12 +528,8 @@ struct FloatingIslandView: View {
                         .clipShape(Capsule())
                 }
             } else if state.activeNotificationTitle.contains("Face ID") {
-                HStack(spacing: 3) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
-                }
-                .padding(.horizontal, 4)
+                FaceIDScannerView(isScanning: state.isFaceIDScanning, isVerified: state.faceIDVerified)
+                    .padding(.horizontal, 4)
             } else if state.activeNotificationTitle.contains("Activity") || state.activeNotificationTitle.contains("Fitness") {
                 MiniActivityRingsView()
                     .padding(.trailing, 2)
@@ -2021,4 +2017,64 @@ struct AirPlayRoutePickerRepresentable: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: AVRoutePickerView, context: Context) {}
+}
+
+// MARK: - Animated Face ID Biometric HUD Viewfinder
+struct FaceIDScannerView: View {
+    let isScanning: Bool
+    let isVerified: Bool
+    @State private var scanOffset: CGFloat = -8
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(
+                        isVerified
+                            ? Color(red: 0.18, green: 0.84, blue: 0.38)
+                            : Color(red: 0.0, green: 0.85, blue: 1.0),
+                        lineWidth: 1.5
+                    )
+                    .frame(width: 24, height: 24)
+
+                if isVerified {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                        .transition(.scale.combined(with: .opacity))
+                } else {
+                    Image(systemName: "faceid")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+
+                    // Animated laser scan sweep
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [.clear, Color(red: 0.0, green: 0.85, blue: 1.0), .clear],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: 18, height: 2)
+                        .offset(y: scanOffset)
+                }
+            }
+            .animation(.spring(response: 0.35, dampingFraction: 0.7), value: isVerified)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(isVerified ? "Face ID" : "Scanning Face...")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                Text(isVerified ? "Verified Successfully" : "Keep Facing Notch")
+                    .font(.system(size: 9, weight: .medium, design: .rounded))
+                    .foregroundColor(isVerified ? Color(red: 0.18, green: 0.84, blue: 0.38) : .gray)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+                scanOffset = 8
+            }
+        }
+    }
 }

@@ -2,7 +2,7 @@
 
 [![iOS 15.0+](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Version 5.4](https://img.shields.io/badge/DynamicNotch-v5.4_GM-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v5.4)
+[![Version 5.5](https://img.shields.io/badge/DynamicNotch-v5.5_GM-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v5.5)
 [![License MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
 **Dynamic Notch** brings the real **Apple Dynamic Island** experience to the iPhone 11, iPhone XR, iPhone 12, iPhone 13, and all notched iOS devices. 

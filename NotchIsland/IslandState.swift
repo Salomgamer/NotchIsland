@@ -27,6 +27,8 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
     case iphone11 = "iPhone 11 / XR"
     case iphone12 = "iPhone 12 / 12 Pro"
     case iphone13 = "iPhone 13 / 14"
+    case iphone14Pro = "iPhone 14 Pro / 15 / 16 (Pill)"
+    case compactSE = "SE / Home Button (Compact)"
     case custom = "Custom Notch"
 
     var id: String { rawValue }
@@ -39,6 +41,10 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
             return (width: 150, height: 35, cornerRadius: 17.5)
         case .iphone13:
             return (width: 138, height: 34, cornerRadius: 17)
+        case .iphone14Pro:
+            return (width: 124, height: 36, cornerRadius: 18)
+        case .compactSE:
+            return (width: 132, height: 32, cornerRadius: 16)
         case .custom:
             return (width: 156, height: 36, cornerRadius: 18)
         }
@@ -49,6 +55,8 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
         case .iphone11: return "156×36"
         case .iphone12: return "150×35"
         case .iphone13: return "138×34"
+        case .iphone14Pro: return "124×36"
+        case .compactSE: return "132×32"
         case .custom: return "Custom"
         }
     }
@@ -204,6 +212,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
     case toggleTorch = "Toggle Torch"
     case toggleSOS = "Toggle SOS Beacon"
     case toggleSilent = "Toggle Silent"
+    case testFaceID = "Simulate Face ID"
     case cycleVisualizer = "Cycle Visualizer"
     case stealthMode = "Stealth Mode"
     case expandCollapse = "Expand / Collapse"
@@ -221,6 +230,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         case .toggleTorch: return "flashlight.on.fill"
         case .toggleSOS: return "exclamationmark.shield.fill"
         case .toggleSilent: return "bell.slash.fill"
+        case .testFaceID: return "faceid"
         case .cycleVisualizer: return "waveform"
         case .stealthMode: return "eye.slash.fill"
         case .expandCollapse: return "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left"
@@ -317,6 +327,8 @@ class IslandState: ObservableObject {
     @Published var activeNotificationIcon: String = "bell.badge.fill"
     @Published var activeNotificationColor: Color? = nil
     @Published var isShowingNotification: Bool = false
+    @Published var isFaceIDScanning: Bool = false
+    @Published var faceIDVerified: Bool = false
     private var notificationDismissWorkItem: DispatchWorkItem?
 
     // MARK: - Volume HUD State
@@ -805,6 +817,8 @@ class IslandState: ObservableObject {
             TorchService.shared.toggleSOS()
         case .toggleSilent:
             toggleSilentMode()
+        case .testFaceID:
+            testSimulateFaceID()
         case .cycleVisualizer:
             cycleNextVisualizer()
         case .stealthMode:
@@ -1187,13 +1201,28 @@ class IslandState: ObservableObject {
 
     // MARK: - Expanded Test Lab Simulators
     func testSimulateFaceID() {
-        HapticService.shared.success()
+        isFaceIDScanning = true
+        faceIDVerified = false
+        HapticService.shared.light()
         triggerNotification(
             title: "Face ID",
-            subtitle: "Verified Successfully",
+            subtitle: "Looking for Face...",
             icon: "faceid",
-            color: Color(red: 0.18, green: 0.84, blue: 0.38)
+            color: Color(red: 0.0, green: 0.85, blue: 1.0)
         )
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) { [weak self] in
+            guard let self = self else { return }
+            self.faceIDVerified = true
+            self.isFaceIDScanning = false
+            HapticService.shared.success()
+            self.triggerNotification(
+                title: "Face ID",
+                subtitle: "Verified Successfully",
+                icon: "checkmark.circle.fill",
+                color: Color(red: 0.18, green: 0.84, blue: 0.38)
+            )
+        }
     }
 
     func testSimulateAirDrop() {
