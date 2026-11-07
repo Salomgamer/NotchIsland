@@ -868,6 +868,18 @@ struct FloatingIslandView: View {
                         color: .white
                     )
                     .frame(height: 15)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        let trackText = "\(state.mediaTitle) - \(state.mediaArtist)"
+                        UIPasteboard.general.string = trackText
+                        HapticService.shared.success()
+                        state.triggerNotification(
+                            title: "Copied Track",
+                            subtitle: trackText,
+                            icon: "doc.on.doc.fill",
+                            color: Color(red: 0.18, green: 0.84, blue: 0.38)
+                        )
+                    }
 
                     if nowPlaying.isLyricsModeEnabled {
                         HStack(spacing: 4) {

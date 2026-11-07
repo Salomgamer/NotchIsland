@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 5.7 • Golden Master")
+                Text("Dynamic Island 5.8 • Golden Master")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1886,7 +1886,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 5.7 Sheet
+// MARK: - What's New in Dynamic Notch 5.8 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1901,7 +1901,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 5.7")
+                    Text("Dynamic Notch 5.8")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("GOLDEN MASTER EDITION")
@@ -1913,6 +1913,13 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "doc.on.doc.fill",
+                            color: Color(red: 0.18, green: 0.84, blue: 0.38),
+                            title: "1-Tap Track Clipboard Copy",
+                            desc: "Tap the song title in the expanded notch or double-tap to copy song and artist info to the iOS clipboard with an instant HUD alert."
+                        )
+
                         featureRow(
                             icon: "hand.tap.fill",
                             color: themeColor,

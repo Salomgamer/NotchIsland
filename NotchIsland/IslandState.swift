@@ -213,6 +213,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
     case toggleSOS = "Toggle SOS Beacon"
     case toggleSilent = "Toggle Silent"
     case toggleTimer = "Toggle Focus Timer"
+    case copySongInfo = "Copy Track to Clipboard"
     case testFaceID = "Simulate Face ID"
     case cycleVisualizer = "Cycle Visualizer"
     case stealthMode = "Stealth Mode"
@@ -232,6 +233,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         case .toggleSOS: return "exclamationmark.shield.fill"
         case .toggleSilent: return "bell.slash.fill"
         case .toggleTimer: return "timer"
+        case .copySongInfo: return "doc.on.doc.fill"
         case .testFaceID: return "faceid"
         case .cycleVisualizer: return "waveform"
         case .stealthMode: return "eye.slash.fill"
@@ -821,6 +823,16 @@ class IslandState: ObservableObject {
             toggleSilentMode()
         case .toggleTimer:
             toggleTimer()
+        case .copySongInfo:
+            let trackText = "\(mediaTitle) - \(mediaArtist)"
+            UIPasteboard.general.string = trackText
+            HapticService.shared.success()
+            triggerNotification(
+                title: "Copied Track",
+                subtitle: trackText,
+                icon: "doc.on.doc.fill",
+                color: Color(red: 0.18, green: 0.84, blue: 0.38)
+            )
         case .testFaceID:
             testSimulateFaceID()
         case .cycleVisualizer:
