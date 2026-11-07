@@ -1,4 +1,5 @@
 import SwiftUI
+import AVKit
 
 struct FloatingIslandView: View {
     @ObservedObject var state: IslandState
@@ -463,17 +464,24 @@ struct FloatingIslandView: View {
                             .foregroundColor(subtitleColor)
                             .lineLimit(1)
 
-                        HStack(spacing: 3) {
-                            Circle()
-                                .fill(subtitleColor)
-                                .frame(width: 3, height: 3)
-                            Image(systemName: nowPlaying.currentRouteType.iconName)
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundColor(subtitleColor)
-                            Text(nowPlaying.currentRouteName)
-                                .font(.system(size: 8.5, weight: .bold))
-                                .foregroundColor(.white.opacity(0.85))
-                                .lineLimit(1)
+                        ZStack {
+                            HStack(spacing: 3) {
+                                Circle()
+                                    .fill(subtitleColor)
+                                    .frame(width: 3, height: 3)
+                                Image(systemName: nowPlaying.currentRouteType.iconName)
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundColor(subtitleColor)
+                                Text(nowPlaying.currentRouteName)
+                                    .font(.system(size: 8.5, weight: .bold))
+                                    .foregroundColor(.white.opacity(0.85))
+                                    .lineLimit(1)
+                            }
+
+                            // Invisible touch target that summons native iOS AirPlay route sheet
+                            AirPlayRoutePickerRepresentable()
+                                .frame(width: 70, height: 16)
+                                .opacity(0.015)
                         }
                     }
                 }
@@ -1233,4 +1241,18 @@ struct PillBatteryView: View {
                 }
         }
     }
+}
+
+// MARK: - Native iOS AirPlay & Audio Route Picker
+struct AirPlayRoutePickerRepresentable: UIViewRepresentable {
+    func makeUIView(context: Context) -> AVRoutePickerView {
+        let picker = AVRoutePickerView()
+        picker.tintColor = .white
+        picker.activeTintColor = UIColor(red: 0.18, green: 0.84, blue: 0.38, alpha: 1.0)
+        picker.backgroundColor = .clear
+        picker.prioritizesVideoDevices = false
+        return picker
+    }
+
+    func updateUIView(_ uiView: AVRoutePickerView, context: Context) {}
 }
