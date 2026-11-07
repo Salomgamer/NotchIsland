@@ -1143,4 +1143,14 @@ class IslandState: ObservableObject {
             toggleRecording()
         }
     }
+
+    func testSimulateFitness() {
+        HapticService.shared.success()
+        triggerNotification(
+            title: "Activity Rings Closed!",
+            subtitle: "Move 620/500 • Exercise 38m • Stand 12h",
+            icon: "figure.run",
+            color: Color(red: 1.0, green: 0.25, blue: 0.35)
+        )
+    }
 }

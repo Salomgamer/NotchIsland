@@ -501,6 +501,38 @@ struct FloatingIslandView: View {
                             .clipShape(Capsule())
                     }
                 }
+            } else if state.activeNotificationTitle.contains("Hotspot") {
+                HStack(spacing: 3) {
+                    HStack(spacing: 2) {
+                        Image(systemName: "link")
+                            .font(.system(size: 7, weight: .bold))
+                        Text("1 Device")
+                            .font(.system(size: 7.5, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .background(Color.white.opacity(0.12))
+                    .clipShape(Capsule())
+
+                    Text("2.4 MB/s")
+                        .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.85))
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(Color.white.opacity(0.10))
+                        .clipShape(Capsule())
+                }
+            } else if state.activeNotificationTitle.contains("Face ID") {
+                HStack(spacing: 3) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                }
+                .padding(.horizontal, 4)
+            } else if state.activeNotificationTitle.contains("Activity") || state.activeNotificationTitle.contains("Fitness") {
+                MiniActivityRingsView()
+                    .padding(.trailing, 2)
             } else {
                 Circle()
                     .fill(notifColor)
@@ -1665,6 +1697,44 @@ struct VoiceWaveformView: View {
                     .delay(delay),
                 value: animating
             )
+    }
+}
+
+// MARK: - Mini Concentric Activity Rings (Move, Exercise, Stand)
+struct MiniActivityRingsView: View {
+    var body: some View {
+        ZStack {
+            // Stand (Cyan)
+            Circle()
+                .stroke(Color.cyan.opacity(0.25), lineWidth: 2)
+                .frame(width: 12, height: 12)
+            Circle()
+                .trim(from: 0, to: 0.85)
+                .stroke(Color.cyan, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .frame(width: 12, height: 12)
+                .rotationEffect(.degrees(-90))
+
+            // Exercise (Green)
+            Circle()
+                .stroke(Color.green.opacity(0.25), lineWidth: 2)
+                .frame(width: 18, height: 18)
+            Circle()
+                .trim(from: 0, to: 1.0)
+                .stroke(Color.green, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .frame(width: 18, height: 18)
+                .rotationEffect(.degrees(-90))
+
+            // Move (Red)
+            Circle()
+                .stroke(Color.red.opacity(0.25), lineWidth: 2)
+                .frame(width: 24, height: 24)
+            Circle()
+                .trim(from: 0, to: 1.0)
+                .stroke(Color.red, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .frame(width: 24, height: 24)
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: 26, height: 26)
     }
 }
 

@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 5.0 • Golden Master")
+                Text("Dynamic Island 5.1 • Golden Master")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -394,6 +394,10 @@ struct ContentView: View {
                         icon: "flashlight.on.fill",
                         color: .yellow
                     )
+                }
+
+                testTriggerButton(title: "🎯 Activity Rings", color: .red) {
+                    state.testSimulateFitness()
                 }
             }
         }
@@ -1832,7 +1836,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 5.0 Sheet
+// MARK: - What's New in Dynamic Notch 5.1 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1847,7 +1851,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 5.0")
+                    Text("Dynamic Notch 5.1")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("GOLDEN MASTER EDITION")
@@ -1859,6 +1863,20 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "figure.run",
+                            color: Color(red: 1.0, green: 0.25, blue: 0.35),
+                            title: "Concentric Activity Rings HUD",
+                            desc: "Apple Watch / Fitness celebration in the notch with live spinning 3-ring circular progress (Move, Exercise, Stand)."
+                        )
+
+                        featureRow(
+                            icon: "personalhotspot",
+                            color: Color(red: 0.18, green: 0.84, blue: 0.38),
+                            title: "Personal Hotspot Tethering Badge",
+                            desc: "In-notch real-time device connection count and live network throughput telemetry chip."
+                        )
+
                         featureRow(
                             icon: "slider.horizontal.3",
                             color: themeColor,
