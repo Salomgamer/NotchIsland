@@ -157,6 +157,30 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
     }
 }
 
+enum IslandAnimationProfile: String, CaseIterable, Identifiable {
+    case appleBouncy = "Bouncy"
+    case snappy = "Snappy"
+    case gentle = "Smooth"
+
+    var id: String { rawValue }
+
+    var response: Double {
+        switch self {
+        case .appleBouncy: return 0.35
+        case .snappy: return 0.26
+        case .gentle: return 0.45
+        }
+    }
+
+    var damping: Double {
+        switch self {
+        case .appleBouncy: return 0.72
+        case .snappy: return 0.82
+        case .gentle: return 0.88
+        }
+    }
+}
+
 enum AccentTheme: String, CaseIterable {
     case spotifyGreen = "Spotify Green"
     case appleOrange = "Apple Orange"
@@ -203,6 +227,7 @@ class IslandState: ObservableObject {
 
     // MARK: - Double-Tap Action
     @Published var doubleTapAction: DoubleTapAction = .playPause
+    @Published var animationProfile: IslandAnimationProfile = .appleBouncy
 
     // MARK: - Custom Size Calibration & Presets
     @Published var selectedPreset: DeviceNotchPreset = .iphone11

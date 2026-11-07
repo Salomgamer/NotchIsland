@@ -67,9 +67,9 @@ struct FloatingIslandView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
-        .animation(.spring(response: 0.35, dampingFraction: 0.72), value: state.isExpanded)
-        .animation(.spring(response: 0.35, dampingFraction: 0.72), value: state.isShowingNotification)
-        .animation(.spring(response: 0.30, dampingFraction: 0.75), value: state.isShowingVolumeHUD)
+        .animation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping), value: state.isExpanded)
+        .animation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping), value: state.isShowingNotification)
+        .animation(.spring(response: state.animationProfile.response * 0.85, dampingFraction: state.animationProfile.damping), value: state.isShowingVolumeHUD)
     }
 
     // MARK: - Pill Background Fill

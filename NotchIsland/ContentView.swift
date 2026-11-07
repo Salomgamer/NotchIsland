@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 4.4 • iPhone 11")
+                Text("Dynamic Island 4.5 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -163,6 +163,11 @@ struct ContentView: View {
                 }
 
                 Spacer()
+
+                Text("Tap pill to expand / collapse in place")
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundColor(.gray.opacity(0.6))
+                    .padding(.bottom, 6)
             }
         }
     }
@@ -1360,6 +1365,30 @@ struct ContentView: View {
                 }
             }
 
+            // Animation Spring Physics Profile
+            HStack(spacing: 8) {
+                Text("Physics:")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.gray)
+
+                ForEach(IslandAnimationProfile.allCases) { profile in
+                    Button(action: {
+                        HapticService.shared.selection()
+                        state.animationProfile = profile
+                    }) {
+                        Text(profile.rawValue)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(state.animationProfile == profile ? .black : .white)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(state.animationProfile == profile ? state.theme.color : Color(white: 0.15))
+                            .clipShape(Capsule())
+                    }
+                }
+                Spacer()
+            }
+            .padding(.top, 2)
+
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("• Single Tap: Expand / Collapse Island")
@@ -1676,7 +1705,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 4.4 Sheet
+// MARK: - What's New in Dynamic Notch 4.5 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1691,7 +1720,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 4.4")
+                    Text("Dynamic Notch 4.5")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                 }
