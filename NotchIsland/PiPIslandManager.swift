@@ -4,12 +4,13 @@ import SwiftUI
 class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureControllerDelegate {
     static let shared = PiPIslandManager()
 
-    private var pipController: AVPictureInPictureController?
-    private var pipVideoCallVC: AVPictureInPictureVideoCallViewController?
-    private var hostingController: UIHostingController<FloatingIslandView>?
-    private var anchorSourceView = UIView()
+    var pipController: AVPictureInPictureController?
+    var pipVideoCallVC: AVPictureInPictureVideoCallViewController?
+    var hostingController: UIHostingController<FloatingIslandView>?
+    let anchorSourceView = UIView()
 
     @Published var isPiPActive: Bool = false
+    @Published var isPossible: Bool = false
 
     override init() {
         super.init()
@@ -31,20 +32,27 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
             return
         }
 
-        if anchorSourceView.superview != nil { return }
+        // Setup anchor source view inside container
+        anchorSourceView.removeFromSuperview()
+        containerView.addSubview(anchorSourceView)
+        anchorSourceView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            anchorSourceView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            anchorSourceView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            anchorSourceView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            anchorSourceView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor)
+        ])
 
         let state = IslandState.shared
         let initialSize = CGSize(width: state.islandWidth, height: state.islandHeight)
 
-        anchorSourceView.frame = CGRect(origin: .zero, size: initialSize)
-        anchorSourceView.backgroundColor = .clear
-        containerView.addSubview(anchorSourceView)
-
+        // Hosting controller for the floating island content
         let islandView = FloatingIslandView(state: state)
         let host = UIHostingController(rootView: islandView)
         host.view.backgroundColor = .clear
         self.hostingController = host
 
+        // Video call view controller for PiP
         let videoCallVC = AVPictureInPictureVideoCallViewController()
         videoCallVC.preferredContentSize = initialSize
         videoCallVC.view.backgroundColor = .black
@@ -52,7 +60,6 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         videoCallVC.addChild(host)
         videoCallVC.view.addSubview(host.view)
 
-        // Pin host view to all 4 edges of the PiP window so the island fills and centers naturally
         host.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             host.view.topAnchor.constraint(equalTo: videoCallVC.view.topAnchor),
@@ -73,21 +80,24 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         controller.delegate = self
         controller.canStartPictureInPictureAutomaticallyFromInline = true
         self.pipController = controller
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.isPossible = controller.isPictureInPicturePossible
+        }
     }
 
     func updateSize(width: CGFloat, height: CGFloat) {
         let newSize = CGSize(width: width, height: height)
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.anchorSourceView.frame = CGRect(origin: .zero, size: newSize)
             self.pipVideoCallVC?.preferredContentSize = newSize
         }
     }
 
     func start() {
         configureAudioSession()
-        guard let controller = pipController, controller.isPictureInPicturePossible else {
-            print("PiP is not currently possible.")
+        guard let controller = pipController else {
+            print("PiP controller not initialized.")
             return
         }
         controller.startPictureInPicture()
