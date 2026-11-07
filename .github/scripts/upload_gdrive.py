@@ -5,7 +5,8 @@ import json
 def upload():
     credentials_raw = os.environ.get("GDRIVE_CREDENTIALS", "").strip()
     folder_id = os.environ.get("GDRIVE_FOLDER_ID", "").strip()
-    file_path = "NotchIsland.ipa"
+    file_path = "DynamicNotch.ipa" if os.path.exists("DynamicNotch.ipa") else "NotchIsland.ipa"
+    upload_name = os.path.basename(file_path)
 
     if not credentials_raw or not folder_id:
         print("Google Drive credentials or Folder ID missing. Skipping upload.")
@@ -39,9 +40,9 @@ def upload():
     credentials = service_account.Credentials.from_service_account_info(cred_info, scopes=scopes)
     service = build('drive', 'v3', credentials=credentials)
 
-    print(f"Checking for existing NotchIsland.ipa in folder {folder_id}...")
+    print(f"Checking for existing {upload_name} in folder {folder_id}...")
     safe_folder = folder_id.replace("'", "\\'")
-    query = f"name = 'NotchIsland.ipa' and '{safe_folder}' in parents and trashed = false"
+    query = f"name = '{upload_name}' and '{safe_folder}' in parents and trashed = false"
     response = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
     existing_files = response.get('files', [])
 
@@ -55,12 +56,12 @@ def upload():
             media_body=media,
             fields='id, name, webViewLink'
         ).execute()
-        print(f"Successfully updated NotchIsland.ipa in Google Drive!")
+        print(f"Successfully updated {upload_name} in Google Drive!")
         print(f"Direct Link: {updated.get('webViewLink')}")
     else:
         print(f"Uploading new file to Google Drive...")
         metadata = {
-            'name': 'NotchIsland.ipa',
+            'name': upload_name,
             'parents': [folder_id]
         }
         created = service.files().create(
@@ -68,7 +69,7 @@ def upload():
             media_body=media,
             fields='id, name, webViewLink'
         ).execute()
-        print(f"Successfully uploaded NotchIsland.ipa to Google Drive!")
+        print(f"Successfully uploaded {upload_name} to Google Drive!")
         print(f"Direct Link: {created.get('webViewLink')}")
 
 if __name__ == "__main__":
