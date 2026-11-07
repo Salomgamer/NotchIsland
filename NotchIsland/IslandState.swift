@@ -25,7 +25,7 @@ class IslandState: ObservableObject {
     @Published var progress: Double = 0.0
     @Published var remainingSeconds: Double = 1500
     @Published var totalSeconds: Double = 1500
-    @Published var batteryPercentage: Int = 100
+    @Published var batteryPercentage: Int = 88
     @Published var isCharging: Bool = true
 
     private var timerCancellable: AnyCancellable?
@@ -57,12 +57,18 @@ class IslandState: ObservableObject {
     }
 
     init() {
-        setMode(.timer)
+        // Completely safe initial values without triggering external singletons
+        self.mode = .timer
+        self.size = .compact
+        self.centerText = "Focus"
+        self.remainingSeconds = 1500
+        self.totalSeconds = 1500
+        self.progress = 0.0
+        startDemoTimer()
     }
 
     func setSize(_ newSize: IslandSize) {
         self.size = newSize
-        PiPIslandManager.shared.updateSize()
     }
 
     func setMode(_ newMode: IslandMode) {
@@ -71,7 +77,7 @@ class IslandState: ObservableObject {
 
         switch newMode {
         case .timer:
-            centerText = size == .standard ? "Focus Session" : ""
+            centerText = size == .standard ? "Focus Session" : "Focus"
             startDemoTimer()
 
         case .media:
@@ -82,10 +88,8 @@ class IslandState: ObservableObject {
             let level = UIDevice.current.batteryLevel
             batteryPercentage = level >= 0 ? Int(level * 100) : 88
             isCharging = UIDevice.current.batteryState == .charging || UIDevice.current.batteryState == .full
-            centerText = isCharging ? "Charging" : ""
+            centerText = isCharging ? "Charging" : "Battery"
         }
-
-        PiPIslandManager.shared.updateSize()
     }
 
     private func startDemoTimer() {

@@ -2,12 +2,12 @@ name: NotchIsland
 options:
   bundleIdPrefix: com.notchisland
   deploymentTarget:
-    iOS: 16.0
+    iOS: 15.0
 targets:
   NotchIsland:
     type: application
     platform: iOS
-    deploymentTarget: 16.0
+    deploymentTarget: 15.0
     sources:
       - path: NotchIsland
     info:

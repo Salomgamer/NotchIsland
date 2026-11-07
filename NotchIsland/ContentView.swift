@@ -68,6 +68,7 @@ struct ContentView: View {
                         ForEach(IslandSize.allCases, id: \.self) { sizeOption in
                             Button(action: {
                                 state.setSize(sizeOption)
+                                pip.updateSize(width: state.islandWidth, height: state.islandHeight)
                             }) {
                                 Text(sizeOption == .mini ? "Ultra-Slim" : (sizeOption == .compact ? "Compact" : "Standard"))
                                     .font(.system(size: 12, weight: .semibold))
@@ -96,6 +97,7 @@ struct ContentView: View {
                         ForEach(IslandMode.allCases, id: \.self) { mode in
                             Button(action: {
                                 state.setMode(mode)
+                                pip.updateSize(width: state.islandWidth, height: state.islandHeight)
                             }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: iconForMode(mode))
@@ -163,7 +165,10 @@ struct ContentView: View {
 struct PiPAnchorView: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView(frame: .zero)
-        PiPIslandManager.shared.attach(to: view)
+        view.isUserInteractionEnabled = false
+        DispatchQueue.main.async {
+            PiPIslandManager.shared.attach(to: view)
+        }
         return view
     }
 

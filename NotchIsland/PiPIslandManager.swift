@@ -13,7 +13,6 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
 
     override init() {
         super.init()
-        configureAudioSession()
     }
 
     private func configureAudioSession() {
@@ -27,6 +26,11 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
     }
 
     func attach(to containerView: UIView) {
+        guard AVPictureInPictureController.isPictureInPictureSupported() else {
+            print("Picture in Picture is not supported on this device/environment.")
+            return
+        }
+
         if anchorSourceView.superview != nil { return }
 
         let state = IslandState.shared
@@ -38,13 +42,17 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
 
         let islandView = FloatingIslandView(state: state)
         let host = UIHostingController(rootView: islandView)
-        host.view.frame = anchorSourceView.bounds
+        host.view.frame = CGRect(origin: .zero, size: initialSize)
         host.view.backgroundColor = .clear
         self.hostingController = host
 
         let videoCallVC = AVPictureInPictureVideoCallViewController()
         videoCallVC.preferredContentSize = initialSize
+
+        videoCallVC.addChild(host)
         videoCallVC.view.addSubview(host.view)
+        host.didMove(toParent: videoCallVC)
+
         self.pipVideoCallVC = videoCallVC
 
         let source = AVPictureInPictureController.ContentSource(
@@ -58,10 +66,8 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         self.pipController = controller
     }
 
-    func updateSize() {
-        let state = IslandState.shared
-        let newSize = CGSize(width: state.islandWidth, height: state.islandHeight)
-
+    func updateSize(width: CGFloat, height: CGFloat) {
+        let newSize = CGSize(width: width, height: height)
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.anchorSourceView.frame = CGRect(origin: .zero, size: newSize)
@@ -71,6 +77,7 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
     }
 
     func start() {
+        configureAudioSession()
         guard let controller = pipController, controller.isPictureInPicturePossible else {
             print("PiP is not currently possible.")
             return
