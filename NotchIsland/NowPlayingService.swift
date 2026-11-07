@@ -419,9 +419,19 @@ class NowPlayingService: ObservableObject {
 
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: 1, height: 1))
 
-        let r = Double(pixelData[0]) / 255.0
-        let g = Double(pixelData[1]) / 255.0
-        let b = Double(pixelData[2]) / 255.0
+        var r = Double(pixelData[0]) / 255.0
+        var g = Double(pixelData[1]) / 255.0
+        var b = Double(pixelData[2]) / 255.0
+
+        // Ensure luminance is vibrant enough to stand out against OLED black
+        let luminance = (r * 0.299 + g * 0.587 + b * 0.114)
+        if luminance < 0.32 {
+            let boost = (0.35 - luminance)
+            r = min(1.0, r + boost * 1.4)
+            g = min(1.0, g + boost * 1.4)
+            b = min(1.0, b + boost * 1.4)
+        }
+
         DispatchQueue.main.async {
             self.artworkAccentColor = Color(red: r, green: g, blue: b)
         }

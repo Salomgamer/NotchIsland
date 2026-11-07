@@ -1,4 +1,5 @@
 import UIKit
+import AudioToolbox
 
 class HapticService {
     static let shared = HapticService()
@@ -55,5 +56,9 @@ class HapticService {
 
     func error() {
         notificationFeedback.notificationOccurred(.error)
+    }
+
+    func clickSound() {
+        AudioServicesPlaySystemSound(1104)
     }
 }
