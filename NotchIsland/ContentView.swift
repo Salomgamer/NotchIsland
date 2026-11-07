@@ -36,6 +36,9 @@ struct ContentView: View {
                     // Accent Theme Picker
                     themeSection
 
+                    // Island Background Style Picker
+                    backgroundSection
+
                     // Device Notch Sizing Presets
                     notchPresetsSection
 
@@ -124,13 +127,14 @@ struct ContentView: View {
 
                 // Floating Island in Preview & Active PiP Anchor
                 ZStack {
+                    PiPAnchorRepresentable()
+                        .frame(width: state.islandWidth, height: state.islandHeight)
+                        .allowsHitTesting(false)
+
                     FloatingIslandView(state: state)
                         .frame(width: state.islandWidth, height: state.islandHeight)
                         .clipShape(RoundedRectangle(cornerRadius: state.isExpanded ? 24 : 18, style: .continuous))
                         .shadow(color: .black.opacity(0.7), radius: 10, x: 0, y: 3)
-
-                    PiPAnchorRepresentable()
-                        .frame(width: state.islandWidth, height: state.islandHeight)
                 }
 
                 Spacer()
@@ -713,6 +717,65 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Background Customization Section
+    private var backgroundSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "paintpalette.fill")
+                    .foregroundColor(state.theme.color)
+                Text("ISLAND BACKGROUND STYLE")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.2)
+                Spacer()
+                Text(state.backgroundStyle.rawValue)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(state.theme.color)
+            }
+            .padding(.horizontal, 4)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(IslandBackgroundStyle.allCases) { bgStyle in
+                        Button(action: {
+                            HapticService.shared.selection()
+                            state.backgroundStyle = bgStyle
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: bgStyle.icon)
+                                    .font(.system(size: 11, weight: .bold))
+                                Text(bgStyle.rawValue)
+                                    .font(.system(size: 11.5, weight: .semibold))
+                            }
+                            .foregroundColor(state.backgroundStyle == bgStyle ? .black : .white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(state.backgroundStyle == bgStyle ? state.theme.color : Color(white: 0.13))
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Opacity & Glass Slider
+            HStack {
+                Text("Opacity: \(Int(state.backgroundOpacity * 100))%")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.gray)
+                Spacer()
+                Slider(value: $state.backgroundOpacity, in: 0.4...1.0, step: 0.05)
+                    .frame(width: 180)
+            }
+            .padding(.top, 2)
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     // MARK: - Device Notch Presets

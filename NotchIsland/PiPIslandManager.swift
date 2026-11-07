@@ -51,6 +51,7 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         let host = UIHostingController(rootView: islandView)
         host.view.backgroundColor = .clear
         host.view.isOpaque = false
+        host.view.isUserInteractionEnabled = true
         self.hostingController = host
 
         // Video call view controller for PiP
@@ -58,6 +59,11 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         videoCallVC.preferredContentSize = initialSize
         videoCallVC.view.backgroundColor = .clear
         videoCallVC.view.isOpaque = false
+        videoCallVC.view.isUserInteractionEnabled = true
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handlePiPTap))
+        tap.cancelsTouchesInView = false
+        videoCallVC.view.addGestureRecognizer(tap)
 
         videoCallVC.addChild(host)
         videoCallVC.view.addSubview(host.view)
@@ -117,7 +123,30 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         }
     }
 
+    @objc private func handlePiPTap() {
+        IslandState.shared.toggleExpanded()
+    }
+
     // MARK: - AVPictureInPictureControllerDelegate
+    func pictureInPictureController(
+        _ pictureInPictureController: AVPictureInPictureController,
+        restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
+    ) {
+        // Intercept click: DO NOT open app full screen! Instead, expand/collapse the floating island in place!
+        HapticService.shared.medium()
+        IslandState.shared.toggleExpanded()
+
+        // Passing false tells iOS NOT to open or restore the app interface!
+        completionHandler(false)
+
+        // Keep PiP floating continuously
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            if self?.isPiPActive == false {
+                self?.pipController?.startPictureInPicture()
+            }
+        }
+    }
+
     func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         DispatchQueue.main.async { self.isPiPActive = true }
     }

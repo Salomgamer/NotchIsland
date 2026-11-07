@@ -11,8 +11,8 @@ struct FloatingIslandView: View {
 
             // The Little Island Pill centered in the middle of the PiP
             ZStack {
-                // True OLED Black fill for the pill itself
-                Color.black
+                // Configurable Pill Background (OLED, Frosted Glass, Artwork Adaptive, etc.)
+                pillBackground
 
                 // Dynamic ambient glow border
                 if state.mode == .media, let glowColor = nowPlaying.artworkAccentColor {
@@ -53,6 +53,75 @@ struct FloatingIslandView: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.72), value: state.isExpanded)
         .animation(.spring(response: 0.35, dampingFraction: 0.72), value: state.isShowingNotification)
         .animation(.spring(response: 0.30, dampingFraction: 0.75), value: state.isShowingVolumeHUD)
+    }
+
+    // MARK: - Pill Background Fill
+    @ViewBuilder
+    private var pillBackground: some View {
+        switch state.backgroundStyle {
+        case .oledBlack:
+            Color.black
+                .opacity(state.backgroundOpacity)
+
+        case .frostedGlass:
+            ZStack {
+                Color(white: 0.12).opacity(state.backgroundOpacity * 0.88)
+                LinearGradient(
+                    colors: [Color.white.opacity(0.18), Color.white.opacity(0.04), Color.clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+
+        case .artworkAdaptive:
+            if let accent = nowPlaying.artworkAccentColor {
+                ZStack {
+                    Color.black.opacity(state.backgroundOpacity)
+                    LinearGradient(
+                        colors: [accent.opacity(0.48 * state.backgroundOpacity), Color.black.opacity(0.85 * state.backgroundOpacity)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
+            } else {
+                ZStack {
+                    Color.black.opacity(state.backgroundOpacity)
+                    LinearGradient(
+                        colors: [state.theme.color.opacity(0.35 * state.backgroundOpacity), Color.black.opacity(0.85 * state.backgroundOpacity)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
+            }
+
+        case .midnightNavy:
+            LinearGradient(
+                colors: [Color(red: 0.05, green: 0.09, blue: 0.22).opacity(state.backgroundOpacity), Color(red: 0.01, green: 0.02, blue: 0.08).opacity(state.backgroundOpacity)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+        case .darkObsidian:
+            LinearGradient(
+                colors: [Color(white: 0.18).opacity(state.backgroundOpacity), Color(white: 0.06).opacity(state.backgroundOpacity)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+        case .deepCrimson:
+            LinearGradient(
+                colors: [Color(red: 0.28, green: 0.05, blue: 0.12).opacity(state.backgroundOpacity), Color(red: 0.08, green: 0.01, blue: 0.03).opacity(state.backgroundOpacity)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+        case .cyberNeon:
+            LinearGradient(
+                colors: [Color(red: 0.02, green: 0.22, blue: 0.26).opacity(state.backgroundOpacity), Color(red: 0.01, green: 0.06, blue: 0.09).opacity(state.backgroundOpacity)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
     }
 
     private var cornerRadius: CGFloat {

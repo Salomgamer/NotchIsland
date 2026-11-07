@@ -49,6 +49,30 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
     }
 }
 
+enum IslandBackgroundStyle: String, CaseIterable, Identifiable {
+    case oledBlack = "OLED Black"
+    case frostedGlass = "Frosted Glass"
+    case artworkAdaptive = "Artwork Adaptive"
+    case midnightNavy = "Midnight Navy"
+    case darkObsidian = "Dark Obsidian"
+    case deepCrimson = "Deep Crimson"
+    case cyberNeon = "Cyber Neon"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .oledBlack: return "circle.fill"
+        case .frostedGlass: return "aqi.medium"
+        case .artworkAdaptive: return "wand.and.stars"
+        case .midnightNavy: return "moon.stars.fill"
+        case .darkObsidian: return "shield.fill"
+        case .deepCrimson: return "flame.fill"
+        case .cyberNeon: return "bolt.fill"
+        }
+    }
+}
+
 enum AccentTheme: String, CaseIterable {
     case spotifyGreen = "Spotify Green"
     case appleOrange = "Apple Orange"
@@ -75,6 +99,10 @@ class IslandState: ObservableObject {
     @Published var theme: AccentTheme = .spotifyGreen
     @Published var isExpanded: Bool = false
     @Published var isMultipurpose: Bool = true
+
+    // MARK: - Background Customization
+    @Published var backgroundStyle: IslandBackgroundStyle = .oledBlack
+    @Published var backgroundOpacity: Double = 1.0
 
     // MARK: - Custom Size Calibration & Presets
     @Published var selectedPreset: DeviceNotchPreset = .iphone11
@@ -334,7 +362,13 @@ class IslandState: ObservableObject {
         )
     }
 
+    private var lastToggleTime: Date = Date.distantPast
+
     func toggleExpanded() {
+        let now = Date()
+        guard now.timeIntervalSince(lastToggleTime) > 0.25 else { return }
+        lastToggleTime = now
+
         HapticService.shared.medium()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
             self.isExpanded.toggle()
