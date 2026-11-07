@@ -277,15 +277,20 @@ struct FloatingIslandView: View {
                             .background(Color.orange.opacity(0.22))
                             .clipShape(Capsule())
                         } else if nowPlaying.currentRouteType.isExternalOrHeadphones {
-                            HStack(spacing: 2) {
-                                Image(systemName: nowPlaying.currentRouteType.iconName)
-                                    .font(.system(size: 8.5, weight: .bold))
-                                    .foregroundColor(subtitleColor)
-                                if let accBat = nowPlaying.accessoryBattery {
-                                    Text("\(accBat)%")
-                                        .font(.system(size: 7.5, weight: .bold, design: .rounded))
-                                        .foregroundColor(subtitleColor.opacity(0.9))
+                            ZStack {
+                                HStack(spacing: 2) {
+                                    Image(systemName: nowPlaying.currentRouteType.iconName)
+                                        .font(.system(size: 8.5, weight: .bold))
+                                        .foregroundColor(subtitleColor)
+                                    if let accBat = nowPlaying.accessoryBattery {
+                                        Text("\(accBat)%")
+                                            .font(.system(size: 7.5, weight: .bold, design: .rounded))
+                                            .foregroundColor(subtitleColor.opacity(0.9))
+                                    }
                                 }
+                                AirPlayRoutePickerRepresentable()
+                                    .frame(width: 36, height: 16)
+                                    .opacity(0.015)
                             }
                         }
 
@@ -659,15 +664,46 @@ struct FloatingIslandView: View {
                     }
                 }
 
-                Button(action: {
-                    state.showVolumeHUD(level: state.systemVolume)
-                }) {
-                    Image(systemName: state.systemVolume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                        .font(.system(size: 9.5, weight: .bold))
-                        .foregroundColor(.white.opacity(0.85))
-                        .padding(5)
-                        .background(Color.white.opacity(0.12))
-                        .clipShape(Circle())
+                HStack(spacing: 3) {
+                    Button(action: {
+                        state.setSystemVolume(max(0.0, state.systemVolume - 0.05))
+                        HapticService.shared.light()
+                    }) {
+                        Image(systemName: "speaker.minus.fill")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.80))
+                            .padding(4)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Circle())
+                    }
+
+                    Button(action: {
+                        if state.systemVolume > 0 {
+                            state.setSystemVolume(0.0)
+                        } else {
+                            state.setSystemVolume(0.75)
+                        }
+                        HapticService.shared.light()
+                    }) {
+                        Image(systemName: state.systemVolume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(state.systemVolume == 0 ? .red : .white.opacity(0.9))
+                            .padding(5)
+                            .background(Color.white.opacity(0.14))
+                            .clipShape(Circle())
+                    }
+
+                    Button(action: {
+                        state.setSystemVolume(min(1.0, state.systemVolume + 0.05))
+                        HapticService.shared.light()
+                    }) {
+                        Image(systemName: "speaker.plus.fill")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.80))
+                            .padding(4)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Circle())
+                    }
                 }
             }
         }

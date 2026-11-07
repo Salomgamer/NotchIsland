@@ -46,6 +46,17 @@ class HapticService {
         }
     }
 
+    func silentSwitchHaptic(isSilent: Bool) {
+        if isSilent {
+            heavyImpact.impactOccurred()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) { [weak self] in
+                self?.heavyImpact.impactOccurred()
+            }
+        } else {
+            mediumImpact.impactOccurred()
+        }
+    }
+
     func success() {
         notificationFeedback.notificationOccurred(.success)
     }

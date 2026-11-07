@@ -136,10 +136,12 @@ enum VisualizerColorMode: String, CaseIterable, Identifiable {
 enum DoubleTapAction: String, CaseIterable, Identifiable {
     case playPause = "Play / Pause"
     case nextTrack = "Next Track"
+    case toggleMute = "Mute / Unmute"
     case toggleTorch = "Toggle Torch"
     case toggleSOS = "Toggle SOS Beacon"
     case toggleSilent = "Toggle Silent"
     case cycleVisualizer = "Cycle Visualizer"
+    case stealthMode = "Stealth Mode"
     case expandCollapse = "Expand / Collapse"
 
     var id: String { rawValue }
@@ -148,10 +150,12 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         switch self {
         case .playPause: return "playpause.fill"
         case .nextTrack: return "forward.fill"
+        case .toggleMute: return "speaker.slash.fill"
         case .toggleTorch: return "flashlight.on.fill"
         case .toggleSOS: return "exclamationmark.shield.fill"
         case .toggleSilent: return "bell.slash.fill"
         case .cycleVisualizer: return "waveform"
+        case .stealthMode: return "eye.slash.fill"
         case .expandCollapse: return "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left"
         }
     }
@@ -650,7 +654,7 @@ class IslandState: ObservableObject {
 
     func toggleSilentMode() {
         self.isSilentOn.toggle()
-        HapticService.shared.medium()
+        HapticService.shared.silentSwitchHaptic(isSilent: isSilentOn)
         triggerNotification(
             title: isSilentOn ? "Silent Mode" : "Ring Mode",
             subtitle: isSilentOn ? "Mute Active • Haptics Only" : "Sound Enabled • Ringing",
@@ -666,6 +670,12 @@ class IslandState: ObservableObject {
             NowPlayingService.shared.togglePlayPause()
         case .nextTrack:
             NowPlayingService.shared.nextTrack()
+        case .toggleMute:
+            if systemVolume > 0 {
+                setSystemVolume(0.0)
+            } else {
+                setSystemVolume(0.75)
+            }
         case .toggleTorch:
             TorchService.shared.toggleTorch()
         case .toggleSOS:
@@ -674,6 +684,12 @@ class IslandState: ObservableObject {
             toggleSilentMode()
         case .cycleVisualizer:
             cycleNextVisualizer()
+        case .stealthMode:
+            if mode == .blank {
+                setMode(.media)
+            } else {
+                setMode(.blank)
+            }
         case .expandCollapse:
             toggleExpanded()
         }

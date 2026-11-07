@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 4.6 • iPhone 11")
+                Text("Dynamic Island 4.7 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1717,7 +1717,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 4.6 Sheet
+// MARK: - What's New in Dynamic Notch 4.7 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1732,7 +1732,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 4.6")
+                    Text("Dynamic Notch 4.7")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                 }
@@ -1740,6 +1740,34 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "bell.slash.fill",
+                            color: .red,
+                            title: "Hardware Silent Switch Haptics",
+                            desc: "Authentic double-pulse haptic vibration replicating Apple's physical mute switch behavior when toggling Silent Mode."
+                        )
+
+                        featureRow(
+                            icon: "speaker.wave.2.fill",
+                            color: themeColor,
+                            title: "Discrete Volume Steppers & Mute",
+                            desc: "Quick +/- 5% volume buttons and one-tap mute directly integrated into the expanded media controls."
+                        )
+
+                        featureRow(
+                            icon: "hand.tap.fill",
+                            color: .purple,
+                            title: "Expanded Double-Tap Actions",
+                            desc: "Double-tap on the collapsed notch now supports instant Mute toggle and Stealth Mode toggle alongside play/pause and torch."
+                        )
+
+                        featureRow(
+                            icon: "airpodspro",
+                            color: .green,
+                            title: "Interactive Route Switcher",
+                            desc: "Tap the audio route icon directly in compact mode to instantly open the native AirPlay audio routing sheet."
+                        )
+
                         featureRow(
                             icon: "arrow.turn.up.right",
                             color: Color(red: 0.18, green: 0.84, blue: 0.38),
