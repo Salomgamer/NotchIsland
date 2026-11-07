@@ -468,6 +468,39 @@ struct FloatingIslandView: View {
                     .background(Color.white.opacity(0.12))
                     .clipShape(Capsule())
                 }
+            } else if state.activeNotificationTitle.contains("AirDrop") {
+                HStack(spacing: 4) {
+                    Button(action: {
+                        HapticService.shared.success()
+                        state.triggerNotification(
+                            title: "AirDrop Accepted",
+                            subtitle: "Saved to Camera Roll • 100%",
+                            icon: "checkmark.circle.fill",
+                            color: .green
+                        )
+                    }) {
+                        Text("Accept")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.blue)
+                            .clipShape(Capsule())
+                    }
+
+                    Button(action: {
+                        HapticService.shared.light()
+                        state.isExpanded = false
+                    }) {
+                        Text("Decline")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.white.opacity(0.14))
+                            .clipShape(Capsule())
+                    }
+                }
             } else {
                 Circle()
                     .fill(notifColor)
@@ -1638,14 +1671,16 @@ struct VoiceWaveformView: View {
 // MARK: - Animated Equalizer Waveform
 struct EqualizerWaveformView: View {
     let color: Color
+    @ObservedObject var state = IslandState.shared
     @State private var animating = false
 
     var body: some View {
+        let m = state.soundEQProfile.barMultipliers
         HStack(spacing: 1.6) {
-            bar(minHeight: 3, maxHeight: 11, duration: 0.38, delay: 0.0)
-            bar(minHeight: 10, maxHeight: 4, duration: 0.28, delay: 0.12)
-            bar(minHeight: 4, maxHeight: 12, duration: 0.42, delay: 0.06)
-            bar(minHeight: 8, maxHeight: 3, duration: 0.32, delay: 0.18)
+            bar(minHeight: 2.5, maxHeight: min(13, 11 * m[0]), duration: 0.38, delay: 0.0)
+            bar(minHeight: min(13, 10 * m[1]), maxHeight: 3.5, duration: 0.28, delay: 0.12)
+            bar(minHeight: 3.0, maxHeight: min(13, 12 * m[2]), duration: 0.42, delay: 0.06)
+            bar(minHeight: min(13, 8 * m[3]), maxHeight: 2.5, duration: 0.32, delay: 0.18)
         }
         .frame(height: 12)
         .onAppear { animating = true }

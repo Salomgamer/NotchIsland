@@ -134,10 +134,41 @@ enum VisualizerColorMode: String, CaseIterable, Identifiable {
     }
 }
 
+enum SoundEQProfile: String, CaseIterable, Identifiable {
+    case balanced = "Balanced Studio"
+    case bassBoost = "Bass Booster"
+    case vocal = "Vocal Clarity"
+    case acoustic = "Acoustic Warmth"
+    case electronic = "Electronic Dance"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .balanced: return "slider.horizontal.3"
+        case .bassBoost: return "speaker.wave.3.fill"
+        case .vocal: return "mic.fill"
+        case .acoustic: return "guitars.fill"
+        case .electronic: return "bolt.horizontal.fill"
+        }
+    }
+
+    var barMultipliers: [CGFloat] {
+        switch self {
+        case .balanced: return [1.0, 1.0, 1.0, 1.0]
+        case .bassBoost: return [1.35, 1.15, 0.65, 0.50]
+        case .vocal: return [0.55, 1.25, 1.20, 0.60]
+        case .acoustic: return [0.65, 0.85, 1.10, 1.30]
+        case .electronic: return [1.20, 0.75, 1.15, 1.05]
+        }
+    }
+}
+
 enum DoubleTapAction: String, CaseIterable, Identifiable {
     case playPause = "Play / Pause"
     case nextTrack = "Next Track"
     case toggleMute = "Mute / Unmute"
+    case cycleEQ = "Cycle EQ Profile"
     case cycleBrightness = "Cycle Brightness"
     case toggleTorch = "Toggle Torch"
     case toggleSOS = "Toggle SOS Beacon"
@@ -153,6 +184,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         case .playPause: return "playpause.fill"
         case .nextTrack: return "forward.fill"
         case .toggleMute: return "speaker.slash.fill"
+        case .cycleEQ: return "slider.horizontal.3"
         case .cycleBrightness: return "sun.max.fill"
         case .toggleTorch: return "flashlight.on.fill"
         case .toggleSOS: return "exclamationmark.shield.fill"
@@ -220,6 +252,7 @@ class IslandState: ObservableObject {
     @Published var visualizerStyle: VisualizerStyle = .equalizer
     @Published var visualizerSpeed: VisualizerSpeed = .balanced
     @Published var visualizerColorMode: VisualizerColorMode = .adaptive
+    @Published var soundEQProfile: SoundEQProfile = .balanced
     @Published var dualActivityEnabled: Bool = true
     @Published var clipboardHUDEnabled: Bool = true
     private var lastClipboardChangeCount: Int = UIPasteboard.general.changeCount
@@ -722,6 +755,8 @@ class IslandState: ObservableObject {
             } else {
                 setSystemVolume(0.75)
             }
+        case .cycleEQ:
+            cycleEQProfile()
         case .cycleBrightness:
             let levels: [Float] = [0.25, 0.50, 0.75, 1.0]
             let current = systemBrightness
@@ -755,6 +790,21 @@ class IslandState: ObservableObject {
             triggerNotification(
                 title: "Visualizer Changed",
                 subtitle: next.rawValue,
+                icon: next.icon,
+                color: theme.color
+            )
+        }
+    }
+
+    func cycleEQProfile() {
+        let all = SoundEQProfile.allCases
+        if let idx = all.firstIndex(of: soundEQProfile) {
+            let next = all[(idx + 1) % all.count]
+            self.soundEQProfile = next
+            HapticService.shared.selection()
+            triggerNotification(
+                title: "EQ: \(next.rawValue)",
+                subtitle: "Sound equalization frequency curve activated",
                 icon: next.icon,
                 color: theme.color
             )

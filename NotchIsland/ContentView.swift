@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 4.9 • iPhone 11")
+                Text("Dynamic Island 5.0 • Golden Master")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1412,6 +1412,37 @@ struct ContentView: View {
                 Spacer()
             }
             .padding(.top, 2)
+
+            // Sound Equalizer Profile
+            HStack(spacing: 8) {
+                Text("Sound EQ:")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.gray)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(SoundEQProfile.allCases) { eq in
+                            Button(action: {
+                                HapticService.shared.selection()
+                                state.soundEQProfile = eq
+                            }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: eq.icon)
+                                        .font(.system(size: 9))
+                                    Text(eq.rawValue)
+                                        .font(.system(size: 10, weight: .semibold))
+                                }
+                                .foregroundColor(state.soundEQProfile == eq ? .black : .white)
+                                .padding(.horizontal, 9)
+                                .padding(.vertical, 4)
+                                .background(state.soundEQProfile == eq ? state.theme.color : Color(white: 0.15))
+                                .clipShape(Capsule())
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.top, 2)
         }
         .padding(13)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1801,7 +1832,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 4.9 Sheet
+// MARK: - What's New in Dynamic Notch 5.0 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1816,14 +1847,32 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 4.9")
+                    Text("Dynamic Notch 5.0")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
+                    Text("GOLDEN MASTER EDITION")
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundColor(themeColor)
+                        .kerning(1.5)
                 }
                 .padding(.top, 24)
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "slider.horizontal.3",
+                            color: themeColor,
+                            title: "Sound Equalizer Frequency Profiles",
+                            desc: "5 acoustic sound profiles (Bass Booster, Vocal Clarity, Acoustic Warmth, Electronic Dance, Balanced) dynamically shaping visualizer spectrum curves."
+                        )
+
+                        featureRow(
+                            icon: "antenna.radiowaves.left.and.right",
+                            color: .blue,
+                            title: "Interactive AirDrop Card",
+                            desc: "In-notch AirDrop file receive HUD with direct 'Accept' and 'Decline' actions and haptic confirmation."
+                        )
+
                         featureRow(
                             icon: "sun.max.fill",
                             color: .yellow,
