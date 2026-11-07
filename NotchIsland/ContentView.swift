@@ -74,7 +74,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 3.3 • iPhone 11")
+                Text("Dynamic Island 3.4 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -172,68 +172,93 @@ struct ContentView: View {
 
     // MARK: - Quick Status & Accessories
     private var quickStatusSection: some View {
-        HStack(spacing: 10) {
-            // Audio Destination / AirPods Card
-            HStack(spacing: 8) {
-                ZStack {
-                    Circle()
-                        .fill(nowPlaying.currentRouteType.isExternalOrHeadphones ? Color.green.opacity(0.25) : Color.white.opacity(0.12))
-                        .frame(width: 32, height: 32)
-                    Image(systemName: nowPlaying.currentRouteType.iconName)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(nowPlaying.currentRouteType.isExternalOrHeadphones ? .green : .white)
+        VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                // Audio Destination / AirPods Card
+                HStack(spacing: 8) {
+                    ZStack {
+                        Circle()
+                            .fill(nowPlaying.currentRouteType.isExternalOrHeadphones ? Color.green.opacity(0.25) : Color.white.opacity(0.12))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: nowPlaying.currentRouteType.iconName)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(nowPlaying.currentRouteType.isExternalOrHeadphones ? .green : .white)
+                    }
+
+                    VStack(alignment: .leading, spacing: 1.5) {
+                        Text(nowPlaying.currentRouteName)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        Text(nowPlaying.currentRouteType.rawValue)
+                            .font(.system(size: 9.5, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(Color(white: 0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                // Flashlight Quick Toggle
+                Button(action: {
+                    torch.toggleTorch()
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: torch.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                            .font(.system(size: 12, weight: .bold))
+                        Text(torch.isTorchOn ? "On" : "Torch")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundColor(torch.isTorchOn ? .black : .white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 10)
+                    .background(torch.isTorchOn ? Color.yellow : Color(white: 0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .shadow(color: torch.isTorchOn ? Color.yellow.opacity(0.4) : .clear, radius: 8)
                 }
 
-                VStack(alignment: .leading, spacing: 1.5) {
-                    Text(nowPlaying.currentRouteName)
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                    Text(nowPlaying.currentRouteType.rawValue)
-                        .font(.system(size: 9.5, weight: .medium))
+                // SOS Strobe Emergency Toggle
+                Button(action: {
+                    torch.toggleSOS()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.shield.fill")
+                            .font(.system(size: 12, weight: .bold))
+                        Text(torch.isSOSActive ? "SOS" : "SOS")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundColor(torch.isSOSActive ? .white : .gray)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 10)
+                    .background(torch.isSOSActive ? Color.red : Color(white: 0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .shadow(color: torch.isSOSActive ? Color.red.opacity(0.5) : .clear, radius: 8)
+                }
+            }
+
+            if torch.isTorchOn && !torch.isSOSActive {
+                HStack(spacing: 6) {
+                    Text("Torch Level:")
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.gray)
+                    ForEach([0.25, 0.50, 0.75, 1.0], id: \.self) { lvl in
+                        Button(action: {
+                            torch.setTorchLevel(Float(lvl))
+                        }) {
+                            Text("\(Int(lvl * 100))%")
+                                .font(.system(size: 9.5, weight: .bold))
+                                .foregroundColor(torch.torchLevel == Float(lvl) ? .black : .white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(torch.torchLevel == Float(lvl) ? Color.yellow : Color(white: 0.16))
+                                .clipShape(Capsule())
+                        }
+                    }
+                    Spacer()
                 }
-                Spacer()
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(Color(white: 0.10))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            // Flashlight Quick Toggle
-            Button(action: {
-                torch.toggleTorch()
-            }) {
-                HStack(spacing: 5) {
-                    Image(systemName: torch.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                        .font(.system(size: 12, weight: .bold))
-                    Text(torch.isTorchOn ? "On" : "Torch")
-                        .font(.system(size: 11, weight: .bold))
-                }
-                .foregroundColor(torch.isTorchOn ? .black : .white)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 10)
-                .background(torch.isTorchOn ? Color.yellow : Color(white: 0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .shadow(color: torch.isTorchOn ? Color.yellow.opacity(0.4) : .clear, radius: 8)
-            }
-
-            // SOS Strobe Emergency Toggle
-            Button(action: {
-                torch.toggleSOS()
-            }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.shield.fill")
-                        .font(.system(size: 12, weight: .bold))
-                    Text(torch.isSOSActive ? "SOS" : "SOS")
-                        .font(.system(size: 11, weight: .bold))
-                }
-                .foregroundColor(torch.isSOSActive ? .white : .gray)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 10)
-                .background(torch.isSOSActive ? Color.red : Color(white: 0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .shadow(color: torch.isSOSActive ? Color.red.opacity(0.5) : .clear, radius: 8)
+                .padding(.horizontal, 4)
             }
         }
     }
@@ -247,10 +272,10 @@ struct ContentView: View {
                     .foregroundColor(.gray.opacity(0.8))
                     .kerning(1.2)
                 Spacer()
-                HStack(spacing: 8) {
+                HStack(spacing: 7) {
                     HStack(spacing: 3) {
                         Text("Auto")
-                            .font(.system(size: 9.5, weight: .bold))
+                            .font(.system(size: 9, weight: .bold))
                             .foregroundColor(state.autoSwitchModes ? state.theme.color : .gray)
                         Toggle("", isOn: $state.autoSwitchModes)
                             .labelsHidden()
@@ -263,9 +288,17 @@ struct ContentView: View {
 
                     HStack(spacing: 3) {
                         Text("Dual")
-                            .font(.system(size: 9.5, weight: .bold))
+                            .font(.system(size: 9, weight: .bold))
                             .foregroundColor(state.dualActivityEnabled ? state.theme.color : .gray)
                         Toggle("", isOn: $state.dualActivityEnabled)
+                            .labelsHidden()
+                    }
+
+                    HStack(spacing: 3) {
+                        Text("Clip")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(state.clipboardHUDEnabled ? state.theme.color : .gray)
+                        Toggle("", isOn: $state.clipboardHUDEnabled)
                             .labelsHidden()
                     }
                 }

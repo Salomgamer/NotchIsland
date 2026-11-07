@@ -145,6 +145,8 @@ class IslandState: ObservableObject {
     // MARK: - Visualizer & Multi-Activity
     @Published var visualizerStyle: VisualizerStyle = .equalizer
     @Published var dualActivityEnabled: Bool = true
+    @Published var clipboardHUDEnabled: Bool = true
+    private var lastClipboardChangeCount: Int = UIPasteboard.general.changeCount
 
     var isDualActivityActive: Bool {
         return dualActivityEnabled && mode == .media && isTimerRunning && remainingSeconds > 0 && remainingSeconds < totalSeconds
@@ -314,7 +316,32 @@ class IslandState: ObservableObject {
         }.store(in: &cancellables)
 
         setupVolumeObserver()
+        setupClipboardObserver()
         startTimer()
+    }
+
+    private func setupClipboardObserver() {
+        NotificationCenter.default.addObserver(
+            forName: UIPasteboard.changedNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self, self.clipboardHUDEnabled else { return }
+            let count = UIPasteboard.general.changeCount
+            guard count != self.lastClipboardChangeCount else { return }
+            self.lastClipboardChangeCount = count
+
+            if let text = UIPasteboard.general.string, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let preview = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                let display = preview.count > 34 ? "\(preview.prefix(32))..." : preview
+                self.triggerNotification(
+                    title: "Copied to Clipboard",
+                    subtitle: display,
+                    icon: "doc.on.clipboard.fill",
+                    color: Color(red: 0.0, green: 0.94, blue: 1.0)
+                )
+            }
+        }
     }
 
     private func setupVolumeObserver() {

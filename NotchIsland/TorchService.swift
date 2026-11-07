@@ -7,6 +7,7 @@ class TorchService: ObservableObject {
     @Published var isTorchOn: Bool = false
     @Published var hasTorch: Bool = false
     @Published var isSOSActive: Bool = false
+    @Published var torchLevel: Float = 1.0
 
     private var sosTimer: Timer?
     private var sosStep: Int = 0
@@ -45,6 +46,27 @@ class TorchService: ObservableObject {
             HapticService.shared.medium()
         } catch {
             print("[TorchService] Error toggling torch: \(error.localizedDescription)")
+        }
+    }
+
+    func setTorchLevel(_ level: Float) {
+        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
+        let clamped = max(0.1, min(1.0, level))
+        self.torchLevel = clamped
+        do {
+            try device.lockForConfiguration()
+            try device.setTorchModeOn(level: clamped)
+            self.isTorchOn = true
+            device.unlockForConfiguration()
+            HapticService.shared.light()
+            IslandState.shared.triggerNotification(
+                title: "Flashlight Brightness",
+                subtitle: "\(Int(clamped * 100))% Level",
+                icon: "flashlight.on.fill",
+                color: .yellow
+            )
+        } catch {
+            print("[TorchService] Error setting torch level: \(error.localizedDescription)")
         }
     }
 
