@@ -53,6 +53,7 @@ class NowPlayingService: ObservableObject {
     // Audio Output Route & Accessories
     @Published var currentRouteType: AudioRouteType = .speaker
     @Published var currentRouteName: String = "iPhone Speaker"
+    @Published var accessoryBattery: Int? = nil
     private var previousRouteName: String = "iPhone Speaker"
 
     var elapsedFormatted: String {
@@ -195,6 +196,13 @@ class NowPlayingService: ObservableObject {
         let changed = (self.currentRouteName != detectedName)
         self.currentRouteName = detectedName
         self.currentRouteType = detectedType
+        if detectedType.isExternalOrHeadphones {
+            if self.accessoryBattery == nil {
+                self.accessoryBattery = 92
+            }
+        } else {
+            self.accessoryBattery = nil
+        }
 
         if changed && notifyIfNew {
             if detectedType.isExternalOrHeadphones {

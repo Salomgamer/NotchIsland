@@ -2,7 +2,7 @@
 
 [![iOS 15.0+](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Version 3.7](https://img.shields.io/badge/DynamicNotch-v3.7-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v3.7)
+[![Version 4.1](https://img.shields.io/badge/DynamicNotch-v4.1-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v4.1)
 [![License MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
 **Dynamic Notch** brings the real **Apple Dynamic Island** experience to the iPhone 11, iPhone XR, iPhone 12, iPhone 13, and all notched iOS devices. 
@@ -65,7 +65,27 @@ Sitting invisibly flush under the physical camera notch, Dynamic Notch delivers 
 ### 11. Clipboard HUD Notch Alerts
 * Automatically detects text copied to the iOS clipboard and pops down a brief preview banner with a clipboard glyph.
 
-### 12. Gesture Engine & Apple Taptic Engine
+### 12. Dynamic Island Notification Test Lab
+* Instant one-tap simulation playground to test all native Dynamic Island triggers directly on demand:
+  * ⚡ **Fast Charge Surge**: Triggers the authentic charging pill animation with wattage readout.
+  * 🎧 **AirPods Pro Connection**: Displays spatial audio indicator and connected earbud battery percentage.
+  * 🪫 **Low Battery Alert (10%)**: Pulsing red alert banner.
+  * 🔋 **Full Charge Preservation (100%)**: Green shield alert to optimize cell lifespan.
+  * 🌡️ **Thermal Protection**: Warning banner when device exceeds 42°C.
+  * ⏱️ **Focus Timer Finish**: Session completion alert with chime and vibration.
+  * 📋 **Clipboard HUD**: Live snippet preview banner.
+  * 🔔 **Silent / Ring Switch**: Toggle mute with Apple-style HUD.
+  * 🔊 **Volume HUD**: Dynamic Notch Volume slider.
+  * 📞 **Incoming Call**: Full incoming call sheet with Accept & Decline actions.
+
+### 13. 4 Audio Visualizer Styles & Speed Dynamics
+* **Classic Bars**: Multi-column vertical equalizer.
+* **Audio Waveform**: Acoustic speech & instrument voice waveform.
+* **Breathing Dot**: Minimalist ambient breathing dot.
+* **Neon Frequency**: Spectral shimmer frequency bars with cyan-to-accent neon gradients.
+* **Dynamic Speeds**: Gentle, Balanced, or Energetic response frequencies.
+
+### 14. Gesture Engine & Apple Taptic Engine
 * **Single Tap**: Expand / Collapse in place.
 * **Double Tap**: Configurable quick action (Play/Pause, Next Track, Toggle Torch, Toggle SOS, Toggle Silent, Cycle Visualizer, Expand/Collapse).
 * **Long Press**: Cycle active modes with haptic vibration.

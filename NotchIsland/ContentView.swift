@@ -7,6 +7,7 @@ struct ContentView: View {
     @ObservedObject var battery = BatteryService.shared
     @ObservedObject var bgEngine = BackgroundEngine.shared
     @ObservedObject var torch = TorchService.shared
+    @State private var showingWhatsNew: Bool = false
 
     var body: some View {
         ZStack {
@@ -26,6 +27,9 @@ struct ContentView: View {
 
                     // Connected Audio Route & Flashlight Quick Bar
                     quickStatusSection
+
+                    // Interactive Test Lab & Dynamic Island Notification Simulator
+                    dynamicIslandTestLab
 
                     // Activity Mode Switcher (All 6 features)
                     activitySelector
@@ -67,6 +71,9 @@ struct ContentView: View {
         .onAppear {
             nowPlaying.checkPermissions()
         }
+        .sheet(isPresented: $showingWhatsNew) {
+            WhatsNewView(isPresented: $showingWhatsNew, themeColor: state.theme.color)
+        }
     }
 
     // MARK: - Header Bar
@@ -77,12 +84,21 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 4.0 • iPhone 11")
+                Text("Dynamic Island 4.1 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
 
             Spacer()
+
+            Button(action: {
+                HapticService.shared.selection()
+                showingWhatsNew = true
+            }) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 21))
+                    .foregroundColor(state.theme.color)
+            }
 
             if battery.isLowPowerMode {
                 HStack(spacing: 4) {
@@ -263,6 +279,91 @@ struct ContentView: View {
                 }
                 .padding(.horizontal, 4)
             }
+        }
+    }
+
+    // MARK: - Dynamic Island Notification Test Lab
+    private var dynamicIslandTestLab: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "flask.fill")
+                    .foregroundColor(state.theme.color)
+                Text("DYNAMIC ISLAND TEST LAB")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.2)
+                Spacer()
+                Text("Tap to Trigger")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 4)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                testTriggerButton(title: "⚡ Fast Charge", color: .green) {
+                    state.testSimulateChargerPlug()
+                }
+
+                testTriggerButton(title: "🎧 AirPods Pro", color: state.theme.color) {
+                    state.testSimulateAirPodsConnect()
+                }
+
+                testTriggerButton(title: "🪫 Low Battery (10%)", color: .red) {
+                    state.testSimulateLowBattery()
+                }
+
+                testTriggerButton(title: "🔋 Full Charge (100%)", color: .green) {
+                    state.testSimulateFullCharge()
+                }
+
+                testTriggerButton(title: "🌡️ Device Hot (43°C)", color: .orange) {
+                    state.testSimulateThermal()
+                }
+
+                testTriggerButton(title: "⏱️ Focus Finished", color: .orange) {
+                    state.testSimulateTimerFinish()
+                }
+
+                testTriggerButton(title: "📋 Clipboard HUD", color: .cyan) {
+                    state.testSimulateClipboard()
+                }
+
+                testTriggerButton(title: "🔔 Silent / Ring HUD", color: state.isSilentOn ? .green : .red) {
+                    state.toggleSilentMode()
+                }
+
+                testTriggerButton(title: "🔊 Volume HUD (85%)", color: .white) {
+                    state.showVolumeHUD(level: 0.85)
+                }
+
+                testTriggerButton(title: "📞 Incoming Call", color: .green) {
+                    state.testSimulateIncomingCall()
+                }
+            }
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func testTriggerButton(title: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .lineLimit(1)
+                Spacer()
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color(white: 0.13))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(color.opacity(0.35), lineWidth: 1)
+            )
         }
     }
 
@@ -930,7 +1031,7 @@ struct ContentView: View {
             }
             .padding(.horizontal, 4)
 
-            HStack(spacing: 8) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(VisualizerStyle.allCases) { style in
                     Button(action: {
                         HapticService.shared.selection()
@@ -941,6 +1042,7 @@ struct ContentView: View {
                                 .font(.system(size: 11, weight: .bold))
                             Text(style.rawValue)
                                 .font(.system(size: 11, weight: .semibold))
+                            Spacer()
                         }
                         .foregroundColor(state.visualizerStyle == style ? .black : .white)
                         .padding(.horizontal, 10)
@@ -952,6 +1054,30 @@ struct ContentView: View {
                     }
                 }
             }
+
+            // Dynamics / Response Speed
+            HStack(spacing: 8) {
+                Text("Dynamics:")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.gray)
+
+                ForEach(VisualizerSpeed.allCases) { spd in
+                    Button(action: {
+                        HapticService.shared.selection()
+                        state.visualizerSpeed = spd
+                    }) {
+                        Text(spd.rawValue)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(state.visualizerSpeed == spd ? .black : .white)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(state.visualizerSpeed == spd ? state.theme.color : Color(white: 0.15))
+                            .clipShape(Capsule())
+                    }
+                }
+                Spacer()
+            }
+            .padding(.top, 2)
         }
         .padding(13)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1315,5 +1441,116 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {}
+}
+
+// MARK: - What's New in Dynamic Notch 4.1 Sheet
+struct WhatsNewView: View {
+    @Binding var isPresented: Bool
+    let themeColor: Color
+
+    var body: some View {
+        ZStack {
+            Color(red: 0.05, green: 0.05, blue: 0.06).ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                // Header
+                VStack(spacing: 5) {
+                    Text("What's New in")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.gray)
+                    Text("Dynamic Notch 4.1")
+                        .font(.system(size: 26, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                .padding(.top, 24)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "music.note.list",
+                            color: themeColor,
+                            title: "Universal Media & App Badges",
+                            desc: "Real-time sync with Spotify, YouTube, Stremio, Safari, and Apple Music with branded source app badges."
+                        )
+
+                        featureRow(
+                            icon: "airpodspro",
+                            color: .green,
+                            title: "Direct In-Island AirPlay Routing",
+                            desc: "Embedded AVRoutePickerView lets you switch audio output and view connected AirPods battery without opening the app."
+                        )
+
+                        featureRow(
+                            icon: "flask.fill",
+                            color: .yellow,
+                            title: "Dynamic Island Test Lab",
+                            desc: "One-tap simulator to preview charging surge, AirPods connect, low battery, 100% full preservation, thermal warning, and volume HUD."
+                        )
+
+                        featureRow(
+                            icon: "waveform.path.ecg",
+                            color: .cyan,
+                            title: "4 Visualizer Styles & Speed Control",
+                            desc: "Classic Bars, Voice Waveform, Breathing Dot, and Neon Frequency Shimmer with adjustable Gentle, Balanced, or Energetic speeds."
+                        )
+
+                        featureRow(
+                            icon: "speedometer",
+                            color: .green,
+                            title: "IOKit Hardware Diagnostics",
+                            desc: "True raw battery voltage, charging wattage, temperature, and cycle count pulled directly from device firmware."
+                        )
+
+                        featureRow(
+                            icon: "exclamationmark.shield.fill",
+                            color: .red,
+                            title: "Emergency SOS Beacon",
+                            desc: "International Morse code light strobe for emergencies, accessible directly via custom double-tap gestures."
+                        )
+                    }
+                    .padding(.horizontal, 20)
+                }
+
+                Button(action: {
+                    HapticService.shared.medium()
+                    isPresented = false
+                }) {
+                    Text("Continue")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(themeColor)
+                        .clipShape(Capsule())
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 20)
+            }
+        }
+    }
+
+    private func featureRow(icon: String, color: Color, title: String, desc: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.18))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(color)
+            }
+            .padding(.top, 2)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13.5, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                Text(desc)
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundColor(.gray)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
 }
 

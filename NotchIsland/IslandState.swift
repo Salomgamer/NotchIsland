@@ -82,6 +82,7 @@ enum VisualizerStyle: String, CaseIterable, Identifiable {
     case equalizer = "Classic Bars"
     case pulseWave = "Audio Waveform"
     case breathingDot = "Breathing Dot"
+    case neonGlow = "Neon Frequency"
 
     var id: String { rawValue }
 
@@ -90,6 +91,23 @@ enum VisualizerStyle: String, CaseIterable, Identifiable {
         case .equalizer: return "chart.bar.fill"
         case .pulseWave: return "waveform"
         case .breathingDot: return "circle.circle.fill"
+        case .neonGlow: return "sparkles"
+        }
+    }
+}
+
+enum VisualizerSpeed: String, CaseIterable, Identifiable {
+    case gentle = "Gentle"
+    case balanced = "Balanced"
+    case energetic = "Energetic"
+
+    var id: String { rawValue }
+
+    var multiplier: Double {
+        switch self {
+        case .gentle: return 1.4
+        case .balanced: return 1.0
+        case .energetic: return 0.65
         }
     }
 }
@@ -148,6 +166,7 @@ class IslandState: ObservableObject {
 
     // MARK: - Visualizer & Multi-Activity
     @Published var visualizerStyle: VisualizerStyle = .equalizer
+    @Published var visualizerSpeed: VisualizerSpeed = .balanced
     @Published var dualActivityEnabled: Bool = true
     @Published var clipboardHUDEnabled: Bool = true
     private var lastClipboardChangeCount: Int = UIPasteboard.general.changeCount
@@ -738,5 +757,92 @@ class IslandState: ObservableObject {
     func toggleSpeaker() {
         HapticService.shared.light()
         isSpeakerOn.toggle()
+    }
+
+    // MARK: - Interactive Test Lab Simulators
+    func testSimulateChargerPlug() {
+        isCharging = true
+        HapticService.shared.chargeHaptic()
+        triggerNotification(
+            title: "Charging Started",
+            subtitle: "\(batteryPercentage)% • Fast Charging (20W)",
+            icon: "bolt.fill",
+            color: .green
+        )
+    }
+
+    func testSimulateAirPodsConnect() {
+        NowPlayingService.shared.currentRouteType = .airPodsPro
+        NowPlayingService.shared.currentRouteName = "AirPods Pro"
+        NowPlayingService.shared.accessoryBattery = 95
+        HapticService.shared.success()
+        triggerNotification(
+            title: "AirPods Pro",
+            subtitle: "Connected • 95% Battery • Spatial Audio",
+            icon: "airpodspro",
+            color: Color(red: 0.18, green: 0.84, blue: 0.38)
+        )
+    }
+
+    func testSimulateLowBattery() {
+        HapticService.shared.warning()
+        triggerNotification(
+            title: "Low Battery",
+            subtitle: "10% Remaining • Connect Charger",
+            icon: "battery.25",
+            color: .red
+        )
+    }
+
+    func testSimulateFullCharge() {
+        HapticService.shared.success()
+        triggerNotification(
+            title: "Fully Charged",
+            subtitle: "Battery 100% • Optimal Cell Health",
+            icon: "battery.100.bolt",
+            color: .green
+        )
+    }
+
+    func testSimulateThermal() {
+        HapticService.shared.warning()
+        triggerNotification(
+            title: "Device Hot (43.2°C)",
+            subtitle: "iPhone needs to cool down",
+            icon: "thermometer.sun.fill",
+            color: .red
+        )
+    }
+
+    func testSimulateTimerFinish() {
+        HapticService.shared.heavy()
+        AudioServicesPlayAlertSound(1005)
+        triggerNotification(
+            title: "Focus Complete",
+            subtitle: "25:00 Session finished!",
+            icon: "timer",
+            color: .orange
+        )
+    }
+
+    func testSimulateClipboard() {
+        HapticService.shared.light()
+        triggerNotification(
+            title: "Copied to Clipboard",
+            subtitle: "https://github.com/Salomgamer/NotchIsland",
+            icon: "doc.on.clipboard.fill",
+            color: Color(red: 0.0, green: 0.94, blue: 1.0)
+        )
+    }
+
+    func testSimulateIncomingCall() {
+        HapticService.shared.medium()
+        withAnimation {
+            callerName = "Tim Cook"
+            callerSubtitle = "Apple Park • Cupertino"
+            isCallActive = false
+            setMode(.call)
+            isExpanded = true
+        }
     }
 }

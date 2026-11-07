@@ -246,9 +246,16 @@ struct FloatingIslandView: View {
                             .background(Color.orange.opacity(0.22))
                             .clipShape(Capsule())
                         } else if nowPlaying.currentRouteType.isExternalOrHeadphones {
-                            Image(systemName: nowPlaying.currentRouteType.iconName)
-                                .font(.system(size: 8.5, weight: .bold))
-                                .foregroundColor(subtitleColor)
+                            HStack(spacing: 2) {
+                                Image(systemName: nowPlaying.currentRouteType.iconName)
+                                    .font(.system(size: 8.5, weight: .bold))
+                                    .foregroundColor(subtitleColor)
+                                if let accBat = nowPlaying.accessoryBattery {
+                                    Text("\(accBat)%")
+                                        .font(.system(size: 7.5, weight: .bold, design: .rounded))
+                                        .foregroundColor(subtitleColor.opacity(0.9))
+                                }
+                            }
                         }
 
                         if nowPlaying.isPlaying {
@@ -580,6 +587,17 @@ struct FloatingIslandView: View {
                             .font(.system(size: 7.5, weight: .medium, design: .monospaced))
                             .foregroundColor(.gray)
                     }
+                }
+
+                Button(action: {
+                    state.showVolumeHUD(level: state.systemVolume)
+                }) {
+                    Image(systemName: state.systemVolume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                        .font(.system(size: 9.5, weight: .bold))
+                        .foregroundColor(.white.opacity(0.85))
+                        .padding(5)
+                        .background(Color.white.opacity(0.12))
+                        .clipShape(Circle())
                 }
             }
         }
@@ -1001,6 +1019,8 @@ struct FloatingIslandView: View {
             VoiceWaveformView(color: color)
         case .breathingDot:
             BreathingDotView(color: color)
+        case .neonGlow:
+            NeonGlowFrequencyView(color: color)
         }
     }
 
@@ -1260,6 +1280,43 @@ struct BreathingDotView: View {
                     opacity = 1.0
                 }
             }
+    }
+}
+
+// MARK: - Animated Neon Frequency Visualizer
+struct NeonGlowFrequencyView: View {
+    let color: Color
+    @State private var animating = false
+
+    var body: some View {
+        HStack(spacing: 1.5) {
+            neonBar(minH: 3, maxH: 12, delay: 0.0)
+            neonBar(minH: 7, maxH: 4, delay: 0.15)
+            neonBar(minH: 4, maxH: 14, delay: 0.08)
+            neonBar(minH: 9, maxH: 3, delay: 0.22)
+            neonBar(minH: 3, maxH: 10, delay: 0.12)
+        }
+        .frame(height: 14)
+        .shadow(color: color.opacity(0.8), radius: 3, x: 0, y: 0)
+        .onAppear { animating = true }
+    }
+
+    private func neonBar(minH: CGFloat, maxH: CGFloat, delay: Double) -> some View {
+        RoundedRectangle(cornerRadius: 0.8)
+            .fill(
+                LinearGradient(
+                    colors: [color, Color.cyan.opacity(0.9)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(width: 1.6, height: animating ? maxH : minH)
+            .animation(
+                Animation.easeInOut(duration: 0.32)
+                    .repeatForever(autoreverses: true)
+                    .delay(delay),
+                value: animating
+            )
     }
 }
 
