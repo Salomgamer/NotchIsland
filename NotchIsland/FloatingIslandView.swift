@@ -717,6 +717,17 @@ struct FloatingIslandView: View {
                         .background(Color.white.opacity(0.15))
                         .clipShape(Capsule())
                 }
+
+                if !state.isTimerRunning && state.remainingSeconds < state.totalSeconds {
+                    Button(action: { state.resetTimer() }) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(4)
+                            .background(Color.white.opacity(0.18))
+                            .clipShape(Circle())
+                    }
+                }
             }
             .foregroundColor(.white)
         }
