@@ -106,8 +106,8 @@ struct ContentView: View {
                 ZStack {
                     FloatingIslandView(state: state)
                         .frame(width: state.islandWidth, height: state.islandHeight)
-                        .clipShape(RoundedRectangle(cornerRadius: state.isExpanded ? 28 : 24, style: .continuous))
-                        .shadow(color: .black.opacity(0.7), radius: 12, x: 0, y: 4)
+                        .clipShape(RoundedRectangle(cornerRadius: state.isExpanded ? 24 : 18, style: .continuous))
+                        .shadow(color: .black.opacity(0.7), radius: 10, x: 0, y: 3)
 
                     PiPAnchorRepresentable()
                         .frame(width: state.islandWidth, height: state.islandHeight)
@@ -211,8 +211,8 @@ struct ContentView: View {
             HStack {
                 Image(systemName: "music.note.list")
                     .foregroundColor(state.theme.color)
-                Text("Spotify & Media Integration")
-                    .font(.system(size: 12, weight: .bold))
+                Text("Universal Media (Spotify, YouTube, Safari, Stremio)")
+                    .font(.system(size: 11.5, weight: .bold))
                     .foregroundColor(.white)
                 Spacer()
                 Text(nowPlaying.isPlaying ? "Playing" : "Standby")
@@ -224,9 +224,15 @@ struct ContentView: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(.white)
 
-            Text("Artist: \(state.mediaArtist)")
-                .font(.system(size: 10.5))
-                .foregroundColor(.gray)
+            HStack(spacing: 6) {
+                Text("Artist: \(state.mediaArtist)")
+                    .font(.system(size: 10.5))
+                    .foregroundColor(.gray)
+
+                Text("• App: \(nowPlaying.sourceAppName)")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(state.theme.color)
+            }
 
             Divider().background(Color.white.opacity(0.1))
 
@@ -266,7 +272,7 @@ struct ContentView: View {
                 Button(action: {
                     nowPlaying.requestAllPermissions()
                 }) {
-                    Text("Sync Now Playing & Re-check")
+                    Text("Sync Media")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.black)
                         .padding(.horizontal, 10)
@@ -275,12 +281,27 @@ struct ContentView: View {
                         .clipShape(Capsule())
                 }
 
+                Button(action: {
+                    state.triggerNotification(title: "Notification Pop", subtitle: "Auto-expanded Dynamic Island!")
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bell.badge.fill")
+                        Text("Test Pop")
+                    }
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color(white: 0.18))
+                    .clipShape(Capsule())
+                }
+
                 Spacer()
 
                 Button(action: {
                     state.toggleExpanded()
                 }) {
-                    Text(state.isExpanded ? "Collapse Island" : "Expand Island")
+                    Text(state.isExpanded ? "Collapse" : "Expand")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 10)

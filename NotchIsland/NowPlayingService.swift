@@ -8,12 +8,15 @@ class NowPlayingService: ObservableObject {
     static let shared = NowPlayingService()
 
     @Published var title: String = "No Music Playing"
-    @Published var artist: String = "Play Spotify or Apple Music"
+    @Published var artist: String = "Play Spotify, YouTube, Safari, or Stremio"
+    @Published var sourceAppName: String = "Media"
     @Published var isPlaying: Bool = false
     @Published var artworkImage: UIImage?
+    @Published var artworkAccentColor: Color?
     @Published var hasMediaPermission: Bool = false
     @Published var lastSyncTime: Date = Date()
 
+    private var previousTrackTitle: String = ""
     private var pollTimer: Timer?
 
     typealias MRGetNowPlayingInfoFunction = @convention(c) (DispatchQueue, @escaping ([String: Any]?) -> Void) -> Void
@@ -47,7 +50,6 @@ class NowPlayingService: ObservableObject {
     }
 
     private func resolveMediaRemote() {
-        // Load MediaRemote from dyld shared cache
         var handle = dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_NOW)
         if handle == nil {
             handle = dlopen(nil, RTLD_NOW)
@@ -77,7 +79,6 @@ class NowPlayingService: ObservableObject {
     }
 
     private func setupAudioSessionObserver() {
-        // Listen to system audio interruptions and secondary audio hints
         NotificationCenter.default.addObserver(
             forName: AVAudioSession.silenceSecondaryAudioHintNotification,
             object: nil,
@@ -95,7 +96,7 @@ class NowPlayingService: ObservableObject {
             object: nil
         )
 
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: true) { [weak self] _ in
             self?.queryNowPlaying()
         }
 
@@ -103,7 +104,6 @@ class NowPlayingService: ObservableObject {
     }
 
     @objc func queryNowPlaying() {
-        // Check hardware audio session first
         let isAudioActive = AVAudioSession.sharedInstance().isOtherAudioPlaying
 
         if let getInfo = self.getNowPlayingInfoFunc {
@@ -120,26 +120,40 @@ class NowPlayingService: ObservableObject {
                         ?? (dict["kMRMediaRemoteNowPlayingInfoAlbum"] as? String)
                         ?? (dict["album"] as? String)
 
+                    let detectedApp = self.extractSourceApp(from: dict)
+                    self.sourceAppName = detectedApp
+
                     let rate = (dict["kMRMediaRemoteNowPlayingInfoPlaybackRate"] as? Double) ?? 1.0
 
                     if let t = trackTitle, !t.isEmpty {
+                        let isNewTrack = (self.previousTrackTitle != t) && !self.previousTrackTitle.isEmpty
+                        self.previousTrackTitle = t
+
                         self.title = t
-                        self.artist = trackArtist ?? "Spotify"
+                        self.artist = trackArtist ?? detectedApp
                         self.isPlaying = (rate > 0.0) || isAudioActive
                         self.lastSyncTime = Date()
 
                         if let rawData = (dict["kMRMediaRemoteNowPlayingInfoArtworkData"] as? Data) ?? (dict["artworkData"] as? Data),
                            let img = UIImage(data: rawData) {
                             self.artworkImage = img
+                            self.extractAccentColor(from: img)
+                        }
+
+                        // Trigger auto-expand on track change
+                        if isNewTrack {
+                            IslandState.shared.triggerNotification(title: t, subtitle: "\(trackArtist ?? detectedApp) • \(detectedApp)")
                         }
                         return
                     }
                 }
 
+                // If media metadata is not exposed, but audio is streaming (YouTube, Safari, Stremio)
                 if isAudioActive {
                     if self.title == "No Music Playing" || self.title.isEmpty {
-                        self.title = "Spotify Music Playing"
-                        self.artist = "Live Audio Active"
+                        self.title = "Live Audio Playing"
+                        self.artist = "YouTube / Stremio / Safari"
+                        self.sourceAppName = "Media Stream"
                     }
                     self.isPlaying = true
                     return
@@ -152,26 +166,98 @@ class NowPlayingService: ObservableObject {
         }
     }
 
+    private func extractSourceApp(from dict: [String: Any]) -> String {
+        if let client = dict["kMRMediaRemoteNowPlayingInfoClientProperties"] as? [String: Any] {
+            if let displayName = client["displayName"] as? String, !displayName.isEmpty {
+                return displayName
+            }
+            if let bundleId = client["bundleIdentifier"] as? String {
+                return parseAppName(bundleId)
+            }
+        }
+        if let bundleId = dict["kMRMediaRemoteNowPlayingApplicationBundleIdentifier"] as? String {
+            return parseAppName(bundleId)
+        }
+        if let appName = dict["kMRMediaRemoteNowPlayingApplicationDisplayName"] as? String {
+            return appName
+        }
+        return "Spotify"
+    }
+
+    private func parseAppName(_ bundleId: String) -> String {
+        let b = bundleId.lowercased()
+        if b.contains("youtube") { return "YouTube" }
+        if b.contains("stremio") { return "Stremio" }
+        if b.contains("safari") { return "Safari" }
+        if b.contains("spotify") { return "Spotify" }
+        if b.contains("netflix") { return "Netflix" }
+        if b.contains("soundcloud") { return "SoundCloud" }
+        if b.contains("music") { return "Apple Music" }
+        if b.contains("podcast") { return "Podcasts" }
+        return "Media"
+    }
+
     private func checkMPMusicFallback(isAudioActive: Bool) {
         let player = MPMusicPlayerController.systemMusicPlayer
         if let item = player.nowPlayingItem, let itemTitle = item.title {
+            let isNewTrack = (self.previousTrackTitle != itemTitle) && !self.previousTrackTitle.isEmpty
+            self.previousTrackTitle = itemTitle
+
             self.title = itemTitle
-            self.artist = item.artist ?? "Music"
+            self.artist = item.artist ?? "Apple Music"
+            self.sourceAppName = "Apple Music"
             self.isPlaying = (player.playbackState == .playing) || isAudioActive
             if let artwork = item.artwork {
-                self.artworkImage = artwork.image(at: CGSize(width: 48, height: 48))
+                let img = artwork.image(at: CGSize(width: 64, height: 64))
+                self.artworkImage = img
+                if let validImg = img {
+                    self.extractAccentColor(from: validImg)
+                }
+            }
+
+            if isNewTrack {
+                IslandState.shared.triggerNotification(title: itemTitle, subtitle: item.artist ?? "Apple Music")
             }
         } else if isAudioActive {
             if self.title == "No Music Playing" || self.title.isEmpty {
-                self.title = "Spotify Audio Playing"
-                self.artist = "Live Audio Active"
+                self.title = "Live Audio Playing"
+                self.artist = "YouTube / Stremio / Safari"
+                self.sourceAppName = "Media Stream"
             }
             self.isPlaying = true
         } else {
             self.title = "No Music Playing"
-            self.artist = "Play track in Spotify"
+            self.artist = "Play Spotify, YouTube, Safari, or Stremio"
             self.isPlaying = false
             self.artworkImage = nil
+            self.artworkAccentColor = nil
+            self.previousTrackTitle = ""
+        }
+    }
+
+    private func extractAccentColor(from image: UIImage) {
+        guard let cgImage = image.cgImage else { return }
+        var pixelData = [UInt8](repeating: 0, count: 4)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+
+        guard let context = CGContext(
+            data: &pixelData,
+            width: 1,
+            height: 1,
+            bitsPerComponent: 8,
+            bytesPerRow: 4,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo
+        ) else { return }
+
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+
+        let r = Double(pixelData[0]) / 255.0
+        let g = Double(pixelData[1]) / 255.0
+        let b = Double(pixelData[2]) / 255.0
+        DispatchQueue.main.async {
+            self.artworkAccentColor = Color(red: r, green: g, blue: b)
         }
     }
 

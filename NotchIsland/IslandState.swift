@@ -2,7 +2,7 @@ import SwiftUI
 import Combine
 
 enum IslandMode: String, CaseIterable {
-    case media = "Music"
+    case media = "Music & Battery"
     case call = "Call HUD"
     case timer = "Timer"
     case stopwatch = "Stopwatch"
@@ -11,9 +11,9 @@ enum IslandMode: String, CaseIterable {
 }
 
 enum IslandSize: String, CaseIterable {
-    case slim = "Slim (160×46)"
-    case compact = "Compact (180×52)"
-    case expanded = "Expanded (210×64)"
+    case slim = "Slim (144×32)"
+    case compact = "Compact (156×36)"
+    case expanded = "Expanded (216×68)"
 }
 
 enum AccentTheme: String, CaseIterable {
@@ -41,10 +41,17 @@ class IslandState: ObservableObject {
     @Published var size: IslandSize = .compact
     @Published var theme: AccentTheme = .spotifyGreen
     @Published var isExpanded: Bool = false
+    @Published var isMultipurpose: Bool = true
+
+    // MARK: - Notification Banner State
+    @Published var activeNotificationTitle: String = ""
+    @Published var activeNotificationSubtitle: String = ""
+    @Published var isShowingNotification: Bool = false
+    private var notificationDismissWorkItem: DispatchWorkItem?
 
     // MARK: - Media State
     @Published var mediaTitle: String = "No Music Playing"
-    @Published var mediaArtist: String = "Play track in Spotify"
+    @Published var mediaArtist: String = "Play Spotify, YouTube, Safari, or Stremio"
     @Published var mediaProgress: Double = 0.45
     @Published var isMediaPlaying: Bool = false
 
@@ -62,6 +69,7 @@ class IslandState: ObservableObject {
     // MARK: - Stopwatch State
     @Published var stopwatchSeconds: Double = 0.0
     @Published var isStopwatchRunning: Bool = false
+    @Published var stopwatchLaps: [String] = []
 
     // MARK: - Battery State
     @Published var batteryPercentage: Int = 100
@@ -75,20 +83,20 @@ class IslandState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     var islandWidth: CGFloat {
-        if isExpanded { return 230 }
+        if isExpanded { return 216 }
         switch size {
-        case .slim: return 160
-        case .compact: return 180
-        case .expanded: return 210
+        case .slim: return 144
+        case .compact: return 156
+        case .expanded: return 186
         }
     }
 
     var islandHeight: CGFloat {
-        if isExpanded { return 72 }
+        if isExpanded { return 68 }
         switch size {
-        case .slim: return 46
-        case .compact: return 52
-        case .expanded: return 64
+        case .slim: return 32
+        case .compact: return 36
+        case .expanded: return 48
         }
     }
 
@@ -109,6 +117,7 @@ class IslandState: ObservableObject {
         self.mode = .media
         self.size = .compact
         self.theme = .spotifyGreen
+        self.isMultipurpose = true
 
         // 1. Bind exact hardware battery
         let bs = BatteryService.shared
@@ -119,8 +128,20 @@ class IslandState: ObservableObject {
             self?.batteryPercentage = newPct
         }.store(in: &cancellables)
 
+        var initialChargingState: Bool? = nil
         bs.$isCharging.receive(on: DispatchQueue.main).sink { [weak self] charging in
-            self?.isCharging = charging
+            guard let self = self else { return }
+            let wasCharging = self.isCharging
+            self.isCharging = charging
+
+            if initialChargingState == nil {
+                initialChargingState = charging
+                return
+            }
+
+            if !wasCharging && charging {
+                self.triggerNotification(title: "Charging Started", subtitle: "\(self.batteryPercentage)% • Fast Charging")
+            }
         }.store(in: &cancellables)
 
         // 2. Bind live Now Playing
@@ -166,10 +187,41 @@ class IslandState: ObservableObject {
     }
 
     func toggleExpanded() {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+        HapticService.shared.medium()
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
             self.isExpanded.toggle()
+            if !self.isExpanded {
+                self.isShowingNotification = false
+            }
         }
         PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+    }
+
+    // MARK: - Live Notification Auto-Expansion
+    func triggerNotification(title: String, subtitle: String) {
+        notificationDismissWorkItem?.cancel()
+        HapticService.shared.medium()
+
+        DispatchQueue.main.async {
+            self.activeNotificationTitle = title
+            self.activeNotificationSubtitle = subtitle
+            self.isShowingNotification = true
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
+                self.isExpanded = true
+            }
+            PiPIslandManager.shared.updateSize(width: self.islandWidth, height: self.islandHeight)
+
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self = self else { return }
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.75)) {
+                    self.isShowingNotification = false
+                    self.isExpanded = false
+                }
+                PiPIslandManager.shared.updateSize(width: self.islandWidth, height: self.islandHeight)
+            }
+            self.notificationDismissWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.8, execute: workItem)
+        }
     }
 
     // MARK: - Timer Logic
@@ -181,6 +233,9 @@ class IslandState: ObservableObject {
                 guard let self = self, self.isTimerRunning else { return }
                 if self.remainingSeconds > 0 {
                     self.remainingSeconds -= 1
+                } else {
+                    self.isTimerRunning = false
+                    self.triggerNotification(title: "Focus Complete", subtitle: "Session finished!")
                 }
             }
     }
@@ -204,10 +259,18 @@ class IslandState: ObservableObject {
             }
     }
 
+    func recordLap() {
+        HapticService.shared.light()
+        let lapTime = stopwatchFormatted
+        let lapNumber = stopwatchLaps.count + 1
+        stopwatchLaps.insert("Lap \(lapNumber) — \(lapTime)", at: 0)
+    }
+
     func resetStopwatch() {
         stopwatchCancellable?.cancel()
         stopwatchSeconds = 0.0
         isStopwatchRunning = false
+        stopwatchLaps.removeAll()
     }
 
     // MARK: - Call HUD Logic
