@@ -54,6 +54,9 @@ struct ContentView: View {
                     // Lock Under Notch Instructions
                     notchPlacementGuide
 
+                    // Signature Haptics Showcase
+                    hapticsShowcaseSection
+
                     // System Permissions & Diagnostics
                     permissionsSection
                 }
@@ -74,7 +77,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 3.4 • iPhone 11")
+                Text("Dynamic Island 3.5 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1154,6 +1157,87 @@ struct ContentView: View {
                 Text("Tap Launch, swipe to Home Screen, and drag the floating island to the top center. It locks flush under the physical notch.")
                     .font(.system(size: 10.5))
                     .foregroundColor(.gray)
+            }
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: - Signature Haptics Showcase
+    private var hapticsShowcaseSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "hand.tap.fill")
+                    .foregroundColor(state.theme.color)
+                Text("APPLE TAPTIC FEEDBACK")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.2)
+                Spacer()
+                Text("Taptic Engine")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 4)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                Button(action: { HapticService.shared.selection() }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "hand.point.up.left.fill")
+                            .font(.system(size: 11))
+                        Text("Selection")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color(white: 0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+
+                Button(action: { HapticService.shared.medium() }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left")
+                            .font(.system(size: 11))
+                        Text("Expand Spring")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color(white: 0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+
+                Button(action: { HapticService.shared.chargeHaptic() }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 11))
+                        Text("Charge Surge")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color(white: 0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+
+                Button(action: { HapticService.shared.doubleTapHaptic() }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "hand.tap.fill")
+                            .font(.system(size: 11))
+                        Text("Double-Tap")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color(white: 0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
             }
         }
         .padding(13)

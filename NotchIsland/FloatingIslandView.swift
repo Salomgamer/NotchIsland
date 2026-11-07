@@ -255,15 +255,12 @@ struct FloatingIslandView: View {
                         }
                     }
 
-                    HStack(spacing: 2) {
-                        Text("\(state.batteryPercentage)%")
-                            .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                            .foregroundColor(batteryColor)
-
-                        Image(systemName: state.isCharging ? "bolt.fill" : (BatteryService.shared.isLowPowerMode ? "battery.100.bolt" : "battery.100"))
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(batteryColor)
-                    }
+                    PillBatteryView(
+                        percentage: state.batteryPercentage,
+                        isCharging: state.isCharging,
+                        isLowPower: BatteryService.shared.isLowPowerMode,
+                        color: batteryColor
+                    )
                 }
             }
             .padding(.horizontal, 9)
@@ -482,14 +479,12 @@ struct FloatingIslandView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                HStack(spacing: 2) {
-                    Text("\(state.batteryPercentage)%")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundColor(batteryColor)
-                    Image(systemName: state.isCharging ? "bolt.fill" : "battery.100")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(batteryColor)
-                }
+                PillBatteryView(
+                    percentage: state.batteryPercentage,
+                    isCharging: state.isCharging,
+                    isLowPower: BatteryService.shared.isLowPowerMode,
+                    color: batteryColor
+                )
                 .padding(.horizontal, 6)
                 .padding(.vertical, 3)
                 .background(Color.white.opacity(0.10))
@@ -1204,5 +1199,38 @@ struct BreathingDotView: View {
                     opacity = 1.0
                 }
             }
+    }
+}
+
+// MARK: - Pulsing Battery Indicator Pill
+struct PillBatteryView: View {
+    let percentage: Int
+    let isCharging: Bool
+    let isLowPower: Bool
+    let color: Color
+
+    @State private var pulse: Bool = false
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Text("\(percentage)%")
+                .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                .foregroundColor(color)
+
+            Image(systemName: isCharging ? "bolt.fill" : (isLowPower ? "battery.100.bolt" : "battery.100"))
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundColor(color)
+                .opacity(isCharging ? (pulse ? 1.0 : 0.6) : (percentage <= 10 ? (pulse ? 1.0 : 0.4) : 1.0))
+                .scaleEffect(isCharging ? (pulse ? 1.08 : 0.95) : 1.0)
+                .animation(
+                    isCharging || percentage <= 10
+                        ? Animation.easeInOut(duration: 0.8).repeatForever(autoreverses: true)
+                        : .default,
+                    value: pulse
+                )
+                .onAppear {
+                    pulse = true
+                }
+        }
     }
 }

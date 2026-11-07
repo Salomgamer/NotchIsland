@@ -98,7 +98,9 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
     case playPause = "Play / Pause"
     case nextTrack = "Next Track"
     case toggleTorch = "Toggle Torch"
+    case toggleSOS = "Toggle SOS Beacon"
     case toggleSilent = "Toggle Silent"
+    case cycleVisualizer = "Cycle Visualizer"
     case expandCollapse = "Expand / Collapse"
 
     var id: String { rawValue }
@@ -108,7 +110,9 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         case .playPause: return "playpause.fill"
         case .nextTrack: return "forward.fill"
         case .toggleTorch: return "flashlight.on.fill"
+        case .toggleSOS: return "exclamationmark.shield.fill"
         case .toggleSilent: return "bell.slash.fill"
+        case .cycleVisualizer: return "waveform"
         case .expandCollapse: return "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left"
         }
     }
@@ -536,10 +540,29 @@ class IslandState: ObservableObject {
             NowPlayingService.shared.nextTrack()
         case .toggleTorch:
             TorchService.shared.toggleTorch()
+        case .toggleSOS:
+            TorchService.shared.toggleSOS()
         case .toggleSilent:
             toggleSilentMode()
+        case .cycleVisualizer:
+            cycleNextVisualizer()
         case .expandCollapse:
             toggleExpanded()
+        }
+    }
+
+    func cycleNextVisualizer() {
+        let all = VisualizerStyle.allCases
+        if let idx = all.firstIndex(of: visualizerStyle) {
+            let next = all[(idx + 1) % all.count]
+            self.visualizerStyle = next
+            HapticService.shared.selection()
+            triggerNotification(
+                title: "Visualizer Changed",
+                subtitle: next.rawValue,
+                icon: next.icon,
+                color: theme.color
+            )
         }
     }
 
