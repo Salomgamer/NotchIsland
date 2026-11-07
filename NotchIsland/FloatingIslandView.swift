@@ -520,13 +520,19 @@ struct FloatingIslandView: View {
 
                 VStack(spacing: 2) {
                     GeometryReader { geo in
+                        let progressWidth = max(4, geo.size.width * CGFloat(nowPlaying.trackProgress))
                         ZStack(alignment: .leading) {
                             Capsule()
                                 .fill(Color.white.opacity(0.20))
                                 .frame(height: 4)
                             Capsule()
                                 .fill(subtitleColor)
-                                .frame(width: max(4, geo.size.width * CGFloat(nowPlaying.trackProgress)), height: 4)
+                                .frame(width: progressWidth, height: 4)
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 7, height: 7)
+                                .shadow(color: .black.opacity(0.5), radius: 2)
+                                .offset(x: max(0, progressWidth - 3.5))
                         }
                         .contentShape(Rectangle())
                         .gesture(
@@ -537,7 +543,7 @@ struct FloatingIslandView: View {
                                 }
                         )
                     }
-                    .frame(height: 4)
+                    .frame(height: 7)
 
                     HStack {
                         Text(nowPlaying.elapsedFormatted)
@@ -1040,13 +1046,14 @@ struct VoiceWaveformView: View {
     @State private var animating = false
 
     var body: some View {
-        HStack(spacing: 2.0) {
-            bar(minHeight: 3, maxHeight: 12, delay: 0.0)
-            bar(minHeight: 10, maxHeight: 4, delay: 0.10)
-            bar(minHeight: 4, maxHeight: 14, delay: 0.05)
-            bar(minHeight: 9, maxHeight: 3, delay: 0.15)
+        HStack(spacing: 1.8) {
+            bar(minHeight: 2.5, maxHeight: 8.0, delay: 0.0)
+            bar(minHeight: 5.0, maxHeight: 12.0, delay: 0.10)
+            bar(minHeight: 8.0, maxHeight: 15.0, delay: 0.05)
+            bar(minHeight: 5.0, maxHeight: 12.0, delay: 0.15)
+            bar(minHeight: 2.5, maxHeight: 8.0, delay: 0.20)
         }
-        .frame(height: 14)
+        .frame(height: 15)
         .onAppear { animating = true }
     }
 
