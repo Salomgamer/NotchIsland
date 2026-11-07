@@ -216,6 +216,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
     case copySongInfo = "Copy Track to Clipboard"
     case testFaceID = "Simulate Face ID"
     case cycleVisualizer = "Cycle Visualizer"
+    case cycleTheme = "Cycle Theme Accent"
     case stealthMode = "Stealth Mode"
     case expandCollapse = "Expand / Collapse"
 
@@ -236,6 +237,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         case .copySongInfo: return "doc.on.doc.fill"
         case .testFaceID: return "faceid"
         case .cycleVisualizer: return "waveform"
+        case .cycleTheme: return "paintpalette.fill"
         case .stealthMode: return "eye.slash.fill"
         case .expandCollapse: return "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left"
         }
@@ -837,6 +839,19 @@ class IslandState: ObservableObject {
             testSimulateFaceID()
         case .cycleVisualizer:
             cycleNextVisualizer()
+        case .cycleTheme:
+            let all = IslandTheme.allCases
+            if let idx = all.firstIndex(of: theme) {
+                let next = all[(idx + 1) % all.count]
+                self.theme = next
+                HapticService.shared.selection()
+                triggerNotification(
+                    title: "Theme Changed",
+                    subtitle: next.rawValue,
+                    icon: "paintpalette.fill",
+                    color: next.color
+                )
+            }
         case .stealthMode:
             if mode == .blank {
                 setMode(.media)

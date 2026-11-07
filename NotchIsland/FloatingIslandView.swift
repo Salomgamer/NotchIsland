@@ -2050,6 +2050,7 @@ struct PillBatteryView: View {
                 .foregroundColor(color)
                 .opacity(isCharging ? (pulse ? 1.0 : 0.6) : (percentage <= 10 ? (pulse ? 1.0 : 0.4) : 1.0))
                 .scaleEffect(isCharging ? (pulse ? 1.08 : 0.95) : 1.0)
+                .shadow(color: isCharging ? Color.green.opacity(pulse ? 0.6 : 0.2) : .clear, radius: 3)
                 .animation(
                     isCharging || percentage <= 10
                         ? Animation.easeInOut(duration: 0.8).repeatForever(autoreverses: true)

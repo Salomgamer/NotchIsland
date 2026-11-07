@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 5.8 • Golden Master")
+                Text("Dynamic Island 5.9 • Golden Master")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1886,7 +1886,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 5.8 Sheet
+// MARK: - What's New in Dynamic Notch 5.9 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1901,7 +1901,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 5.8")
+                    Text("Dynamic Notch 5.9")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("GOLDEN MASTER EDITION")
@@ -1913,6 +1913,20 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "bolt.fill",
+                            color: .green,
+                            title: "Battery Charging Radiant Halo",
+                            desc: "Subtle emerald radiant glow halo gently pulsing around the battery indicator while connected to power."
+                        )
+
+                        featureRow(
+                            icon: "paintpalette.fill",
+                            color: themeColor,
+                            title: "Double-Tap Theme Accent Cycle",
+                            desc: "Quickly cycle through your favorite neon and pastel accent themes directly with a double-tap on the notch."
+                        )
+
                         featureRow(
                             icon: "doc.on.doc.fill",
                             color: Color(red: 0.18, green: 0.84, blue: 0.38),
