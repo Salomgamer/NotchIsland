@@ -39,6 +39,9 @@ struct ContentView: View {
                     // Island Background Style Picker
                     backgroundSection
 
+                    // Audio Visualizer Style Picker
+                    visualizerSection
+
                     // Gesture Actions (Double-Tap & Long-Press)
                     gesturesSection
 
@@ -71,7 +74,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 3.1 • iPhone 11")
+                Text("Dynamic Island 3.2 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -226,17 +229,27 @@ struct ContentView: View {
                     .foregroundColor(.gray.opacity(0.8))
                     .kerning(1.2)
                 Spacer()
-                HStack(spacing: 4) {
-                    Text("Auto-Switch")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(state.autoSwitchModes ? state.theme.color : .gray)
-                    Toggle("", isOn: $state.autoSwitchModes)
-                        .labelsHidden()
-                        .onChange(of: state.autoSwitchModes) { val in
-                            if val {
-                                state.evaluateActiveMode()
+                HStack(spacing: 8) {
+                    HStack(spacing: 3) {
+                        Text("Auto")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(state.autoSwitchModes ? state.theme.color : .gray)
+                        Toggle("", isOn: $state.autoSwitchModes)
+                            .labelsHidden()
+                            .onChange(of: state.autoSwitchModes) { val in
+                                if val {
+                                    state.evaluateActiveMode()
+                                }
                             }
-                        }
+                    }
+
+                    HStack(spacing: 3) {
+                        Text("Dual")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(state.dualActivityEnabled ? state.theme.color : .gray)
+                        Toggle("", isOn: $state.dualActivityEnabled)
+                            .labelsHidden()
+                    }
                 }
             }
             .padding(.horizontal, 4)
@@ -839,6 +852,52 @@ struct ContentView: View {
                     .frame(width: 180)
             }
             .padding(.top, 2)
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: - Audio Visualizer Style Section
+    private var visualizerSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "waveform")
+                    .foregroundColor(state.theme.color)
+                Text("AUDIO VISUALIZER STYLE")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.2)
+                Spacer()
+                Text(state.visualizerStyle.rawValue)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(state.theme.color)
+            }
+            .padding(.horizontal, 4)
+
+            HStack(spacing: 8) {
+                ForEach(VisualizerStyle.allCases) { style in
+                    Button(action: {
+                        HapticService.shared.selection()
+                        state.visualizerStyle = style
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: style.icon)
+                                .font(.system(size: 11, weight: .bold))
+                            Text(style.rawValue)
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundColor(state.visualizerStyle == style ? .black : .white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(state.visualizerStyle == style ? state.theme.color : Color(white: 0.13))
+                        )
+                    }
+                }
+            }
         }
         .padding(13)
         .frame(maxWidth: .infinity, alignment: .leading)

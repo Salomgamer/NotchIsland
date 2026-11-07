@@ -58,6 +58,8 @@ enum IslandBackgroundStyle: String, CaseIterable, Identifiable {
     case darkObsidian = "Dark Obsidian"
     case deepCrimson = "Deep Crimson"
     case cyberNeon = "Cyber Neon"
+    case auroraBorealis = "Aurora Borealis"
+    case sunsetHorizon = "Sunset Horizon"
 
     var id: String { rawValue }
 
@@ -70,6 +72,24 @@ enum IslandBackgroundStyle: String, CaseIterable, Identifiable {
         case .darkObsidian: return "shield.fill"
         case .deepCrimson: return "flame.fill"
         case .cyberNeon: return "bolt.fill"
+        case .auroraBorealis: return "sparkles"
+        case .sunsetHorizon: return "sunset.fill"
+        }
+    }
+}
+
+enum VisualizerStyle: String, CaseIterable, Identifiable {
+    case equalizer = "Classic Bars"
+    case pulseWave = "Audio Waveform"
+    case breathingDot = "Breathing Dot"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .equalizer: return "chart.bar.fill"
+        case .pulseWave: return "waveform"
+        case .breathingDot: return "circle.circle.fill"
         }
     }
 }
@@ -121,6 +141,14 @@ class IslandState: ObservableObject {
     @Published var isExpanded: Bool = false
     @Published var isMultipurpose: Bool = true
     @Published var autoSwitchModes: Bool = true
+
+    // MARK: - Visualizer & Multi-Activity
+    @Published var visualizerStyle: VisualizerStyle = .equalizer
+    @Published var dualActivityEnabled: Bool = true
+
+    var isDualActivityActive: Bool {
+        return dualActivityEnabled && mode == .media && isTimerRunning && remainingSeconds > 0 && remainingSeconds < totalSeconds
+    }
 
     // MARK: - Background Customization
     @Published var backgroundStyle: IslandBackgroundStyle = .oledBlack

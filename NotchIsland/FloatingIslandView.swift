@@ -137,6 +137,20 @@ struct FloatingIslandView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+
+        case .auroraBorealis:
+            LinearGradient(
+                colors: [Color(red: 0.02, green: 0.28, blue: 0.22).opacity(state.backgroundOpacity), Color(red: 0.01, green: 0.08, blue: 0.14).opacity(state.backgroundOpacity)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+        case .sunsetHorizon:
+            LinearGradient(
+                colors: [Color(red: 0.32, green: 0.08, blue: 0.24).opacity(state.backgroundOpacity), Color(red: 0.12, green: 0.04, blue: 0.16).opacity(state.backgroundOpacity)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
     }
 
@@ -203,7 +217,7 @@ struct FloatingIslandView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Trailing: Multipurpose Equalizer + Route + Exact Battery Together
+                // Trailing: Multipurpose Dual-Activity / Equalizer + Route + Exact Battery Together
                 HStack(spacing: 3.5) {
                     if state.mode == .call {
                         if state.isCallActive {
@@ -217,13 +231,27 @@ struct FloatingIslandView: View {
                                 .foregroundColor(.green)
                         }
                     } else {
-                        if nowPlaying.currentRouteType.isExternalOrHeadphones {
+                        if state.isDualActivityActive {
+                            HStack(spacing: 2) {
+                                Image(systemName: "timer")
+                                    .font(.system(size: 7.5, weight: .bold))
+                                    .foregroundColor(.orange)
+                                Text(state.timerFormatted)
+                                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.orange)
+                            }
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1.5)
+                            .background(Color.orange.opacity(0.22))
+                            .clipShape(Capsule())
+                        } else if nowPlaying.currentRouteType.isExternalOrHeadphones {
                             Image(systemName: nowPlaying.currentRouteType.iconName)
                                 .font(.system(size: 8.5, weight: .bold))
                                 .foregroundColor(subtitleColor)
                         }
+
                         if nowPlaying.isPlaying {
-                            EqualizerWaveformView(color: subtitleColor)
+                            audioVisualizer(color: subtitleColor)
                         }
                     }
 
@@ -404,20 +432,25 @@ struct FloatingIslandView: View {
     private var expandedMediaContent: some View {
         VStack(spacing: 6) {
             HStack(spacing: 10) {
-                if let artwork = nowPlaying.artworkImage {
-                    ZStack(alignment: .bottomTrailing) {
-                        Image(uiImage: artwork)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 32, height: 32)
-                            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                Button(action: {
+                    openPlayingApp()
+                }) {
+                    if let artwork = nowPlaying.artworkImage {
+                        ZStack(alignment: .bottomTrailing) {
+                            Image(uiImage: artwork)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 32, height: 32)
+                                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
 
-                        AppSourceIconView(source: nowPlaying.sourceAppName, size: 10)
-                            .offset(x: 2, y: 2)
+                            AppSourceIconView(source: nowPlaying.sourceAppName, size: 10)
+                                .offset(x: 2, y: 2)
+                        }
+                    } else {
+                        AppSourceIconView(source: nowPlaying.sourceAppName, size: 32)
                     }
-                } else {
-                    AppSourceIconView(source: nowPlaying.sourceAppName, size: 32)
                 }
+                .buttonStyle(PlainButtonStyle())
 
                 VStack(alignment: .leading, spacing: 2) {
                     MarqueeText(
@@ -912,6 +945,42 @@ struct FloatingIslandView: View {
             return .green
         }
     }
+
+    @ViewBuilder
+    private func audioVisualizer(color: Color) -> some View {
+        switch state.visualizerStyle {
+        case .equalizer:
+            EqualizerWaveformView(color: color)
+        case .pulseWave:
+            VoiceWaveformView(color: color)
+        case .breathingDot:
+            BreathingDotView(color: color)
+        }
+    }
+
+    private func openPlayingApp() {
+        let app = nowPlaying.sourceAppName.lowercased()
+        var urlString: String? = nil
+        if app.contains("spotify") {
+            urlString = "spotify://"
+        } else if app.contains("youtube music") {
+            urlString = "youtubemusic://"
+        } else if app.contains("youtube") {
+            urlString = "youtube://"
+        } else if app.contains("music") {
+            urlString = "music://"
+        } else if app.contains("stremio") {
+            urlString = "stremio://"
+        } else if app.contains("soundcloud") {
+            urlString = "soundcloud://"
+        } else if app.contains("safari") {
+            urlString = "http://"
+        }
+        if let str = urlString, let url = URL(string: str), UIApplication.shared.canOpenURL(url) {
+            HapticService.shared.medium()
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        }
+    }
 }
 
 // MARK: - App Source Icon View (YouTube, Spotify, Safari, Stremio, etc.)
@@ -1111,5 +1180,29 @@ private struct TextWidthPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+// MARK: - Animated Breathing Dot Visualizer
+struct BreathingDotView: View {
+    let color: Color
+    @State private var scale: CGFloat = 0.82
+    @State private var opacity: Double = 0.60
+
+    var body: some View {
+        Circle()
+            .fill(color)
+            .frame(width: 5.5, height: 5.5)
+            .scaleEffect(scale)
+            .opacity(opacity)
+            .onAppear {
+                withAnimation(
+                    Animation.easeInOut(duration: 0.60)
+                        .repeatForever(autoreverses: true)
+                ) {
+                    scale = 1.25
+                    opacity = 1.0
+                }
+            }
     }
 }
