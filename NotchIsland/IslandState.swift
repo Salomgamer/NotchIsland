@@ -1,5 +1,7 @@
 import SwiftUI
 import Combine
+import AudioToolbox
+import AVFoundation
 
 enum IslandMode: String, CaseIterable {
     case media = "Music & Battery"
@@ -43,11 +45,22 @@ class IslandState: ObservableObject {
     @Published var isExpanded: Bool = false
     @Published var isMultipurpose: Bool = true
 
+    // MARK: - Custom Size Calibration
+    @Published var useCustomSize: Bool = false
+    @Published var customWidth: CGFloat = 156
+    @Published var customHeight: CGFloat = 36
+    @Published var customCornerRadius: CGFloat = 18
+
     // MARK: - Notification Banner State
     @Published var activeNotificationTitle: String = ""
     @Published var activeNotificationSubtitle: String = ""
     @Published var isShowingNotification: Bool = false
     private var notificationDismissWorkItem: DispatchWorkItem?
+
+    // MARK: - Volume HUD State
+    @Published var systemVolume: Float = 0.5
+    @Published var isShowingVolumeHUD: Bool = false
+    private var volumeHUDDismissItem: DispatchWorkItem?
 
     // MARK: - Media State
     @Published var mediaTitle: String = "No Music Playing"
@@ -60,6 +73,9 @@ class IslandState: ObservableObject {
     @Published var callerSubtitle: String = "Mobile • iPhone"
     @Published var callDuration: Int = 0
     @Published var isCallActive: Bool = false
+    @Published var isCallMuted: Bool = false
+    @Published var isSpeakerOn: Bool = false
+    private var callTimer: AnyCancellable?
 
     // MARK: - Timer State
     @Published var remainingSeconds: Double = 1500
@@ -74,6 +90,7 @@ class IslandState: ObservableObject {
     // MARK: - Battery State
     @Published var batteryPercentage: Int = 100
     @Published var isCharging: Bool = false
+    private var previousBatteryLevel: Int = 100
 
     // MARK: - Silent HUD State
     @Published var isSilentOn: Bool = true
@@ -84,6 +101,7 @@ class IslandState: ObservableObject {
 
     var islandWidth: CGFloat {
         if isExpanded { return 216 }
+        if useCustomSize { return customWidth }
         switch size {
         case .slim: return 144
         case .compact: return 156
@@ -93,6 +111,7 @@ class IslandState: ObservableObject {
 
     var islandHeight: CGFloat {
         if isExpanded { return 68 }
+        if useCustomSize { return customHeight }
         switch size {
         case .slim: return 32
         case .compact: return 36
@@ -122,10 +141,19 @@ class IslandState: ObservableObject {
         // 1. Bind exact hardware battery
         let bs = BatteryService.shared
         self.batteryPercentage = bs.percentage
+        self.previousBatteryLevel = bs.percentage
         self.isCharging = bs.isCharging
 
         bs.$percentage.receive(on: DispatchQueue.main).sink { [weak self] newPct in
-            self?.batteryPercentage = newPct
+            guard let self = self else { return }
+            let prev = self.previousBatteryLevel
+            self.batteryPercentage = newPct
+            self.previousBatteryLevel = newPct
+
+            // Low battery alert trigger at 20%
+            if prev > 20 && newPct <= 20 && !self.isCharging {
+                self.triggerNotification(title: "Low Battery", subtitle: "\(newPct)% • Connect Charger")
+            }
         }.store(in: &cancellables)
 
         var initialChargingState: Bool? = nil
@@ -158,7 +186,51 @@ class IslandState: ObservableObject {
             self?.isMediaPlaying = playing
         }.store(in: &cancellables)
 
+        setupVolumeObserver()
         startTimer()
+    }
+
+    private func setupVolumeObserver() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+            self.systemVolume = AVAudioSession.sharedInstance().outputVolume
+        } catch {
+            print("Audio session error: \(error)")
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("AVSystemController_SystemVolumeDidChangeNotification"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notif in
+            guard let self = self else { return }
+            if let userInfo = notif.userInfo,
+               let vol = userInfo["AVSystemController_AudioVolumeNotificationParameter"] as? Float {
+                self.showVolumeHUD(level: vol)
+            } else {
+                let vol = AVAudioSession.sharedInstance().outputVolume
+                self.showVolumeHUD(level: vol)
+            }
+        }
+    }
+
+    func showVolumeHUD(level: Float) {
+        self.systemVolume = level
+        self.volumeHUDDismissItem?.cancel()
+        HapticService.shared.light()
+
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.75)) {
+            self.isShowingVolumeHUD = true
+        }
+
+        let item = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                self.isShowingVolumeHUD = false
+            }
+        }
+        self.volumeHUDDismissItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8, execute: item)
     }
 
     func setMode(_ newMode: IslandMode) {
@@ -183,7 +255,16 @@ class IslandState: ObservableObject {
 
     func setSize(_ newSize: IslandSize) {
         self.size = newSize
+        self.useCustomSize = false
         PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+    }
+
+    func updateCustomCalibration(width: CGFloat, height: CGFloat, cornerRadius: CGFloat) {
+        self.customWidth = width
+        self.customHeight = height
+        self.customCornerRadius = cornerRadius
+        self.useCustomSize = true
+        PiPIslandManager.shared.updateSize(width: width, height: height)
     }
 
     func toggleExpanded() {
@@ -235,6 +316,8 @@ class IslandState: ObservableObject {
                     self.remainingSeconds -= 1
                 } else {
                     self.isTimerRunning = false
+                    AudioServicesPlayAlertSound(1005)
+                    AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
                     self.triggerNotification(title: "Focus Complete", subtitle: "Session finished!")
                 }
             }
@@ -275,18 +358,46 @@ class IslandState: ObservableObject {
 
     // MARK: - Call HUD Logic
     func answerCall() {
+        HapticService.shared.success()
         withAnimation {
             isCallActive = true
             callerName = "Connected Call"
             callerSubtitle = "00:01"
+            callDuration = 1
         }
+        startCallTimer()
     }
 
     func declineCall() {
+        HapticService.shared.heavy()
+        callTimer?.cancel()
         withAnimation {
             isCallActive = false
             callerName = "Call Ended"
             callerSubtitle = "Dismissed"
         }
+    }
+
+    private func startCallTimer() {
+        callTimer?.cancel()
+        callTimer = Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self, self.isCallActive else { return }
+                self.callDuration += 1
+                let m = self.callDuration / 60
+                let s = self.callDuration % 60
+                self.callerSubtitle = String(format: "%02d:%02d", m, s)
+            }
+    }
+
+    func toggleCallMute() {
+        HapticService.shared.light()
+        isCallMuted.toggle()
+    }
+
+    func toggleSpeaker() {
+        HapticService.shared.light()
+        isSpeakerOn.toggle()
     }
 }

@@ -35,6 +35,9 @@ struct ContentView: View {
                     // Notch Sizing Profile
                     notchProfileSection
 
+                    // Notch Precision Calibrator
+                    notchCalibratorSection
+
                     // Lock Under Notch Instructions
                     notchPlacementGuide
 
@@ -296,6 +299,22 @@ struct ContentView: View {
                     .clipShape(Capsule())
                 }
 
+                Button(action: {
+                    let newVol = min(1.0, state.systemVolume + 0.1)
+                    state.showVolumeHUD(level: newVol)
+                }) {
+                    HStack(spacing: 3) {
+                        Image(systemName: "speaker.wave.2.fill")
+                        Text("Vol HUD")
+                    }
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color(white: 0.18))
+                    .clipShape(Capsule())
+                }
+
                 Spacer()
 
                 Button(action: {
@@ -366,6 +385,26 @@ struct ContentView: View {
                         .padding(.vertical, 6)
                         .background(Color.red)
                         .clipShape(Capsule())
+                }
+
+                if state.isCallActive {
+                    Button(action: { state.toggleCallMute() }) {
+                        Image(systemName: state.isCallMuted ? "mic.slash.fill" : "mic.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(state.isCallMuted ? .red : .white)
+                            .padding(6)
+                            .background(Color(white: 0.16))
+                            .clipShape(Circle())
+                    }
+
+                    Button(action: { state.toggleSpeaker() }) {
+                        Image(systemName: state.isSpeakerOn ? "speaker.wave.3.fill" : "speaker.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(state.isSpeakerOn ? .green : .white)
+                            .padding(6)
+                            .background(Color(white: 0.16))
+                            .clipShape(Circle())
+                    }
                 }
             }
         }
@@ -449,6 +488,18 @@ struct ContentView: View {
                 }
 
                 Button(action: {
+                    state.recordLap()
+                }) {
+                    Text("Lap")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(Color(white: 0.16))
+                        .clipShape(Capsule())
+                }
+
+                Button(action: {
                     state.resetStopwatch()
                 }) {
                     Text("Reset")
@@ -459,6 +510,17 @@ struct ContentView: View {
                         .background(Color(white: 0.16))
                         .clipShape(Capsule())
                 }
+            }
+
+            if !state.stopwatchLaps.isEmpty {
+                VStack(alignment: .leading, spacing: 3) {
+                    ForEach(state.stopwatchLaps.prefix(4), id: \.self) { lap in
+                        Text(lap)
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.top, 4)
             }
         }
     }
@@ -596,6 +658,81 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Notch Precision Calibrator
+    private var notchCalibratorSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "slider.horizontal.3")
+                    .foregroundColor(state.theme.color)
+                Text("PIXEL CALIBRATOR (CUSTOM NOTCH FIT)")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                Spacer()
+                Toggle("", isOn: $state.useCustomSize)
+                    .labelsHidden()
+                    .onChange(of: state.useCustomSize) { _ in
+                        HapticService.shared.selection()
+                        PiPIslandManager.shared.updateSize(width: state.islandWidth, height: state.islandHeight)
+                    }
+            }
+
+            if state.useCustomSize {
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("Width: \(Int(state.customWidth))pt")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Slider(value: $state.customWidth, in: 130...220, step: 2)
+                            .frame(width: 180)
+                            .onChange(of: state.customWidth) { w in
+                                state.updateCustomCalibration(width: w, height: state.customHeight, cornerRadius: state.customCornerRadius)
+                            }
+                    }
+
+                    HStack {
+                        Text("Height: \(Int(state.customHeight))pt")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Slider(value: $state.customHeight, in: 28...46, step: 2)
+                            .frame(width: 180)
+                            .onChange(of: state.customHeight) { h in
+                                state.updateCustomCalibration(width: state.customWidth, height: h, cornerRadius: state.customCornerRadius)
+                            }
+                    }
+
+                    HStack {
+                        Text("Radius: \(Int(state.customCornerRadius))pt")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Slider(value: $state.customCornerRadius, in: 12...24, step: 1)
+                            .frame(width: 180)
+                            .onChange(of: state.customCornerRadius) { r in
+                                state.updateCustomCalibration(width: state.customWidth, height: state.customHeight, cornerRadius: r)
+                            }
+                    }
+
+                    Button(action: {
+                        HapticService.shared.light()
+                        state.updateCustomCalibration(width: 156, height: 36, cornerRadius: 18)
+                    }) {
+                        Text("Reset to iPhone 11 Standard (156×36)")
+                            .font(.system(size: 10.5, weight: .semibold))
+                            .foregroundColor(state.theme.color)
+                            .padding(.vertical, 4)
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     // MARK: - Notch Placement Guide
