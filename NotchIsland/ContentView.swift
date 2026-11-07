@@ -220,11 +220,26 @@ struct ContentView: View {
     // MARK: - Activity Mode Selector
     private var activitySelector: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("DYNAMIC ACTIVITIES")
-                .font(.system(size: 10.5, weight: .bold))
-                .foregroundColor(.gray.opacity(0.8))
-                .kerning(1.2)
-                .padding(.horizontal, 4)
+            HStack {
+                Text("DYNAMIC ACTIVITIES")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.gray.opacity(0.8))
+                    .kerning(1.2)
+                Spacer()
+                HStack(spacing: 4) {
+                    Text("Auto-Switch")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(state.autoSwitchModes ? state.theme.color : .gray)
+                    Toggle("", isOn: $state.autoSwitchModes)
+                        .labelsHidden()
+                        .onChange(of: state.autoSwitchModes) { val in
+                            if val {
+                                state.evaluateActiveMode()
+                            }
+                        }
+                }
+            }
+            .padding(.horizontal, 4)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(IslandMode.allCases, id: \.self) { mode in
@@ -257,6 +272,9 @@ struct ContentView: View {
     private var modeInteractiveSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             switch state.mode {
+            case .blank:
+                blankControls
+
             case .media:
                 mediaControls
 
@@ -280,6 +298,53 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(white: 0.08))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: - Blank Controls
+    private var blankControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "eye.slash.fill")
+                    .foregroundColor(state.theme.color)
+                Text("Blank / Stealth Notch Mode")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                Spacer()
+                Text("Active Stealth")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.gray)
+            }
+
+            Text("Presents a pure black silhouette that blends invisibly into the physical iPhone 11 notch. Dynamic Notch remains completely silent until a media stream starts, a phone call connects, or the charger is plugged in.")
+                .font(.system(size: 10.5))
+                .foregroundColor(.gray)
+
+            HStack {
+                Button(action: {
+                    state.setMode(.media)
+                }) {
+                    Text("Switch to Music & Battery")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(state.theme.color)
+                        .clipShape(Capsule())
+                }
+
+                Button(action: {
+                    state.triggerNotification(title: "Stealth Island", subtitle: "Tap or play audio to activate")
+                }) {
+                    Text("Test Ping")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color(white: 0.16))
+                        .clipShape(Capsule())
+                }
+            }
+        }
     }
 
     // MARK: - Media Controls

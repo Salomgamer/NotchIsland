@@ -175,66 +175,71 @@ struct FloatingIslandView: View {
     }
 
     // MARK: - Multipurpose Compact Content (Music + Battery Together)
+    @ViewBuilder
     private var multipurposeCompactContent: some View {
-        HStack(spacing: 6) {
-            // Leading: Song Cover Thumbnail with Playing App Badge
-            songCoverThumbnail
+        if state.mode == .blank {
+            Color.clear
+        } else {
+            HStack(spacing: 6) {
+                // Leading: Song Cover Thumbnail with Playing App Badge
+                songCoverThumbnail
 
-            // Center: Song Name & Source/Artist
-            VStack(alignment: .leading, spacing: 0.5) {
-                Text(state.mode == .call ? state.callerName : state.mediaTitle)
-                    .font(.system(size: 10.5, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                HStack(spacing: 3) {
-                    Text(state.mode == .call ? state.callerSubtitle : state.mediaArtist)
-                        .font(.system(size: 8.5, weight: .semibold, design: .rounded))
-                        .foregroundColor(subtitleColor)
+                // Center: Song Name & Source/Artist
+                VStack(alignment: .leading, spacing: 0.5) {
+                    Text(state.mode == .call ? state.callerName : state.mediaTitle)
+                        .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
                         .lineLimit(1)
                         .truncationMode(.tail)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Trailing: Multipurpose Equalizer + Route + Exact Battery Together
-            HStack(spacing: 3.5) {
-                if state.mode == .call {
-                    if state.isCallActive {
-                        Circle()
-                            .fill(Color.orange)
-                            .frame(width: 4.5, height: 4.5)
-                        VoiceWaveformView(color: Color.green)
-                    } else {
-                        Image(systemName: "phone.fill")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.green)
-                    }
-                } else {
-                    if nowPlaying.currentRouteType.isExternalOrHeadphones {
-                        Image(systemName: nowPlaying.currentRouteType.iconName)
-                            .font(.system(size: 8.5, weight: .bold))
+                    HStack(spacing: 3) {
+                        Text(state.mode == .call ? state.callerSubtitle : state.mediaArtist)
+                            .font(.system(size: 8.5, weight: .semibold, design: .rounded))
                             .foregroundColor(subtitleColor)
-                    }
-                    if nowPlaying.isPlaying {
-                        EqualizerWaveformView(color: subtitleColor)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                HStack(spacing: 2) {
-                    Text("\(state.batteryPercentage)%")
-                        .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                        .foregroundColor(batteryColor)
+                // Trailing: Multipurpose Equalizer + Route + Exact Battery Together
+                HStack(spacing: 3.5) {
+                    if state.mode == .call {
+                        if state.isCallActive {
+                            Circle()
+                                .fill(Color.orange)
+                                .frame(width: 4.5, height: 4.5)
+                            VoiceWaveformView(color: Color.green)
+                        } else {
+                            Image(systemName: "phone.fill")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.green)
+                        }
+                    } else {
+                        if nowPlaying.currentRouteType.isExternalOrHeadphones {
+                            Image(systemName: nowPlaying.currentRouteType.iconName)
+                                .font(.system(size: 8.5, weight: .bold))
+                                .foregroundColor(subtitleColor)
+                        }
+                        if nowPlaying.isPlaying {
+                            EqualizerWaveformView(color: subtitleColor)
+                        }
+                    }
 
-                    Image(systemName: state.isCharging ? "bolt.fill" : (BatteryService.shared.isLowPowerMode ? "battery.100.bolt" : "battery.100"))
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(batteryColor)
+                    HStack(spacing: 2) {
+                        Text("\(state.batteryPercentage)%")
+                            .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                            .foregroundColor(batteryColor)
+
+                        Image(systemName: state.isCharging ? "bolt.fill" : (BatteryService.shared.isLowPowerMode ? "battery.100.bolt" : "battery.100"))
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(batteryColor)
+                    }
                 }
             }
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
         }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 4)
     }
 
     // MARK: - Song Cover Thumbnail with App Icon
@@ -309,6 +314,9 @@ struct FloatingIslandView: View {
     @ViewBuilder
     private var expandedActivityContent: some View {
         switch state.mode {
+        case .blank:
+            expandedBlankContent
+
         case .media:
             expandedMediaContent
 
@@ -327,6 +335,68 @@ struct FloatingIslandView: View {
         case .silent:
             expandedSilentContent
         }
+    }
+
+    // MARK: - Expanded Blank / Stealth Status
+    private var expandedBlankContent: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.12))
+                    .frame(width: 30, height: 30)
+                Image(systemName: "applelogo")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Dynamic Notch")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+
+                HStack(spacing: 4) {
+                    Text("\(state.batteryPercentage)%")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundColor(batteryColor)
+
+                    Image(systemName: state.isCharging ? "bolt.fill" : "battery.100")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(batteryColor)
+
+                    Text("• \(nowPlaying.currentRouteName)")
+                        .font(.system(size: 9.5, weight: .medium))
+                        .foregroundColor(.gray)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 6) {
+                Button(action: {
+                    TorchService.shared.toggleTorch()
+                }) {
+                    Image(systemName: TorchService.shared.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(TorchService.shared.isTorchOn ? .black : .white)
+                        .padding(7)
+                        .background(TorchService.shared.isTorchOn ? Color.yellow : Color.white.opacity(0.15))
+                        .clipShape(Circle())
+                }
+
+                Button(action: {
+                    state.setMode(.media)
+                }) {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(7)
+                        .background(Color.white.opacity(0.15))
+                        .clipShape(Circle())
+                }
+            }
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Expanded Media

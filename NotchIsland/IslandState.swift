@@ -4,6 +4,7 @@ import AudioToolbox
 import AVFoundation
 
 enum IslandMode: String, CaseIterable {
+    case blank = "Blank / Stealth"
     case media = "Music & Battery"
     case call = "Call HUD"
     case timer = "Timer"
@@ -119,6 +120,7 @@ class IslandState: ObservableObject {
     @Published var theme: AccentTheme = .spotifyGreen
     @Published var isExpanded: Bool = false
     @Published var isMultipurpose: Bool = true
+    @Published var autoSwitchModes: Bool = true
 
     // MARK: - Background Customization
     @Published var backgroundStyle: IslandBackgroundStyle = .oledBlack
@@ -278,7 +280,9 @@ class IslandState: ObservableObject {
         }.store(in: &cancellables)
 
         np.$isPlaying.receive(on: DispatchQueue.main).sink { [weak self] playing in
-            self?.isMediaPlaying = playing
+            guard let self = self else { return }
+            self.isMediaPlaying = playing
+            self.evaluateActiveMode()
         }.store(in: &cancellables)
 
         setupVolumeObserver()
@@ -331,6 +335,8 @@ class IslandState: ObservableObject {
     func setMode(_ newMode: IslandMode) {
         self.mode = newMode
         switch newMode {
+        case .blank:
+            break
         case .media:
             break
         case .call:
@@ -346,6 +352,59 @@ class IslandState: ObservableObject {
             break
         }
         PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+    }
+
+    func evaluateActiveMode() {
+        guard autoSwitchModes else { return }
+
+        // 1. Phone Call Active or Incoming
+        if isCallActive || callerName == "Incoming Call" {
+            if mode != .call {
+                setMode(.call)
+            }
+            return
+        }
+
+        // 2. Music / Media Streaming Active
+        if isMediaPlaying {
+            if mode != .media {
+                setMode(.media)
+            }
+            return
+        }
+
+        // 3. Focus Timer Active
+        if isTimerRunning && remainingSeconds > 0 && remainingSeconds < totalSeconds {
+            if mode != .timer {
+                setMode(.timer)
+            }
+            return
+        }
+
+        // 4. Stopwatch Running
+        if isStopwatchRunning {
+            if mode != .stopwatch {
+                setMode(.stopwatch)
+            }
+            return
+        }
+
+        // 5. Idle: Gracefully return to Blank mode after brief grace period
+        if mode == .media && !isMediaPlaying {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                guard let self = self, self.autoSwitchModes else { return }
+                if !self.isMediaPlaying && !self.isCallActive && !self.isStopwatchRunning {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+                        self.setMode(.blank)
+                    }
+                }
+            }
+            return
+        }
+
+        if mode != .blank && !isCallActive && !isMediaPlaying && !isStopwatchRunning {
+            setMode(.blank)
+        }
     }
 
     func cycleNextMode() {
@@ -366,6 +425,7 @@ class IslandState: ObservableObject {
 
     func iconForMode(_ mode: IslandMode) -> String {
         switch mode {
+        case .blank: return "eye.slash.fill"
         case .media: return "music.note"
         case .call: return "phone.fill"
         case .timer: return "timer"
