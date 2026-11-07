@@ -1,44 +1,69 @@
 # NotchIsland (iPhone 11 Dynamic Island Alternative)
 
-A floating, persistent pill interface built with Swift and SwiftUI that snaps directly under the iPhone 11 notch to display focus timers, media progress, and battery indicators over any app.
+A floating, persistent pill interface built with Swift and SwiftUI that snaps directly under the iPhone 11 notch to display focus timers, media playback, and battery indicators over any app.
 
 ---
 
-## How to Build the `.ipa` on Windows (No Mac Required)
+## Cloud Build: GitHub Actions macOS Runner + Google Drive Upload
 
-Because Apple requires macOS to compile iOS apps, this project uses **GitHub Actions** (a free cloud Mac runner) to build the app and package it into an `.ipa` for you automatically.
-
-### Step 1: Create a Repository on GitHub
-1. Go to [github.com/new](https://github.com/new).
-2. Name the repository: `NotchIsland`.
-3. Set it to **Public** or **Private** (both include free GitHub Actions minutes).
-4. Do not initialize with README or .gitignore (we already have them). Click **Create repository**.
-
-### Step 2: Push this folder to your GitHub repo
-Open PowerShell and run:
-```powershell
-cd C:\Users\crown\NotchIsland
-git branch -M main
-git remote add origin https://github.com/<YOUR-USERNAME>/NotchIsland.git
-git push -u origin main
-```
-
-### Step 3: Download the `.ipa`
-1. On your GitHub repository page, click the **Actions** tab.
-2. You will see the **Build NotchIsland IPA** workflow running on a macOS runner.
-3. Once completed (~2 minutes), click on the completed run and scroll to **Artifacts**.
-4. Download **`NotchIsland-IPA.zip`** and extract **`NotchIsland.ipa`**.
+Because Apple requires macOS to compile iOS apps, this project uses **GitHub Actions macOS virtual runners** to automatically build the Xcode project, package it into an `.ipa`, and upload it straight to your **Google Drive** (and GitHub Artifacts).
 
 ---
 
-## How to Install onto your iPhone 11 on Windows
+### Step 1: Push this Project to GitHub
 
-1. Download and install **[Sideloadly](https://sideloadly.io/)** (free tool for Windows).
-2. Connect your iPhone 11 to your PC via a USB cable.
-3. Open Sideloadly:
-   * Drag and drop `NotchIsland.ipa` into the app icon field.
-   * Enter your Apple ID (free Apple accounts work).
-   * Click **Start**.
-4. On your iPhone:
-   * Go to **Settings > General > VPN & Device Management** and trust your developer certificate.
+1. Create a repository at [github.com/new](https://github.com/new) named `NotchIsland` (Public or Private).
+2. Open PowerShell in this folder:
+   ```powershell
+   cd C:\Users\crown\NotchIsland
+   git remote add origin https://github.com/<YOUR-USERNAME>/NotchIsland.git
+   git push -u origin main
+   ```
+   *(Or simply run `.\setup_github.ps1`)*
+
+---
+
+### Step 2: Set up Automatic Google Drive Upload (Optional but Recommended)
+
+To have GitHub Actions automatically send the built `.ipa` to your Google Drive:
+
+1. **Enable Google Drive API & Create a Service Account:**
+   * Go to the [Google Cloud Console](https://console.cloud.google.com/).
+   * Search for **Google Drive API** and click **Enable**.
+   * Go to **APIs & Services > Credentials** → Click **Create Credentials** → **Service Account**.
+   * After creating it, click on the Service Account → go to the **Keys** tab → **Add Key** → **Create New Key (JSON)**. This downloads a `.json` key file to your PC.
+2. **Create a Folder in Google Drive:**
+   * Go to [drive.google.com](https://drive.google.com/) and create a folder (e.g. `iOS Builds`).
+   * Right-click the folder → **Share** → paste the **Service Account email** (`...iam.gserviceaccount.com` found inside your JSON file) and give it **Editor** permissions.
+   * Open the folder and copy the **Folder ID** from your browser address bar:
+     `https://drive.google.com/drive/folders/<THIS_IS_THE_FOLDER_ID>`
+3. **Add Secrets to your GitHub Repository:**
+   * In your GitHub repo, go to **Settings > Secrets and variables > Actions**.
+   * Add Repository Secret:
+     * Name: `GDRIVE_CREDENTIALS` → Value: (Paste the entire contents of your downloaded `.json` key file)
+     * Name: `GDRIVE_FOLDER_ID` → Value: (Paste your Google Drive Folder ID)
+
+---
+
+### Step 3: Trigger the Build & Get your `.ipa`
+
+1. Once pushed, go to the **Actions** tab on your GitHub repository.
+2. Click on the running workflow: **Build NotchIsland IPA**.
+3. The virtual Mac will:
+   * Generate the Xcode project with `xcodegen`.
+   * Compile the Swift code using `xcodebuild` targeting iOS.
+   * Package `NotchIsland.ipa`.
+   * Upload `NotchIsland.ipa` to your **Google Drive** folder automatically.
+   * Also save a copy under **Artifacts** on GitHub.
+
+---
+
+## Installing the `.ipa` onto your iPhone 11 (Windows)
+
+1. Download **[Sideloadly](https://sideloadly.io/)** (free for Windows).
+2. Connect your iPhone 11 via USB cable and trust your PC.
+3. Drag and drop `NotchIsland.ipa` (from your Google Drive or GitHub Artifacts) into Sideloadly.
+4. Enter your Apple ID and click **Start**.
+5. On your iPhone:
+   * Go to **Settings > General > VPN & Device Management** and trust your Apple ID certificate.
    * Open **Notch Island** and tap **Launch Floating Island**!
