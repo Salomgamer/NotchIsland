@@ -569,6 +569,28 @@ class IslandState: ObservableObject {
         startTimer()
     }
 
+    func toggleTimer() {
+        isTimerRunning.toggle()
+        HapticService.shared.selection()
+        if isTimerRunning {
+            startTimer()
+        }
+    }
+
+    func adjustTimer(by seconds: Double) {
+        remainingSeconds = max(0, remainingSeconds + seconds)
+        if remainingSeconds > totalSeconds {
+            totalSeconds = remainingSeconds
+        }
+        HapticService.shared.light()
+    }
+
+    func resetTimer() {
+        remainingSeconds = totalSeconds
+        isTimerRunning = false
+        HapticService.shared.medium()
+    }
+
     // MARK: - Stopwatch Logic
     func startStopwatch() {
         stopwatchCancellable?.cancel()

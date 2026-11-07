@@ -186,11 +186,12 @@ struct FloatingIslandView: View {
 
                 // Center: Song Name & Source/Artist
                 VStack(alignment: .leading, spacing: 0.5) {
-                    Text(state.mode == .call ? state.callerName : state.mediaTitle)
-                        .font(.system(size: 10.5, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                    MarqueeText(
+                        text: state.mode == .call ? state.callerName : state.mediaTitle,
+                        font: .system(size: 10.5, weight: .bold, design: .rounded),
+                        color: .white
+                    )
+                    .frame(height: 13)
 
                     HStack(spacing: 3) {
                         Text(state.mode == .call ? state.callerSubtitle : state.mediaArtist)
@@ -419,10 +420,12 @@ struct FloatingIslandView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(state.mediaTitle)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
+                    MarqueeText(
+                        text: state.mediaTitle,
+                        font: .system(size: 12, weight: .bold, design: .rounded),
+                        color: .white
+                    )
+                    .frame(height: 15)
 
                     HStack(spacing: 5) {
                         Text(state.mediaArtist)
@@ -530,9 +533,12 @@ struct FloatingIslandView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(state.callerName)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                    MarqueeText(
+                        text: state.callerName,
+                        font: .system(size: 12, weight: .bold, design: .rounded),
+                        color: .white
+                    )
+                    .frame(height: 15)
                     Text(state.callerSubtitle)
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundColor(state.isCallActive ? .green : .orange)
@@ -615,7 +621,7 @@ struct FloatingIslandView: View {
 
     // MARK: - Expanded Timer
     private var expandedTimerContent: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             ZStack {
                 Circle()
                     .stroke(Color.white.opacity(0.15), lineWidth: 3)
@@ -632,7 +638,7 @@ struct FloatingIslandView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Focus Session")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 Text(state.timerFormatted)
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
@@ -640,19 +646,31 @@ struct FloatingIslandView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 6) {
-                Button(action: { state.setTimerPreset(minutes: 5) }) {
-                    Text("5m")
+            HStack(spacing: 5) {
+                Button(action: { state.toggleTimer() }) {
+                    Image(systemName: state.isTimerRunning ? "pause.fill" : "play.fill")
                         .font(.system(size: 9.5, weight: .bold))
-                        .padding(.horizontal, 6)
+                        .foregroundColor(.black)
+                        .padding(6)
+                        .background(Color.orange)
+                        .clipShape(Circle())
+                }
+
+                Button(action: { state.adjustTimer(by: -60) }) {
+                    Text("-1m")
+                        .font(.system(size: 8.5, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 5)
                         .padding(.vertical, 3)
                         .background(Color.white.opacity(0.15))
                         .clipShape(Capsule())
                 }
-                Button(action: { state.setTimerPreset(minutes: 25) }) {
-                    Text("25m")
-                        .font(.system(size: 9.5, weight: .bold))
-                        .padding(.horizontal, 6)
+
+                Button(action: { state.adjustTimer(by: 60) }) {
+                    Text("+1m")
+                        .font(.system(size: 8.5, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 5)
                         .padding(.vertical, 3)
                         .background(Color.white.opacity(0.15))
                         .clipShape(Capsule())
@@ -676,17 +694,25 @@ struct FloatingIslandView: View {
                     .foregroundColor(state.theme.color)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Stopwatch")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 4) {
+                    Text("Stopwatch")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    if let firstLap = state.stopwatchLaps.first {
+                        Text("(\(firstLap))")
+                            .font(.system(size: 8, weight: .medium, design: .monospaced))
+                            .foregroundColor(.gray)
+                            .lineLimit(1)
+                    }
+                }
                 Text(state.stopwatchFormatted)
                     .font(.system(size: 13.5, weight: .bold, design: .monospaced))
                     .foregroundColor(state.theme.color)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 Button(action: {
                     if state.isStopwatchRunning {
                         state.isStopwatchRunning = false
@@ -703,14 +729,26 @@ struct FloatingIslandView: View {
                         .clipShape(Capsule())
                 }
 
-                Button(action: { state.recordLap() }) {
-                    Text("Lap")
-                        .font(.system(size: 9.5, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.18))
-                        .clipShape(Capsule())
+                if state.isStopwatchRunning {
+                    Button(action: { state.recordLap() }) {
+                        Text("Lap")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.18))
+                            .clipShape(Capsule())
+                    }
+                } else if state.stopwatchSeconds > 0 {
+                    Button(action: { state.resetStopwatch() }) {
+                        Text("Reset")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(Color.red.opacity(0.4))
+                            .clipShape(Capsule())
+                    }
                 }
             }
         }
@@ -751,9 +789,23 @@ struct FloatingIslandView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text("\(state.batteryPercentage)%")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundColor(batteryColor)
+                HStack(spacing: 5) {
+                    Button(action: {
+                        HapticService.shared.selection()
+                        BatteryService.shared.updateBattery()
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(.white.opacity(0.85))
+                            .padding(5)
+                            .background(Color.white.opacity(0.14))
+                            .clipShape(Circle())
+                    }
+
+                    Text("\(state.batteryPercentage)%")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundColor(batteryColor)
+                }
             }
 
             // Real-Time Hardware Readouts Row (Voltage, Amperage, Temp, Cycles)
@@ -965,5 +1017,99 @@ struct EqualizerWaveformView: View {
                     .delay(delay),
                 value: animating
             )
+    }
+}
+
+// MARK: - Marquee Auto-Scrolling Text View
+struct MarqueeText: View {
+    let text: String
+    let font: Font
+    let color: Color
+    var speed: Double = 30.0
+
+    @State private var textWidth: CGFloat = 0
+    @State private var offset: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { geo in
+            let containerWidth = geo.size.width
+            let shouldScroll = textWidth > containerWidth && containerWidth > 0
+            let overflow = max(0, textWidth - containerWidth + 6)
+
+            ZStack(alignment: .leading) {
+                // Background invisible text for measuring natural width
+                Text(text)
+                    .font(font)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .background(
+                        GeometryReader { textGeo in
+                            Color.clear.preference(
+                                key: TextWidthPreferenceKey.self,
+                                value: textGeo.size.width
+                            )
+                        }
+                    )
+                    .hidden()
+
+                // Foreground displayed text
+                if shouldScroll {
+                    Text(text)
+                        .font(font)
+                        .foregroundColor(color)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .offset(x: offset)
+                        .onAppear {
+                            triggerScrollAnimation(overflow: overflow)
+                        }
+                        .onChange(of: text) { _ in
+                            offset = 0
+                            triggerScrollAnimation(overflow: overflow)
+                        }
+                } else {
+                    Text(text)
+                        .font(font)
+                        .foregroundColor(color)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(width: containerWidth, alignment: .leading)
+            .clipped()
+            .onPreferenceChange(TextWidthPreferenceKey.self) { newWidth in
+                textWidth = newWidth
+                if newWidth > containerWidth && containerWidth > 0 {
+                    triggerScrollAnimation(overflow: newWidth - containerWidth + 6)
+                } else {
+                    offset = 0
+                }
+            }
+        }
+    }
+
+    private func triggerScrollAnimation(overflow: CGFloat) {
+        guard overflow > 0 else {
+            offset = 0
+            return
+        }
+        let duration = Double(overflow) / speed + 1.2
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            withAnimation(
+                Animation.easeInOut(duration: duration)
+                    .repeatForever(autoreverses: true)
+                    .delay(0.8)
+            ) {
+                offset = -overflow
+            }
+        }
+    }
+}
+
+private struct TextWidthPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
