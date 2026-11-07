@@ -2,12 +2,28 @@
 
 [![iOS 15.0+](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Version 5.9](https://img.shields.io/badge/DynamicNotch-v5.9_GM-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v5.9)
+[![Version 6.0](https://img.shields.io/badge/DynamicNotch-v6.0_Adaptive-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v6.0)
 [![License MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
 **Dynamic Notch** brings the real **Apple Dynamic Island** experience to the iPhone 11, iPhone XR, iPhone 12, iPhone 13, and all notched iOS devices. 
 
-Sitting invisibly flush under the physical camera notch, Dynamic Notch delivers live multipurpose playback, animated equalizers, split dual-activity countdowns, hardware battery diagnostics, and one-tap controls without ever disrupting your workflow.
+Sitting invisibly flush under the physical camera notch, Dynamic Notch dynamically adapts to real-time device activity: incoming telephone and VoIP calls, notification auto-expansion, live media streaming, hardware battery & charger state transitions, screenshots, and system volume/brightness HUDs.
+
+---
+
+## What's New in v6.0 (Adaptive Device Engine)
+
+* **CallKit Real-Time Phone & VoIP Call Adaptation**:
+  * Utilizes Apple's native `CallKit` (`CXCallObserver`) to detect incoming cellular and VoIP calls in real time.
+  * Synchronized telephone ring haptics and alert chime (`HapticService.startCallRingtone()`).
+  * Oscillating ringing phone glyph with ripple wave halo.
+  * Expands to `242 × 78 pt` with genuine Apple-style Decline (red) and Accept (green) capsule buttons.
+  * Live connected call elapsed timer, active green audio waveform, microphone mute, speaker switcher, and 1-tap end call button.
+* **Intelligent Notification Auto-Expansion**:
+  * Floating notch pill dynamically expands upon any system or app notification (screenshots via `UIApplication.userDidTakeScreenshotNotification`, charger plug/unplug, AirPods / Bluetooth audio route changes, thermal protection warnings, clipboard copy, and focus timer finishes).
+  * Auto-collapses with Apple spring physics after 3.8s, or collapses instantly when tapped.
+* **Hardware Power State Adaptation**:
+  * Live charger connection and disconnection alerts with exact wattage readout.
 
 ---
 

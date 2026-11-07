@@ -411,7 +411,11 @@ class IslandState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     var islandWidth: CGFloat {
-        if isExpanded { return 216 }
+        if isShowingNotification { return 232 }
+        if isExpanded {
+            if mode == .call { return 242 }
+            return 224
+        }
         if useCustomSize { return customWidth }
         switch size {
         case .slim: return 144
@@ -421,7 +425,11 @@ class IslandState: ObservableObject {
     }
 
     var islandHeight: CGFloat {
-        if isExpanded { return 68 }
+        if isShowingNotification { return 66 }
+        if isExpanded {
+            if mode == .call { return 78 }
+            return 68
+        }
         if useCustomSize { return customHeight }
         switch size {
         case .slim: return 32
@@ -490,6 +498,13 @@ class IslandState: ObservableObject {
                     icon: "bolt.fill",
                     color: .green
                 )
+            } else if wasCharging && !charging {
+                self.triggerNotification(
+                    title: "Power Disconnected",
+                    subtitle: "\(self.batteryPercentage)% • On Battery",
+                    icon: "battery.100",
+                    color: .white
+                )
             }
         }.store(in: &cancellables)
 
@@ -512,6 +527,10 @@ class IslandState: ObservableObject {
         setupVolumeObserver()
         setupClipboardObserver()
         startTimer()
+
+        // 3. Start CallKit and Device Activity Monitoring
+        CallService.shared.startMonitoring()
+        ActivityObserverService.shared.startMonitoring()
     }
 
     private func setupClipboardObserver() {
@@ -661,7 +680,7 @@ class IslandState: ObservableObject {
         guard autoSwitchModes else { return }
 
         // 1. Phone Call Active or Incoming
-        if isCallActive || callerName == "Incoming Call" {
+        if isCallActive || CallService.shared.hasActiveCall || CallService.shared.isIncoming || callerName == "Incoming Call" {
             if mode != .call {
                 setMode(.call)
             }
@@ -945,9 +964,12 @@ class IslandState: ObservableObject {
 
         HapticService.shared.medium()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
-            self.isExpanded.toggle()
-            if !self.isExpanded {
+            if self.isShowingNotification {
+                self.notificationDismissWorkItem?.cancel()
                 self.isShowingNotification = false
+                self.isExpanded = false
+            } else {
+                self.isExpanded.toggle()
             }
         }
         PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
@@ -1075,23 +1097,37 @@ class IslandState: ObservableObject {
 
     // MARK: - Call HUD Logic
     func answerCall() {
+        HapticService.shared.stopCallRingtone()
         HapticService.shared.success()
-        withAnimation {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
             isCallActive = true
             callerName = "Connected Call"
             callerSubtitle = "00:01"
             callDuration = 1
+            isExpanded = true
         }
         startCallTimer()
+        PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
     }
 
     func declineCall() {
+        HapticService.shared.stopCallRingtone()
         HapticService.shared.heavy()
         callTimer?.cancel()
-        withAnimation {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
             isCallActive = false
             callerName = "Call Ended"
             callerSubtitle = "Dismissed"
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { [weak self] in
+            guard let self = self else { return }
+            if !self.isCallActive {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+                    self.isExpanded = false
+                    self.evaluateActiveMode()
+                }
+                PiPIslandManager.shared.updateSize(width: self.islandWidth, height: self.islandHeight)
+            }
         }
     }
 
@@ -1195,14 +1231,15 @@ class IslandState: ObservableObject {
     }
 
     func testSimulateIncomingCall() {
-        HapticService.shared.medium()
-        withAnimation {
-            callerName = "Tim Cook"
-            callerSubtitle = "Apple Park • Cupertino"
-            isCallActive = false
-            setMode(.call)
+        HapticService.shared.startCallRingtone()
+        callerName = "Tim Cook"
+        callerSubtitle = "Apple Park • Cupertino"
+        isCallActive = false
+        setMode(.call)
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
             isExpanded = true
         }
+        PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
     }
 
     // MARK: - Voice Memo Recording Actions

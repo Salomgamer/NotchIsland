@@ -389,13 +389,19 @@ struct FloatingIslandView: View {
                     .frame(width: 8, height: 8)
             }
         } else if state.mode == .call {
-            ZStack {
-                Circle()
-                    .fill(state.isCallActive ? Color.green : Color.orange)
+            if !state.isCallActive {
+                RingingPhoneIconView()
+                    .scaleEffect(0.72)
                     .frame(width: 22, height: 22)
-                Image(systemName: "phone.fill")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(.white)
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(Color(red: 0.18, green: 0.82, blue: 0.38))
+                        .frame(width: 22, height: 22)
+                    Image(systemName: "phone.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white)
+                }
             }
         } else if let artwork = nowPlaying.artworkImage {
             ZStack(alignment: .bottomTrailing) {
@@ -1066,24 +1072,33 @@ struct FloatingIslandView: View {
 
     // MARK: - Expanded Call
     private var expandedCallContent: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 7) {
             HStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .fill(state.isCallActive ? Color.green : Color.orange)
-                        .frame(width: 30, height: 30)
-                    Image(systemName: "phone.fill")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
+                if !state.isCallActive {
+                    RingingPhoneIconView()
+                } else {
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(
+                                colors: [Color(red: 0.22, green: 0.88, blue: 0.42), Color(red: 0.12, green: 0.72, blue: 0.32)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .frame(width: 28, height: 28)
+                        Image(systemName: "phone.fill")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     MarqueeText(
                         text: state.callerName,
-                        font: .system(size: 12, weight: .bold, design: .rounded),
+                        font: .system(size: 12.5, weight: .bold, design: .rounded),
                         color: .white
                     )
-                    .frame(height: 15)
+                    .frame(height: 16)
+
                     Text(state.callerSubtitle)
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundColor(state.isCallActive ? .green : .orange)
@@ -1103,28 +1118,30 @@ struct FloatingIslandView: View {
             HStack(spacing: 12) {
                 if !state.isCallActive {
                     Button(action: { state.declineCall() }) {
-                        HStack(spacing: 4) {
+                        HStack(spacing: 5) {
                             Image(systemName: "phone.down.fill")
+                                .font(.system(size: 10.5, weight: .bold))
                             Text("Decline")
+                                .font(.system(size: 10.5, weight: .bold, design: .rounded))
                         }
-                        .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 4)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 28)
                         .background(Color.red)
                         .clipShape(Capsule())
                     }
 
                     Button(action: { state.answerCall() }) {
-                        HStack(spacing: 4) {
+                        HStack(spacing: 5) {
                             Image(systemName: "phone.fill")
+                                .font(.system(size: 10.5, weight: .bold))
                             Text("Accept")
+                                .font(.system(size: 10.5, weight: .bold, design: .rounded))
                         }
-                        .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 4)
-                        .background(Color.green)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 28)
+                        .background(Color(red: 0.18, green: 0.82, blue: 0.38))
                         .clipShape(Capsule())
                     }
                 } else {
@@ -1149,19 +1166,23 @@ struct FloatingIslandView: View {
                     Spacer()
 
                     Button(action: { state.declineCall() }) {
-                        Image(systemName: "phone.down.fill")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 5)
-                            .background(Color.red)
-                            .clipShape(Capsule())
+                        HStack(spacing: 4) {
+                            Image(systemName: "phone.down.fill")
+                                .font(.system(size: 11, weight: .bold))
+                            Text("End")
+                                .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 14)
+                        .frame(height: 28)
+                        .background(Color.red)
+                        .clipShape(Capsule())
                     }
                 }
             }
         }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
     }
 
     // MARK: - Expanded Voice Memo Recording
@@ -1769,6 +1790,49 @@ struct AppSourceIconView: View {
         if lower.contains("twitch") { return "video.fill" }
         if lower.contains("audible") { return "book.fill" }
         return "music.note"
+    }
+}
+
+// MARK: - Animated Ringing Phone Icon (Incoming Call)
+struct RingingPhoneIconView: View {
+    @State private var isRinging = false
+
+    var body: some View {
+        ZStack {
+            // Ripple halo wave
+            Circle()
+                .stroke(Color.green.opacity(0.45), lineWidth: 1.8)
+                .frame(width: 34, height: 34)
+                .scaleEffect(isRinging ? 1.3 : 0.85)
+                .opacity(isRinging ? 0.0 : 0.8)
+                .animation(
+                    Animation.easeOut(duration: 0.9)
+                        .repeatForever(autoreverses: false),
+                    value: isRinging
+                )
+
+            Circle()
+                .fill(LinearGradient(
+                    colors: [Color(red: 0.22, green: 0.88, blue: 0.42), Color(red: 0.12, green: 0.72, blue: 0.32)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ))
+                .frame(width: 28, height: 28)
+                .shadow(color: Color.green.opacity(0.55), radius: 5)
+
+            Image(systemName: "phone.fill")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.white)
+                .rotationEffect(.degrees(isRinging ? 14 : -14))
+                .animation(
+                    Animation.easeInOut(duration: 0.15)
+                        .repeatForever(autoreverses: true),
+                    value: isRinging
+                )
+        }
+        .onAppear {
+            isRinging = true
+        }
     }
 }
 

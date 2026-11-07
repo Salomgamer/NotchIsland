@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 5.9 • Golden Master")
+                Text("Dynamic Island 6.0 • Adaptive Device Engine")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1901,10 +1901,10 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 5.9")
+                    Text("Dynamic Notch 6.0")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
-                    Text("GOLDEN MASTER EDITION")
+                    Text("ADAPTIVE DEVICE ENGINE")
                         .font(.system(size: 10, weight: .black))
                         .foregroundColor(themeColor)
                         .kerning(1.5)
@@ -1914,10 +1914,24 @@ struct WhatsNewView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
                         featureRow(
+                            icon: "phone.and.waveform.fill",
+                            color: .green,
+                            title: "CallKit Live Call Observation",
+                            desc: "Automatically adapts when phone calls arrive: pulsating ringtone haptics, ringing wobble badge, Accept/Decline capsule buttons, and live elapsed timer."
+                        )
+
+                        featureRow(
+                            icon: "bell.badge.fill",
+                            color: themeColor,
+                            title: "Smart Notification Auto-Expansion",
+                            desc: "Notch dynamically expands on system events (charger connect/disconnect, screenshot capture, thermal alerts, audio devices, clipboard) and auto-collapses."
+                        )
+
+                        featureRow(
                             icon: "bolt.fill",
                             color: .green,
-                            title: "Battery Charging Radiant Halo",
-                            desc: "Subtle emerald radiant glow halo gently pulsing around the battery indicator while connected to power."
+                            title: "Hardware Power State Adaptation",
+                            desc: "Real-time adapter detection notifying you of charging wattage and battery transitions seamlessly."
                         )
 
                         featureRow(

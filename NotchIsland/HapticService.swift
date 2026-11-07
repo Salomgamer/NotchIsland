@@ -109,4 +109,29 @@ class HapticService: ObservableObject {
     func clickSound() {
         AudioServicesPlaySystemSound(1104)
     }
+
+    // MARK: - Incoming Call Ringtone & Haptic Pulse
+    private var ringtoneTimer: Timer?
+
+    func startCallRingtone() {
+        stopCallRingtone()
+        playRingPulse()
+        ringtoneTimer = Timer.scheduledTimer(withTimeInterval: 2.2, repeats: true) { [weak self] _ in
+            self?.playRingPulse()
+        }
+    }
+
+    private func playRingPulse() {
+        guard strength != .muted else { return }
+        heavy()
+        AudioServicesPlaySystemSound(1005) // Standard incoming telephone chime
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+            self?.medium()
+        }
+    }
+
+    func stopCallRingtone() {
+        ringtoneTimer?.invalidate()
+        ringtoneTimer = nil
+    }
 }
