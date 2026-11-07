@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 4.3 • iPhone 11")
+                Text("Dynamic Island 4.4 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1283,6 +1283,34 @@ struct ContentView: View {
                 Spacer()
             }
             .padding(.top, 2)
+
+            // Palette / Color Mode
+            HStack(spacing: 8) {
+                Text("Palette:")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.gray)
+
+                ForEach(VisualizerColorMode.allCases) { colMode in
+                    Button(action: {
+                        HapticService.shared.selection()
+                        state.visualizerColorMode = colMode
+                    }) {
+                        HStack(spacing: 3) {
+                            Image(systemName: colMode.icon)
+                                .font(.system(size: 9))
+                            Text(colMode.rawValue)
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .foregroundColor(state.visualizerColorMode == colMode ? .black : .white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(state.visualizerColorMode == colMode ? state.theme.color : Color(white: 0.15))
+                        .clipShape(Capsule())
+                    }
+                }
+                Spacer()
+            }
+            .padding(.top, 2)
         }
         .padding(13)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1648,7 +1676,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 4.3 Sheet
+// MARK: - What's New in Dynamic Notch 4.4 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1663,7 +1691,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 4.3")
+                    Text("Dynamic Notch 4.4")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                 }

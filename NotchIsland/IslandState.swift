@@ -115,6 +115,24 @@ enum VisualizerSpeed: String, CaseIterable, Identifiable {
     }
 }
 
+enum VisualizerColorMode: String, CaseIterable, Identifiable {
+    case adaptive = "Adaptive"
+    case theme = "Accent"
+    case rainbow = "Cyan Glow"
+    case white = "White"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .adaptive: return "wand.and.stars"
+        case .theme: return "paintpalette.fill"
+        case .rainbow: return "sparkles"
+        case .white: return "sun.max.fill"
+        }
+    }
+}
+
 enum DoubleTapAction: String, CaseIterable, Identifiable {
     case playPause = "Play / Pause"
     case nextTrack = "Next Track"
@@ -170,6 +188,7 @@ class IslandState: ObservableObject {
     // MARK: - Visualizer & Multi-Activity
     @Published var visualizerStyle: VisualizerStyle = .equalizer
     @Published var visualizerSpeed: VisualizerSpeed = .balanced
+    @Published var visualizerColorMode: VisualizerColorMode = .adaptive
     @Published var dualActivityEnabled: Bool = true
     @Published var clipboardHUDEnabled: Bool = true
     private var lastClipboardChangeCount: Int = UIPasteboard.general.changeCount

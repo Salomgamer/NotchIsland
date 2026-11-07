@@ -290,7 +290,7 @@ struct FloatingIslandView: View {
                         }
 
                         if nowPlaying.isPlaying {
-                            audioVisualizer(color: subtitleColor)
+                            audioVisualizer(color: visualizerColor)
                         }
                     }
 
@@ -1225,6 +1225,19 @@ struct FloatingIslandView: View {
 
     private var subtitleColor: Color {
         return nowPlaying.artworkAccentColor ?? state.theme.color
+    }
+
+    private var visualizerColor: Color {
+        switch state.visualizerColorMode {
+        case .adaptive:
+            return nowPlaying.artworkAccentColor ?? state.theme.color
+        case .theme:
+            return state.theme.color
+        case .rainbow:
+            return Color(red: 0.0, green: 0.94, blue: 1.0)
+        case .white:
+            return .white
+        }
     }
 
     private var batteryColor: Color {
