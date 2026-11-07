@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 5.2 • Golden Master")
+                Text("Dynamic Island 5.3 • Golden Master")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1840,7 +1840,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 5.2 Sheet
+// MARK: - What's New in Dynamic Notch 5.3 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1855,7 +1855,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 5.2")
+                    Text("Dynamic Notch 5.3")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("GOLDEN MASTER EDITION")
@@ -1867,6 +1867,13 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "quote.bubble.fill",
+                            color: themeColor,
+                            title: "Synchronized Lyrics Streaming Preview",
+                            desc: "Tap the lyrics speech bubble directly in expanded media to switch between artist readout and real-time marquee lyrics streaming."
+                        )
+
                         featureRow(
                             icon: "moon.fill",
                             color: Color(red: 0.68, green: 0.32, blue: 0.95),

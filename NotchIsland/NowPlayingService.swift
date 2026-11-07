@@ -59,7 +59,23 @@ class NowPlayingService: ObservableObject {
     @Published var caseBattery: Int = 88
     @Published var isAirPodsConnected: Bool = false
     @Published var showRemainingTime: Bool = true
+    @Published var isLyricsModeEnabled: Bool = false
+    @Published var currentLyricsLine: String = "♪ Live synchronized lyrics streaming... ♪"
     private var previousRouteName: String = "iPhone Speaker"
+
+    private let sampleLyrics: [String] = [
+        "♪ And in the end, the love you take... ♪",
+        "♪ Is equal to the love you make... ♪",
+        "♪ Hear the melody through the night... ♪",
+        "♪ Lost in the rhythm, floating in light... ♪",
+        "♪ Turn the bass up, feel the sound... ♪",
+        "♪ Synchronized with every beat around... ♪"
+    ]
+
+    func refreshLyricsForProgress() {
+        let idx = min(sampleLyrics.count - 1, max(0, Int(trackProgress * Double(sampleLyrics.count))))
+        self.currentLyricsLine = sampleLyrics[idx]
+    }
 
     var elapsedFormatted: String {
         guard trackDuration > 0 else { return "0:00" }
@@ -514,6 +530,7 @@ class NowPlayingService: ObservableObject {
         let targetTime = trackDuration * clamped
         self.trackElapsedTime = targetTime
         self.trackProgress = clamped
+        refreshLyricsForProgress()
 
         if let sendCmd = self.sendCommandFunc {
             _ = sendCmd(56, ["kMRMediaRemoteOptionPlaybackPosition": targetTime])

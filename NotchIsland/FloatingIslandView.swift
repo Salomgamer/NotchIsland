@@ -859,30 +859,58 @@ struct FloatingIslandView: View {
                     )
                     .frame(height: 15)
 
-                    HStack(spacing: 5) {
-                        Text(state.mediaArtist)
-                            .font(.system(size: 10, weight: .medium, design: .rounded))
-                            .foregroundColor(subtitleColor)
-                            .lineLimit(1)
-
-                        ZStack {
-                            HStack(spacing: 3) {
-                                Circle()
-                                    .fill(subtitleColor)
-                                    .frame(width: 3, height: 3)
-                                Image(systemName: nowPlaying.currentRouteType.iconName)
+                    if nowPlaying.isLyricsModeEnabled {
+                        HStack(spacing: 4) {
+                            Button(action: {
+                                nowPlaying.isLyricsModeEnabled.toggle()
+                                HapticService.shared.light()
+                            }) {
+                                Image(systemName: "quote.bubble.fill")
                                     .font(.system(size: 8, weight: .bold))
-                                    .foregroundColor(subtitleColor)
-                                Text(nowPlaying.currentRouteName)
-                                    .font(.system(size: 8.5, weight: .bold))
-                                    .foregroundColor(.white.opacity(0.85))
-                                    .lineLimit(1)
+                                    .foregroundColor(state.theme.color)
                             }
 
-                            // Invisible touch target that summons native iOS AirPlay route sheet
-                            AirPlayRoutePickerRepresentable()
-                                .frame(width: 70, height: 16)
-                                .opacity(0.015)
+                            MarqueeText(
+                                text: nowPlaying.currentLyricsLine,
+                                font: .system(size: 9.5, weight: .semibold, design: .rounded),
+                                color: subtitleColor
+                            )
+                            .frame(height: 14)
+                        }
+                    } else {
+                        HStack(spacing: 5) {
+                            Text(state.mediaArtist)
+                                .font(.system(size: 10, weight: .medium, design: .rounded))
+                                .foregroundColor(subtitleColor)
+                                .lineLimit(1)
+
+                            ZStack {
+                                HStack(spacing: 3) {
+                                    Circle()
+                                        .fill(subtitleColor)
+                                        .frame(width: 3, height: 3)
+                                    Image(systemName: nowPlaying.currentRouteType.iconName)
+                                        .font(.system(size: 8, weight: .bold))
+                                        .foregroundColor(subtitleColor)
+                                    Text(nowPlaying.currentRouteName)
+                                        .font(.system(size: 8.5, weight: .bold))
+                                        .foregroundColor(.white.opacity(0.85))
+                                        .lineLimit(1)
+                                }
+
+                                AirPlayRoutePickerRepresentable()
+                                    .frame(width: 70, height: 16)
+                                    .opacity(0.015)
+                            }
+
+                            Button(action: {
+                                nowPlaying.isLyricsModeEnabled.toggle()
+                                HapticService.shared.light()
+                            }) {
+                                Image(systemName: "quote.bubble")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundColor(subtitleColor.opacity(0.75))
+                            }
                         }
                     }
                 }
