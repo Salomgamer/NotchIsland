@@ -230,6 +230,38 @@ struct ContentView: View {
 
             Divider().background(Color.white.opacity(0.1))
 
+            // Playback Remote Controls
+            HStack(spacing: 20) {
+                Button(action: { nowPlaying.previousTrack() }) {
+                    Image(systemName: "backward.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(9)
+                        .background(Color(white: 0.16))
+                        .clipShape(Circle())
+                }
+
+                Button(action: { nowPlaying.togglePlayPause() }) {
+                    Image(systemName: nowPlaying.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.black)
+                        .padding(12)
+                        .background(state.theme.color)
+                        .clipShape(Circle())
+                }
+
+                Button(action: { nowPlaying.nextTrack() }) {
+                    Image(systemName: "forward.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(9)
+                        .background(Color(white: 0.16))
+                        .clipShape(Circle())
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 2)
+
             HStack {
                 Button(action: {
                     nowPlaying.requestAllPermissions()
@@ -491,6 +523,7 @@ struct ContentView: View {
                 HStack(spacing: 8) {
                     ForEach(AccentTheme.allCases, id: \.self) { theme in
                         Button(action: {
+                            HapticService.shared.selection()
                             state.theme = theme
                         }) {
                             HStack(spacing: 6) {
@@ -526,6 +559,7 @@ struct ContentView: View {
             HStack(spacing: 8) {
                 ForEach(IslandSize.allCases, id: \.self) { sizeOption in
                     Button(action: {
+                        HapticService.shared.selection()
                         state.setSize(sizeOption)
                     }) {
                         Text(sizeOption.rawValue)

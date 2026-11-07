@@ -19,9 +19,11 @@ class NowPlayingService: ObservableObject {
     typealias MRGetNowPlayingInfoFunction = @convention(c) (DispatchQueue, @escaping ([String: Any]?) -> Void) -> Void
     typealias MRRegisterNotificationsFunction = @convention(c) (DispatchQueue) -> Void
     typealias MRGetIsPlayingFunction = @convention(c) (DispatchQueue, @escaping (Bool) -> Void) -> Void
+    typealias MRSendCommandFunction = @convention(c) (UInt32, [String: Any]?) -> Bool
 
     private var getNowPlayingInfoFunc: MRGetNowPlayingInfoFunction?
     private var getIsPlayingFunc: MRGetIsPlayingFunction?
+    private var sendCommandFunc: MRSendCommandFunction?
 
     init() {
         checkPermissions()
@@ -62,6 +64,10 @@ class NowPlayingService: ObservableObject {
 
         if let symIsPlaying = dlsym(validHandle, "MRMediaRemoteGetNowPlayingApplicationIsPlaying") {
             self.getIsPlayingFunc = unsafeBitCast(symIsPlaying, to: MRGetIsPlayingFunction.self)
+        }
+
+        if let symCmd = dlsym(validHandle, "MRMediaRemoteSendCommand") {
+            self.sendCommandFunc = unsafeBitCast(symCmd, to: MRSendCommandFunction.self)
         }
 
         if let symReg = dlsym(validHandle, "MRMediaRemoteRegisterForNowPlayingNotifications") {
@@ -105,7 +111,6 @@ class NowPlayingService: ObservableObject {
                 guard let self = self else { return }
 
                 if let dict = infoDict {
-                    // Check all possible key variants used by MediaRemote and iOS versions
                     let trackTitle = (dict["kMRMediaRemoteNowPlayingInfoTitle"] as? String)
                         ?? (dict["title"] as? String)
                         ?? (dict["kMRMediaRemoteNowPlayingInfoName"] as? String)
@@ -131,7 +136,6 @@ class NowPlayingService: ObservableObject {
                     }
                 }
 
-                // If MediaRemote returned no title but audio is playing, keep Spotify indicator active
                 if isAudioActive {
                     if self.title == "No Music Playing" || self.title.isEmpty {
                         self.title = "Spotify Music Playing"
@@ -168,6 +172,47 @@ class NowPlayingService: ObservableObject {
             self.artist = "Play track in Spotify"
             self.isPlaying = false
             self.artworkImage = nil
+        }
+    }
+
+    // MARK: - Interactive Playback Commands
+    func togglePlayPause() {
+        HapticService.shared.medium()
+        if let sendCmd = self.sendCommandFunc {
+            _ = sendCmd(2, nil) // MRCommandTogglePlayPause = 2
+        } else {
+            if MPMusicPlayerController.systemMusicPlayer.playbackState == .playing {
+                MPMusicPlayerController.systemMusicPlayer.pause()
+            } else {
+                MPMusicPlayerController.systemMusicPlayer.play()
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.queryNowPlaying()
+        }
+    }
+
+    func nextTrack() {
+        HapticService.shared.light()
+        if let sendCmd = self.sendCommandFunc {
+            _ = sendCmd(4, nil) // MRCommandNextTrack = 4
+        } else {
+            MPMusicPlayerController.systemMusicPlayer.skipToNextItem()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.queryNowPlaying()
+        }
+    }
+
+    func previousTrack() {
+        HapticService.shared.light()
+        if let sendCmd = self.sendCommandFunc {
+            _ = sendCmd(5, nil) // MRCommandPreviousTrack = 5
+        } else {
+            MPMusicPlayerController.systemMusicPlayer.skipToPreviousItem()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.queryNowPlaying()
         }
     }
 }

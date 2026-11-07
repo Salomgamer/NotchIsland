@@ -25,6 +25,7 @@ struct FloatingIslandView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture {
+            HapticService.shared.light()
             state.toggleExpanded()
         }
     }
@@ -82,18 +83,38 @@ struct FloatingIslandView: View {
             HStack(spacing: 12) {
                 switch state.mode {
                 case .media:
-                    // Progress Bar
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(Color.white.opacity(0.16))
-                                .frame(height: 3.5)
-                            Capsule()
-                                .fill(state.theme.color)
-                                .frame(width: geo.size.width * CGFloat(state.mediaProgress), height: 3.5)
+                    HStack(spacing: 12) {
+                        Button(action: { nowPlaying.previousTrack() }) {
+                            Image(systemName: "backward.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.9))
                         }
+
+                        Button(action: { nowPlaying.togglePlayPause() }) {
+                            Image(systemName: nowPlaying.isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(state.theme.color)
+                        }
+
+                        Button(action: { nowPlaying.nextTrack() }) {
+                            Image(systemName: "forward.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.9))
+                        }
+
+                        // Compact track progress bar
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.20))
+                                    .frame(height: 3)
+                                Capsule()
+                                    .fill(state.theme.color)
+                                    .frame(width: max(4, geo.size.width * CGFloat(state.mediaProgress)), height: 3)
+                            }
+                        }
+                        .frame(height: 3)
                     }
-                    .frame(height: 4)
 
                 case .call:
                     if !state.isCallActive {
