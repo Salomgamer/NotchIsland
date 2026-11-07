@@ -398,25 +398,51 @@ struct FloatingIslandView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
+                // Flashlight
                 Button(action: {
                     TorchService.shared.toggleTorch()
                 }) {
                     Image(systemName: TorchService.shared.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundColor(TorchService.shared.isTorchOn ? .black : .white)
-                        .padding(7)
+                        .padding(6)
                         .background(TorchService.shared.isTorchOn ? Color.yellow : Color.white.opacity(0.15))
                         .clipShape(Circle())
                 }
 
+                // Spotify Quick Launch
+                Button(action: {
+                    launchURL("spotify://")
+                }) {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Color(red: 0.12, green: 0.84, blue: 0.38))
+                        .padding(6)
+                        .background(Color.white.opacity(0.15))
+                        .clipShape(Circle())
+                }
+
+                // YouTube Quick Launch
+                Button(action: {
+                    launchURL("youtube://")
+                }) {
+                    Image(systemName: "play.rectangle.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Color(red: 1.0, green: 0.15, blue: 0.15))
+                        .padding(6)
+                        .background(Color.white.opacity(0.15))
+                        .clipShape(Circle())
+                }
+
+                // Switch to Music & Battery Mode
                 Button(action: {
                     state.setMode(.media)
                 }) {
                     Image(systemName: "music.note")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.white)
-                        .padding(7)
+                        .padding(6)
                         .background(Color.white.opacity(0.15))
                         .clipShape(Circle())
                 }
@@ -999,6 +1025,15 @@ struct FloatingIslandView: View {
         if let str = urlString, let url = URL(string: str), UIApplication.shared.canOpenURL(url) {
             HapticService.shared.medium()
             UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        }
+    }
+
+    private func launchURL(_ urlString: String) {
+        if let url = URL(string: urlString), UIApplication.shared.canOpenURL(url) {
+            HapticService.shared.medium()
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        } else {
+            HapticService.shared.light()
         }
     }
 }
