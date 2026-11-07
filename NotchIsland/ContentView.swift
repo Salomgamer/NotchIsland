@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 4.7 • iPhone 11")
+                Text("Dynamic Island 4.8 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -378,6 +378,17 @@ struct ContentView: View {
                         subtitle: "RMA 2 - 1 FCB • Bellingham 67'",
                         icon: "sportscourt.fill",
                         color: .green
+                    )
+                }
+
+                testTriggerButton(title: "🔦 iOS 18 Flashlight", color: .yellow) {
+                    TorchService.shared.setTorchLevel(0.85)
+                    state.setMode(.flashlight)
+                    state.triggerNotification(
+                        title: "Flashlight Active",
+                        subtitle: "Beam Intensity: 85%",
+                        icon: "flashlight.on.fill",
+                        color: .yellow
                     )
                 }
             }
@@ -1717,7 +1728,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 4.7 Sheet
+// MARK: - What's New in Dynamic Notch 4.8 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1732,7 +1743,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 4.7")
+                    Text("Dynamic Notch 4.8")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                 }
@@ -1740,6 +1751,13 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "flashlight.on.fill",
+                            color: .yellow,
+                            title: "iOS 18 Flashlight Dynamic Island",
+                            desc: "Apple iOS 18 Flashlight HUD with glowing beam indicator, live draggable beam brightness slider, quick presets (25-100%), and SOS Morse strobe toggle."
+                        )
+
                         featureRow(
                             icon: "bell.slash.fill",
                             color: .red,

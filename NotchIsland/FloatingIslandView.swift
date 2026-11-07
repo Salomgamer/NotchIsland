@@ -263,7 +263,12 @@ struct FloatingIslandView: View {
                         .background(Color.green.opacity(0.2))
                         .clipShape(Capsule())
                     } else {
-                        if state.isDualActivityActive {
+                        if TorchService.shared.isTorchOn {
+                            Image(systemName: "flashlight.on.fill")
+                                .font(.system(size: 8.5, weight: .bold))
+                                .foregroundColor(.yellow)
+                                .shadow(color: .yellow.opacity(0.8), radius: 2)
+                        } else if state.isDualActivityActive {
                             HStack(spacing: 2) {
                                 Image(systemName: "timer")
                                     .font(.system(size: 7.5, weight: .bold))
@@ -416,6 +421,9 @@ struct FloatingIslandView: View {
         case .media:
             expandedMediaContent
 
+        case .flashlight:
+            expandedFlashlightContent
+
         case .call:
             expandedCallContent
 
@@ -528,6 +536,139 @@ struct FloatingIslandView: View {
         }
         .padding(.horizontal, 11)
         .padding(.vertical, 8)
+    }
+
+    // MARK: - Expanded iOS 18 Flashlight Island
+    private var expandedFlashlightContent: some View {
+        VStack(spacing: 7) {
+            HStack(spacing: 12) {
+                // Animated Yellow Torch Icon with Glow
+                ZStack {
+                    Circle()
+                        .fill(Color.yellow.opacity(0.25))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: "flashlight.on.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.yellow)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 5) {
+                        Text("Flashlight")
+                            .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                        if TorchService.shared.isSOSActive {
+                            Text("SOS")
+                                .font(.system(size: 7.5, weight: .heavy))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1.5)
+                                .background(Color.red)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    Text("Beam Intensity: \(Int(TorchService.shared.torchLevel * 100))%")
+                        .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                        .foregroundColor(.yellow.opacity(0.85))
+                }
+
+                Spacer()
+
+                // Power Toggle
+                Button(action: {
+                    TorchService.shared.toggleTorch()
+                }) {
+                    Image(systemName: "power")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(TorchService.shared.isTorchOn ? .black : .white)
+                        .padding(7)
+                        .background(TorchService.shared.isTorchOn ? Color.yellow : Color.white.opacity(0.15))
+                        .clipShape(Circle())
+                }
+            }
+
+            // Beam Intensity Slider
+            HStack(spacing: 8) {
+                Image(systemName: "sun.min.fill")
+                    .font(.system(size: 8.5, weight: .semibold))
+                    .foregroundColor(.yellow.opacity(0.6))
+
+                GeometryReader { geo in
+                    let fillWidth = max(6, geo.size.width * CGFloat(TorchService.shared.torchLevel))
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.18))
+                            .frame(height: 6)
+
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.yellow.opacity(0.7), Color.yellow],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: fillWidth, height: 6)
+
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 10, height: 10)
+                            .shadow(color: .black.opacity(0.4), radius: 2)
+                            .offset(x: max(0, fillWidth - 5))
+                    }
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { val in
+                                let pct = max(0.1, min(1.0, Float(val.location.x / geo.size.width)))
+                                TorchService.shared.setTorchLevel(pct)
+                            }
+                    )
+                }
+                .frame(height: 12)
+
+                Image(systemName: "sun.max.fill")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(.yellow)
+            }
+
+            // Quick Beam Level Presets & SOS Toggle
+            HStack(spacing: 6) {
+                ForEach([0.25, 0.50, 0.75, 1.0], id: \.self) { lvl in
+                    Button(action: {
+                        TorchService.shared.setTorchLevel(Float(lvl))
+                    }) {
+                        Text("\(Int(lvl * 100))%")
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .foregroundColor(abs(Double(TorchService.shared.torchLevel) - lvl) < 0.08 ? .black : .white)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(
+                                abs(Double(TorchService.shared.torchLevel) - lvl) < 0.08
+                                    ? Color.yellow
+                                    : Color.white.opacity(0.12)
+                            )
+                            .clipShape(Capsule())
+                    }
+                }
+
+                Spacer()
+
+                Button(action: {
+                    TorchService.shared.toggleSOS()
+                }) {
+                    Text(TorchService.shared.isSOSActive ? "STOP SOS" : "SOS STROBE")
+                        .font(.system(size: 8, weight: .heavy))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(TorchService.shared.isSOSActive ? Color.red : Color.red.opacity(0.35))
+                        .clipShape(Capsule())
+                }
+            }
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Expanded Media

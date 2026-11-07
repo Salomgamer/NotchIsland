@@ -20,54 +20,50 @@ class TorchService: ObservableObject {
     }
 
     func toggleTorch() {
-        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
-        do {
-            try device.lockForConfiguration()
-            if device.torchMode == .on {
-                device.torchMode = .off
-                self.isTorchOn = false
-                IslandState.shared.triggerNotification(
-                    title: "Flashlight Off",
-                    subtitle: "Torch disabled",
-                    icon: "flashlight.off.fill",
-                    color: .gray
-                )
-            } else {
-                try device.setTorchModeOn(level: 1.0)
-                self.isTorchOn = true
-                IslandState.shared.triggerNotification(
-                    title: "Flashlight On",
-                    subtitle: "100% Brightness • Active",
-                    icon: "flashlight.on.fill",
-                    color: .yellow
-                )
+        if let device = AVCaptureDevice.default(for: .video), device.hasTorch {
+            do {
+                try device.lockForConfiguration()
+                if device.torchMode == .on {
+                    device.torchMode = .off
+                    self.isTorchOn = false
+                } else {
+                    try device.setTorchModeOn(level: self.torchLevel)
+                    self.isTorchOn = true
+                }
+                device.unlockForConfiguration()
+            } catch {
+                print("[TorchService] Error toggling torch: \(error.localizedDescription)")
             }
-            device.unlockForConfiguration()
-            HapticService.shared.medium()
-        } catch {
-            print("[TorchService] Error toggling torch: \(error.localizedDescription)")
+        } else {
+            self.isTorchOn.toggle()
         }
+        HapticService.shared.medium()
+        IslandState.shared.triggerNotification(
+            title: isTorchOn ? "Flashlight On" : "Flashlight Off",
+            subtitle: isTorchOn ? "\(Int(torchLevel * 100))% Brightness • Active" : "Torch disabled",
+            icon: isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill",
+            color: isTorchOn ? .yellow : .gray
+        )
+        IslandState.shared.evaluateActiveMode()
     }
 
     func setTorchLevel(_ level: Float) {
-        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
         let clamped = max(0.1, min(1.0, level))
         self.torchLevel = clamped
-        do {
-            try device.lockForConfiguration()
-            try device.setTorchModeOn(level: clamped)
+        if let device = AVCaptureDevice.default(for: .video), device.hasTorch {
+            do {
+                try device.lockForConfiguration()
+                try device.setTorchModeOn(level: clamped)
+                self.isTorchOn = true
+                device.unlockForConfiguration()
+            } catch {
+                print("[TorchService] Error setting torch level: \(error.localizedDescription)")
+            }
+        } else {
             self.isTorchOn = true
-            device.unlockForConfiguration()
-            HapticService.shared.light()
-            IslandState.shared.triggerNotification(
-                title: "Flashlight Brightness",
-                subtitle: "\(Int(clamped * 100))% Level",
-                icon: "flashlight.on.fill",
-                color: .yellow
-            )
-        } catch {
-            print("[TorchService] Error setting torch level: \(error.localizedDescription)")
         }
+        HapticService.shared.light()
+        IslandState.shared.evaluateActiveMode()
     }
 
     func toggleSOS() {
@@ -112,19 +108,23 @@ class TorchService: ObservableObject {
             icon: "flashlight.off.fill",
             color: .gray
         )
+        IslandState.shared.evaluateActiveMode()
     }
 
     private func tickSOS() {
-        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
         sosStep = (sosStep + 1) % 2
-        try? device.lockForConfiguration()
-        if sosStep == 1 {
-            try? device.setTorchModeOn(level: 1.0)
-            self.isTorchOn = true
+        if let device = AVCaptureDevice.default(for: .video), device.hasTorch {
+            try? device.lockForConfiguration()
+            if sosStep == 1 {
+                try? device.setTorchModeOn(level: 1.0)
+                self.isTorchOn = true
+            } else {
+                device.torchMode = .off
+                self.isTorchOn = false
+            }
+            device.unlockForConfiguration()
         } else {
-            device.torchMode = .off
-            self.isTorchOn = false
+            self.isTorchOn = (sosStep == 1)
         }
-        device.unlockForConfiguration()
     }
 }

@@ -6,6 +6,7 @@ import AVFoundation
 enum IslandMode: String, CaseIterable {
     case blank = "Blank / Stealth"
     case media = "Music & Battery"
+    case flashlight = "Flashlight"
     case call = "Call HUD"
     case navigation = "Apple Maps"
     case sports = "Live Sports"
@@ -545,6 +546,14 @@ class IslandState: ObservableObject {
             return
         }
 
+        // 2. Flashlight / SOS Strobe Active
+        if TorchService.shared.isTorchOn || TorchService.shared.isSOSActive {
+            if mode != .flashlight {
+                setMode(.flashlight)
+            }
+            return
+        }
+
         // 2. Voice Memo Recording Active
         if isRecordingActive {
             if mode != .recording {
@@ -615,6 +624,7 @@ class IslandState: ObservableObject {
         switch mode {
         case .blank: return "eye.slash.fill"
         case .media: return "music.note"
+        case .flashlight: return "flashlight.on.fill"
         case .call: return "phone.fill"
         case .navigation: return "arrow.turn.up.right"
         case .sports: return "sportscourt.fill"
