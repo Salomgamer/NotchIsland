@@ -12,7 +12,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 }
 
 @main
-struct NotchIslandApp: App {
+struct DynamicNotchApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {

@@ -5,11 +5,11 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleDisplayName</key>
-    <string>Notch Island</string>
+    <string>Dynamic Notch</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
-    <string>com.notchisland.app</string>
+    <string>com.dynamicnotch.app</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
@@ -23,7 +23,7 @@
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSAppleMusicUsageDescription</key>
-    <string>Notch Island displays real-time now-playing media titles, artists, and playback status.</string>
+    <string>Dynamic Notch displays real-time now-playing media titles, artists, and playback status.</string>
     <key>UIBackgroundModes</key>
     <array>
         <string>audio</string>

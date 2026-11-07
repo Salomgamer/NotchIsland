@@ -1,10 +1,10 @@
-name: NotchIsland
+name: DynamicNotch
 options:
-  bundleIdPrefix: com.notchisland
+  bundleIdPrefix: com.dynamicnotch
   deploymentTarget:
     iOS: 15.0
 targets:
-  NotchIsland:
+  DynamicNotch:
     type: application
     platform: iOS
     deploymentTarget: 15.0
@@ -13,7 +13,8 @@ targets:
     info:
       path: NotchIsland/Info.plist
     settings:
-      PRODUCT_BUNDLE_IDENTIFIER: com.notchisland.app
+      PRODUCT_BUNDLE_IDENTIFIER: com.dynamicnotch.app
+      PRODUCT_NAME: DynamicNotch
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       CURRENT_PROJECT_VERSION: "2.0"
       MARKETING_VERSION: "2.0"

@@ -1,4 +1,4 @@
-name: Build NotchIsland IPA
+name: Build DynamicNotch IPA
 
 on:
   push:
@@ -22,8 +22,8 @@ jobs:
       - name: Build App (Unsigned for Sideloading)
         run: |
           xcodebuild clean build \
-            -project NotchIsland.xcodeproj \
-            -scheme NotchIsland \
+            -project DynamicNotch.xcodeproj \
+            -scheme DynamicNotch \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath build \
@@ -34,24 +34,18 @@ jobs:
       - name: Package into IPA
         run: |
           mkdir -p Payload
-          cp -r build/Build/Products/Release-iphoneos/NotchIsland.app Payload/
-          zip -r NotchIsland.ipa Payload
+          cp -r build/Build/Products/Release-iphoneos/DynamicNotch.app Payload/
+          zip -r DynamicNotch.ipa Payload
 
       - name: Upload IPA to GitHub Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: NotchIsland-IPA
-          path: NotchIsland.ipa
+          name: DynamicNotch-IPA
+          path: DynamicNotch.ipa
           retention-days: 14
 
-      - name: Upload IPA to Google Drive
+      - name: Update GitHub Release Asset
         env:
-          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
-          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -z "$GDRIVE_CREDENTIALS" ] || [ -z "$GDRIVE_FOLDER_ID" ]; then
-            echo "::notice::Google Drive secrets (GDRIVE_CREDENTIALS or GDRIVE_FOLDER_ID) not configured. Skipping Google Drive upload. IPA is available in GitHub Artifacts."
-            exit 0
-          fi
-          pip3 install --quiet google-api-python-client google-auth
-          python3 .github/scripts/upload_gdrive.py
+          gh release upload v2.0 DynamicNotch.ipa --clobber || gh release create v2.0 DynamicNotch.ipa --title "Dynamic Notch 2.0" --notes "Dynamic Notch 2.0 for iOS 15+ (iPhone 11 & all notch devices)" || echo "Release upload skipped"
