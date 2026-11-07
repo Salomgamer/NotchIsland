@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 5.5 • Golden Master")
+                Text("Dynamic Island 5.6 • Golden Master")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1886,7 +1886,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 5.5 Sheet
+// MARK: - What's New in Dynamic Notch 5.6 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1901,7 +1901,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 5.5")
+                    Text("Dynamic Notch 5.6")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("GOLDEN MASTER EDITION")
@@ -1913,6 +1913,27 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "slider.horizontal.3",
+                            color: themeColor,
+                            title: "Tap-to-Cycle Sound EQ Profiles",
+                            desc: "Tap the animated equalizer bars directly in the notch to cycle Sound EQ curves (Balanced, Bass Booster, Vocal, Acoustic, EDM)."
+                        )
+
+                        featureRow(
+                            icon: "timer",
+                            color: .orange,
+                            title: "Focus Session Quick Presets",
+                            desc: "1-Tap focus blocks right inside the expanded notch: 5m, 15m, 25m Pomodoro 🍅, and 45m deep work."
+                        )
+
+                        featureRow(
+                            icon: "speaker.wave.2.fill",
+                            color: themeColor,
+                            title: "Live Volume Percentage Readout",
+                            desc: "Real-time integer volume chip alongside discrete ±5% steppers and mute toggle."
+                        )
+
                         featureRow(
                             icon: "faceid",
                             color: Color(red: 0.0, green: 0.85, blue: 1.0),

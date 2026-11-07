@@ -632,6 +632,19 @@ struct FloatingIslandView: View {
                         .font(.system(size: 9.5, weight: .medium))
                         .foregroundColor(.gray)
                         .lineLimit(1)
+
+                    HStack(spacing: 2) {
+                        Image(systemName: "wifi")
+                            .font(.system(size: 7.5, weight: .bold))
+                            .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                        Text("Online")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1.5)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Capsule())
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1025,6 +1038,11 @@ struct FloatingIslandView: View {
                             .background(Color.white.opacity(0.12))
                             .clipShape(Circle())
                     }
+
+                    Text("\(Int(state.systemVolume * 100))%")
+                        .font(.system(size: 8, weight: .bold, design: .rounded))
+                        .foregroundColor(state.systemVolume == 0 ? .red : .gray)
+                        .padding(.leading, 1)
                 }
             }
         }
@@ -1173,76 +1191,98 @@ struct FloatingIslandView: View {
 
     // MARK: - Expanded Timer
     private var expandedTimerContent: some View {
-        HStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.15), lineWidth: 3)
-                    .frame(width: 32, height: 32)
-                Circle()
-                    .trim(from: 0, to: CGFloat(max(0.04, min(1.0, (state.totalSeconds - state.remainingSeconds) / max(1.0, state.totalSeconds)))))
-                    .stroke(Color.orange, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .frame(width: 32, height: 32)
-                Image(systemName: "timer")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.orange)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Focus Session")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                Text(state.timerFormatted)
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    .foregroundColor(.orange)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            HStack(spacing: 5) {
-                Button(action: { state.toggleTimer() }) {
-                    Image(systemName: state.isTimerRunning ? "pause.fill" : "play.fill")
-                        .font(.system(size: 9.5, weight: .bold))
-                        .foregroundColor(.black)
-                        .padding(6)
-                        .background(Color.orange)
-                        .clipShape(Circle())
+        VStack(spacing: 6) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .stroke(Color.white.opacity(0.15), lineWidth: 3)
+                        .frame(width: 30, height: 30)
+                    Circle()
+                        .trim(from: 0, to: CGFloat(max(0.04, min(1.0, (state.totalSeconds - state.remainingSeconds) / max(1.0, state.totalSeconds)))))
+                        .stroke(Color.orange, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: 30, height: 30)
+                    Image(systemName: "timer")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.orange)
                 }
 
-                Button(action: { state.adjustTimer(by: -60) }) {
-                    Text("-1m")
-                        .font(.system(size: 8.5, weight: .bold))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Focus Session")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 3)
-                        .background(Color.white.opacity(0.15))
-                        .clipShape(Capsule())
+                    Text(state.timerFormatted)
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .foregroundColor(.orange)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Button(action: { state.adjustTimer(by: 60) }) {
-                    Text("+1m")
-                        .font(.system(size: 8.5, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 3)
-                        .background(Color.white.opacity(0.15))
-                        .clipShape(Capsule())
-                }
-
-                if !state.isTimerRunning && state.remainingSeconds < state.totalSeconds {
-                    Button(action: { state.resetTimer() }) {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 8.5, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(4)
-                            .background(Color.white.opacity(0.18))
+                HStack(spacing: 4) {
+                    Button(action: { state.toggleTimer() }) {
+                        Image(systemName: state.isTimerRunning ? "pause.fill" : "play.fill")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(5)
+                            .background(Color.orange)
                             .clipShape(Circle())
+                    }
+
+                    Button(action: { state.adjustTimer(by: -60) }) {
+                        Text("-1m")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 3)
+                            .background(Color.white.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+
+                    Button(action: { state.adjustTimer(by: 60) }) {
+                        Text("+1m")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 3)
+                            .background(Color.white.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+
+                    if !state.isTimerRunning && state.remainingSeconds < state.totalSeconds {
+                        Button(action: { state.resetTimer() }) {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(4)
+                                .background(Color.white.opacity(0.18))
+                                .clipShape(Circle())
+                        }
                     }
                 }
             }
-            .foregroundColor(.white)
+
+            // Quick Focus Presets Row
+            HStack(spacing: 5) {
+                Text("Preset:")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(.gray)
+
+                ForEach([5, 15, 25, 45], id: \.self) { mins in
+                    Button(action: {
+                        state.setTimerPreset(minutes: mins)
+                    }) {
+                        Text("\(mins)m\(mins == 25 ? " 🍅" : "")")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(state.totalSeconds == Double(mins * 60) ? .orange : .white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2.5)
+                            .background(state.totalSeconds == Double(mins * 60) ? Color.orange.opacity(0.2) : Color.white.opacity(0.10))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
         }
         .padding(.horizontal, 11)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Expanded Stopwatch
@@ -1801,6 +1841,10 @@ struct EqualizerWaveformView: View {
             bar(minHeight: min(13, 8 * m[3]), maxHeight: 2.5, duration: 0.32, delay: 0.18)
         }
         .frame(height: 12)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            state.cycleEQProfile()
+        }
         .onAppear { animating = true }
     }
 
