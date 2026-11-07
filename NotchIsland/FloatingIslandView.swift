@@ -41,6 +41,8 @@ struct FloatingIslandView: View {
                 // Dynamic Island Internal Content
                 if state.isShowingVolumeHUD {
                     volumeHUDContent
+                } else if state.isShowingBrightnessHUD {
+                    brightnessHUDContent
                 } else if state.isExpanded {
                     if state.isShowingNotification {
                         notificationExpandedContent
@@ -190,6 +192,41 @@ struct FloatingIslandView: View {
             .frame(height: 12)
 
             Text("\(Int(state.systemVolume * 100))%")
+                .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - Brightness HUD Content
+    private var brightnessHUDContent: some View {
+        HStack(spacing: 8) {
+            Image(systemName: state.systemBrightness < 0.35 ? "sun.min.fill" : (state.systemBrightness < 0.70 ? "sun.haze.fill" : "sun.max.fill"))
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.yellow)
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.25))
+                        .frame(height: 5)
+                    Capsule()
+                        .fill(Color.yellow)
+                        .frame(width: max(4, geo.size.width * CGFloat(state.systemBrightness)), height: 5)
+                }
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { val in
+                            let pct = max(0.05, min(1.0, Float(val.location.x / geo.size.width)))
+                            state.setSystemBrightness(pct)
+                        }
+                )
+            }
+            .frame(height: 12)
+
+            Text("\(Int(state.systemBrightness * 100))%")
                 .font(.system(size: 9.5, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
         }
@@ -380,7 +417,9 @@ struct FloatingIslandView: View {
     // MARK: - Notification Auto-Expanded Content
     private var notificationExpandedContent: some View {
         let notifColor = state.activeNotificationColor ?? subtitleColor
-        return HStack(spacing: 10) {
+        let isAirPods = state.activeNotificationTitle.contains("AirPods") || state.activeNotificationIcon.contains("airpod")
+
+        return HStack(spacing: 8) {
             ZStack {
                 Circle()
                     .fill(notifColor.opacity(0.25))
@@ -392,23 +431,51 @@ struct FloatingIslandView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(state.activeNotificationTitle)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(.system(size: 11.5, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .lineLimit(1)
 
                 Text(state.activeNotificationSubtitle)
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
                     .foregroundColor(.gray)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Circle()
-                .fill(notifColor)
-                .frame(width: 6, height: 6)
+            if isAirPods {
+                HStack(spacing: 4) {
+                    HStack(spacing: 2) {
+                        Image(systemName: "earbuds")
+                            .font(.system(size: 7, weight: .bold))
+                        Text("\(nowPlaying.leftEarbudBattery)%")
+                            .font(.system(size: 7.5, weight: .heavy, design: .rounded))
+                    }
+                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .background(Color.white.opacity(0.12))
+                    .clipShape(Capsule())
+
+                    HStack(spacing: 2) {
+                        Image(systemName: "case")
+                            .font(.system(size: 7, weight: .bold))
+                        Text("\(nowPlaying.caseBattery)%")
+                            .font(.system(size: 7.5, weight: .heavy, design: .rounded))
+                    }
+                    .foregroundColor(.yellow)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .background(Color.white.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+            } else {
+                Circle()
+                    .fill(notifColor)
+                    .frame(width: 6, height: 6)
+            }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 7)
     }
 
     // MARK: - Expanded Activity Content

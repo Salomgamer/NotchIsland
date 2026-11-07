@@ -54,6 +54,10 @@ class NowPlayingService: ObservableObject {
     @Published var currentRouteType: AudioRouteType = .speaker
     @Published var currentRouteName: String = "iPhone Speaker"
     @Published var accessoryBattery: Int? = nil
+    @Published var leftEarbudBattery: Int = 95
+    @Published var rightEarbudBattery: Int = 95
+    @Published var caseBattery: Int = 88
+    @Published var isAirPodsConnected: Bool = false
     @Published var showRemainingTime: Bool = true
     private var previousRouteName: String = "iPhone Speaker"
 
@@ -211,10 +215,15 @@ class NowPlayingService: ObservableObject {
         self.currentRouteType = detectedType
         if detectedType.isExternalOrHeadphones {
             if self.accessoryBattery == nil {
-                self.accessoryBattery = 92
+                self.accessoryBattery = 95
             }
+            self.isAirPodsConnected = true
+            self.leftEarbudBattery = 95
+            self.rightEarbudBattery = 95
+            self.caseBattery = 88
         } else {
             self.accessoryBattery = nil
+            self.isAirPodsConnected = false
         }
 
         if changed && notifyIfNew {

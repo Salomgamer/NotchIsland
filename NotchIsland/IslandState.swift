@@ -138,6 +138,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
     case playPause = "Play / Pause"
     case nextTrack = "Next Track"
     case toggleMute = "Mute / Unmute"
+    case cycleBrightness = "Cycle Brightness"
     case toggleTorch = "Toggle Torch"
     case toggleSOS = "Toggle SOS Beacon"
     case toggleSilent = "Toggle Silent"
@@ -152,6 +153,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         case .playPause: return "playpause.fill"
         case .nextTrack: return "forward.fill"
         case .toggleMute: return "speaker.slash.fill"
+        case .cycleBrightness: return "sun.max.fill"
         case .toggleTorch: return "flashlight.on.fill"
         case .toggleSOS: return "exclamationmark.shield.fill"
         case .toggleSilent: return "bell.slash.fill"
@@ -253,6 +255,11 @@ class IslandState: ObservableObject {
     @Published var systemVolume: Float = 0.5
     @Published var isShowingVolumeHUD: Bool = false
     private var volumeHUDDismissItem: DispatchWorkItem?
+
+    // MARK: - Brightness HUD State
+    @Published var systemBrightness: Float = 0.70
+    @Published var isShowingBrightnessHUD: Bool = false
+    private var brightnessHUDDismissItem: DispatchWorkItem?
 
     // MARK: - Media State
     @Published var mediaTitle: String = "No Music Playing"
@@ -504,6 +511,33 @@ class IslandState: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.8, execute: item)
     }
 
+    func showBrightnessHUD(level: Float) {
+        self.systemBrightness = max(0.05, min(1.0, level))
+        self.brightnessHUDDismissItem?.cancel()
+        self.isShowingVolumeHUD = false
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+            self.isShowingBrightnessHUD = true
+        }
+        let item = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                self.isShowingBrightnessHUD = false
+            }
+        }
+        self.brightnessHUDDismissItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8, execute: item)
+    }
+
+    func setSystemBrightness(_ level: Float) {
+        let clamped = max(0.05, min(1.0, level))
+        self.systemBrightness = clamped
+        DispatchQueue.main.async {
+            UIScreen.main.brightness = CGFloat(clamped)
+        }
+        showBrightnessHUD(level: clamped)
+        HapticService.shared.light()
+    }
+
     func setMode(_ newMode: IslandMode) {
         self.mode = newMode
         switch newMode {
@@ -688,6 +722,11 @@ class IslandState: ObservableObject {
             } else {
                 setSystemVolume(0.75)
             }
+        case .cycleBrightness:
+            let levels: [Float] = [0.25, 0.50, 0.75, 1.0]
+            let current = systemBrightness
+            let next = levels.first { $0 > current + 0.05 } ?? 0.25
+            setSystemBrightness(next)
         case .toggleTorch:
             TorchService.shared.toggleTorch()
         case .toggleSOS:

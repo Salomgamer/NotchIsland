@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 4.8 • iPhone 11")
+                Text("Dynamic Island 4.9 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -339,6 +339,10 @@ struct ContentView: View {
 
                 testTriggerButton(title: "🔊 Volume HUD (85%)", color: .white) {
                     state.showVolumeHUD(level: 0.85)
+                }
+
+                testTriggerButton(title: "☀️ Brightness HUD (70%)", color: .yellow) {
+                    state.setSystemBrightness(0.70)
                 }
 
                 testTriggerButton(title: "📞 Incoming Call", color: .green) {
@@ -1797,7 +1801,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 4.8 Sheet
+// MARK: - What's New in Dynamic Notch 4.9 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1812,7 +1816,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 4.8")
+                    Text("Dynamic Notch 4.9")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                 }
@@ -1820,6 +1824,20 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "sun.max.fill",
+                            color: .yellow,
+                            title: "Interactive Screen Brightness HUD",
+                            desc: "Real-time draggable screen brightness HUD capsule slider that physically updates iPhone screen brightness via UIScreen."
+                        )
+
+                        featureRow(
+                            icon: "airpodspro",
+                            color: Color(red: 0.18, green: 0.84, blue: 0.38),
+                            title: "AirPods Tri-Battery Breakout",
+                            desc: "Apple Dynamic Island style Left Earbud, Case, and Right Earbud battery telemetry chips on device connect."
+                        )
+
                         featureRow(
                             icon: "flashlight.on.fill",
                             color: .yellow,
