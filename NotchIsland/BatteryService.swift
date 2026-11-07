@@ -17,6 +17,9 @@ class BatteryService: ObservableObject {
     @Published var cycleCount: Int? = nil
     @Published var batteryTempCelsius: Double? = nil
 
+    private var hasWarnedOverheating: Bool = false
+    private var hasNotifiedFullCharge: Bool = false
+
     private var timer: Timer?
 
     typealias IOPSCopyPowerSourcesInfoFunc = @convention(c) () -> Unmanaged<CFTypeRef>?
@@ -142,6 +145,7 @@ class BatteryService: ObservableObject {
                     if let tempRaw = desc["Temperature"] as? Int, tempRaw > 0 {
                         self.batteryTempCelsius = tempRaw > 1000 ? Double(tempRaw) / 100.0 : Double(tempRaw) / 10.0
                     }
+                    evaluateBatteryAlerts()
                     return
                 }
             }
@@ -159,5 +163,34 @@ class BatteryService: ObservableObject {
         self.isAccurateHardwareRead = false
         self.chargingWatts = nil
         self.timeToFullMinutes = nil
+        evaluateBatteryAlerts()
+    }
+
+    private func evaluateBatteryAlerts() {
+        if self.percentage == 100 && self.isCharging && !self.hasNotifiedFullCharge {
+            self.hasNotifiedFullCharge = true
+            IslandState.shared.triggerNotification(
+                title: "Fully Charged",
+                subtitle: "Battery 100% • Optimal Health",
+                icon: "battery.100.bolt",
+                color: .green
+            )
+        } else if !self.isCharging {
+            self.hasNotifiedFullCharge = false
+        }
+
+        if let temp = self.batteryTempCelsius {
+            if temp > 42.0 && !self.hasWarnedOverheating {
+                self.hasWarnedOverheating = true
+                IslandState.shared.triggerNotification(
+                    title: "Device Hot (\(String(format: "%.1f°C", temp)))",
+                    subtitle: "iPhone needs to cool down",
+                    icon: "thermometer.sun.fill",
+                    color: .red
+                )
+            } else if temp < 38.0 {
+                self.hasWarnedOverheating = false
+            }
+        }
     }
 }

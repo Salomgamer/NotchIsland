@@ -74,7 +74,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 3.2 • iPhone 11")
+                Text("Dynamic Island 3.3 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -204,18 +204,36 @@ struct ContentView: View {
             Button(action: {
                 torch.toggleTorch()
             }) {
-                HStack(spacing: 6) {
+                HStack(spacing: 5) {
                     Image(systemName: torch.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                     Text(torch.isTorchOn ? "On" : "Torch")
-                        .font(.system(size: 11.5, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                 }
                 .foregroundColor(torch.isTorchOn ? .black : .white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 10)
                 .background(torch.isTorchOn ? Color.yellow : Color(white: 0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .shadow(color: torch.isTorchOn ? Color.yellow.opacity(0.4) : .clear, radius: 8)
+            }
+
+            // SOS Strobe Emergency Toggle
+            Button(action: {
+                torch.toggleSOS()
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.shield.fill")
+                        .font(.system(size: 12, weight: .bold))
+                    Text(torch.isSOSActive ? "SOS" : "SOS")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .foregroundColor(torch.isSOSActive ? .white : .gray)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 10)
+                .background(torch.isSOSActive ? Color.red : Color(white: 0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: torch.isSOSActive ? Color.red.opacity(0.5) : .clear, radius: 8)
             }
         }
     }
