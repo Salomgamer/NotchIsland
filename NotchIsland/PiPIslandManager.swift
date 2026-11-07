@@ -42,17 +42,26 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
 
         let islandView = FloatingIslandView(state: state)
         let host = UIHostingController(rootView: islandView)
-        host.view.frame = CGRect(origin: .zero, size: initialSize)
         host.view.backgroundColor = .clear
         self.hostingController = host
 
         let videoCallVC = AVPictureInPictureVideoCallViewController()
         videoCallVC.preferredContentSize = initialSize
+        videoCallVC.view.backgroundColor = .black
 
         videoCallVC.addChild(host)
         videoCallVC.view.addSubview(host.view)
-        host.didMove(toParent: videoCallVC)
 
+        // Pin host view to all 4 edges of the PiP window so the island fills and centers naturally
+        host.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            host.view.topAnchor.constraint(equalTo: videoCallVC.view.topAnchor),
+            host.view.bottomAnchor.constraint(equalTo: videoCallVC.view.bottomAnchor),
+            host.view.leadingAnchor.constraint(equalTo: videoCallVC.view.leadingAnchor),
+            host.view.trailingAnchor.constraint(equalTo: videoCallVC.view.trailingAnchor)
+        ])
+
+        host.didMove(toParent: videoCallVC)
         self.pipVideoCallVC = videoCallVC
 
         let source = AVPictureInPictureController.ContentSource(
@@ -71,7 +80,6 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.anchorSourceView.frame = CGRect(origin: .zero, size: newSize)
-            self.hostingController?.view.frame = CGRect(origin: .zero, size: newSize)
             self.pipVideoCallVC?.preferredContentSize = newSize
         }
     }

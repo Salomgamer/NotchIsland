@@ -9,7 +9,7 @@ struct ContentView: View {
             Color(red: 0.05, green: 0.05, blue: 0.06)
                 .ignoresSafeArea()
 
-            VStack(spacing: 22) {
+            VStack(spacing: 20) {
                 // Header
                 VStack(spacing: 4) {
                     Text("Notch Island")
@@ -24,7 +24,7 @@ struct ContentView: View {
 
                 // Live Preview with Simulated Notch
                 VStack(spacing: 10) {
-                    Text("LIVE PILL PREVIEW")
+                    Text("LIVE FLOATER PREVIEW")
                         .font(.system(size: 10.5, weight: .bold))
                         .foregroundColor(.gray.opacity(0.8))
                         .kerning(1.2)
@@ -32,23 +32,26 @@ struct ContentView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
                             .fill(Color(white: 0.11))
-                            .frame(height: 100)
+                            .frame(height: 125)
 
                         VStack(spacing: 0) {
                             // iPhone 11 Physical Notch Shape
                             Path { path in
-                                path.move(to: CGPoint(x: 110, y: 0))
-                                path.addLine(to: CGPoint(x: 135, y: 22))
-                                path.addLine(to: CGPoint(x: 265, y: 22))
-                                path.addLine(to: CGPoint(x: 290, y: 0))
+                                path.move(to: CGPoint(x: 100, y: 0))
+                                path.addLine(to: CGPoint(x: 125, y: 24))
+                                path.addLine(to: CGPoint(x: 275, y: 24))
+                                path.addLine(to: CGPoint(x: 300, y: 0))
                             }
                             .fill(Color.black)
-                            .frame(height: 22)
+                            .frame(height: 24)
 
                             Spacer()
 
-                            // Compact Island Pill
+                            // Floating Island Preview
                             FloatingIslandView(state: state)
+                                .frame(width: state.islandWidth, height: state.islandHeight)
+                                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                .shadow(color: .black.opacity(0.6), radius: 8, x: 0, y: 4)
 
                             Spacer()
                         }
@@ -58,7 +61,7 @@ struct ContentView: View {
 
                 // Size Switcher
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("ISLAND PROFILE")
+                    Text("PILL PROFILE")
                         .font(.system(size: 10.5, weight: .bold))
                         .foregroundColor(.gray.opacity(0.8))
                         .kerning(1.2)
@@ -70,7 +73,7 @@ struct ContentView: View {
                                 state.setSize(sizeOption)
                                 pip.updateSize(width: state.islandWidth, height: state.islandHeight)
                             }) {
-                                Text(sizeOption == .mini ? "Ultra-Slim" : (sizeOption == .compact ? "Compact" : "Standard"))
+                                Text(sizeOption.rawValue)
                                     .font(.system(size: 12, weight: .semibold))
                                     .foregroundColor(state.size == sizeOption ? .black : .white)
                                     .frame(maxWidth: .infinity)
@@ -87,7 +90,7 @@ struct ContentView: View {
 
                 // Activity Mode Selector
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("ACTIVITY TYPE")
+                    Text("LIVE ACTIVITY")
                         .font(.system(size: 10.5, weight: .bold))
                         .foregroundColor(.gray.opacity(0.8))
                         .kerning(1.2)
@@ -139,7 +142,7 @@ struct ContentView: View {
                     }
                     .padding(.horizontal, 24)
 
-                    Text("When launched, swipe Home and snap the pill directly under your notch.")
+                    Text("When launched, swipe Home and drag it to the top under your notch.")
                         .font(.system(size: 11))
                         .foregroundColor(.gray)
                 }

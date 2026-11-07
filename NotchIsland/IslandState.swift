@@ -8,9 +8,9 @@ enum IslandMode: String, CaseIterable {
 }
 
 enum IslandSize: String, CaseIterable {
-    case mini = "Ultra-Slim (130×28)"
-    case compact = "Compact (148×32)"
-    case standard = "Standard (184×34)"
+    case slim = "Slim (160×46)"
+    case compact = "Compact (180×52)"
+    case expanded = "Expanded (210×58)"
 }
 
 class IslandState: ObservableObject {
@@ -19,9 +19,8 @@ class IslandState: ObservableObject {
     @Published var mode: IslandMode = .timer
     @Published var size: IslandSize = .compact
 
-    @Published var title: String = "Focus"
-    @Published var subtitle: String = "25:00"
-    @Published var centerText: String = "Focus"
+    @Published var title: String = "Focus Session"
+    @Published var subtitle: String = "25:00 remaining"
     @Published var progress: Double = 0.0
     @Published var remainingSeconds: Double = 1500
     @Published var totalSeconds: Double = 1500
@@ -32,22 +31,18 @@ class IslandState: ObservableObject {
 
     var islandWidth: CGFloat {
         switch size {
-        case .mini: return 130
-        case .compact: return 148
-        case .standard: return 184
+        case .slim: return 160
+        case .compact: return 180
+        case .expanded: return 210
         }
     }
 
     var islandHeight: CGFloat {
         switch size {
-        case .mini: return 28
-        case .compact: return 32
-        case .standard: return 34
+        case .slim: return 46
+        case .compact: return 52
+        case .expanded: return 58
         }
-    }
-
-    var showCenterText: Bool {
-        return size != .mini
     }
 
     var timerFormatted: String {
@@ -57,10 +52,10 @@ class IslandState: ObservableObject {
     }
 
     init() {
-        // Completely safe initial values without triggering external singletons
         self.mode = .timer
         self.size = .compact
-        self.centerText = "Focus"
+        self.title = "Focus Session"
+        self.subtitle = "25:00 remaining"
         self.remainingSeconds = 1500
         self.totalSeconds = 1500
         self.progress = 0.0
@@ -77,18 +72,23 @@ class IslandState: ObservableObject {
 
         switch newMode {
         case .timer:
-            centerText = size == .standard ? "Focus Session" : "Focus"
+            title = "Focus Session"
+            subtitle = "\(timerFormatted) remaining"
             startDemoTimer()
 
         case .media:
-            centerText = "Starboy"
+            title = "Starboy"
+            subtitle = "The Weeknd"
+            progress = 0.45
 
         case .battery:
             UIDevice.current.isBatteryMonitoringEnabled = true
             let level = UIDevice.current.batteryLevel
             batteryPercentage = level >= 0 ? Int(level * 100) : 88
             isCharging = UIDevice.current.batteryState == .charging || UIDevice.current.batteryState == .full
-            centerText = isCharging ? "Charging" : "Battery"
+            title = "iPhone 11"
+            subtitle = isCharging ? "Fast Charging • \(batteryPercentage)%" : "\(batteryPercentage)% Remaining"
+            progress = Double(batteryPercentage) / 100.0
         }
     }
 
@@ -103,6 +103,7 @@ class IslandState: ObservableObject {
                 guard let self = self else { return }
                 if self.remainingSeconds > 0 {
                     self.remainingSeconds -= 1
+                    self.subtitle = "\(self.timerFormatted) remaining"
                     self.progress = (self.totalSeconds - self.remainingSeconds) / self.totalSeconds
                 }
             }
