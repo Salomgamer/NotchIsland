@@ -1233,4 +1233,16 @@ class IslandState: ObservableObject {
             color: Color(red: 1.0, green: 0.25, blue: 0.35)
         )
     }
+
+    func testSimulateLowPowerMode() {
+        BatteryService.shared.isLowPowerMode.toggle()
+        let active = BatteryService.shared.isLowPowerMode
+        HapticService.shared.light()
+        triggerNotification(
+            title: active ? "Low Power Mode On" : "Standard Power Restored",
+            subtitle: active ? "Yellow Battery Active • Background Throttling" : "Normal Background Refresh",
+            icon: "battery.25",
+            color: active ? .yellow : .green
+        )
+    }
 }

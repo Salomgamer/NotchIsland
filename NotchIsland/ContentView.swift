@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 5.3 • Golden Master")
+                Text("Dynamic Island 5.4 • Golden Master")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -402,6 +402,10 @@ struct ContentView: View {
 
                 testTriggerButton(title: "🌙 Do Not Disturb", color: Color(red: 0.68, green: 0.32, blue: 0.95)) {
                     state.toggleFocus(.dnd)
+                }
+
+                testTriggerButton(title: "🪫 Low Power Mode", color: .yellow) {
+                    state.testSimulateLowPowerMode()
                 }
             }
         }
@@ -1524,6 +1528,30 @@ struct ContentView: View {
             }
             .padding(.top, 2)
 
+            // Haptic Feedback Strength
+            HStack(spacing: 8) {
+                Text("Haptics:")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.gray)
+
+                ForEach(HapticFeedbackStrength.allCases) { str in
+                    Button(action: {
+                        HapticService.shared.strength = str
+                        HapticService.shared.medium()
+                    }) {
+                        Text(str.rawValue)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(HapticService.shared.strength == str ? .black : .white)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(HapticService.shared.strength == str ? state.theme.color : Color(white: 0.15))
+                            .clipShape(Capsule())
+                    }
+                }
+                Spacer()
+            }
+            .padding(.top, 2)
+
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("• Single Tap: Expand / Collapse Island")
@@ -1840,7 +1868,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 5.3 Sheet
+// MARK: - What's New in Dynamic Notch 5.4 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1855,7 +1883,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 5.3")
+                    Text("Dynamic Notch 5.4")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("GOLDEN MASTER EDITION")
@@ -1867,6 +1895,19 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "waveform.path",
+                            color: themeColor,
+                            title: "Haptic Intensity Customization",
+                            desc: "Tailor your Taptic Engine feedback with Apple Default, Subtle, Firm Impact, or Muted profiles."
+                        )
+
+                        featureRow(
+                            icon: "battery.25",
+                            color: .yellow,
+                            title: "Low Power Mode Dynamic HUD",
+                            desc: "Authentic Apple iOS Low Power Mode notification and yellow battery telemetry readout."
+                        )
                         featureRow(
                             icon: "quote.bubble.fill",
                             color: themeColor,
