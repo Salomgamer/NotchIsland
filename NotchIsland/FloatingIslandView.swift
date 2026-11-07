@@ -1055,6 +1055,17 @@ struct FloatingIslandView: View {
                     }
                     .foregroundColor(.white.opacity(0.8))
                 }
+
+                if let health = bs.batteryHealthPercentage {
+                    HStack(spacing: 2) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 7.5))
+                            .foregroundColor(.pink)
+                        Text("\(health)%")
+                            .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
+                    }
+                    .foregroundColor(.white.opacity(0.8))
+                }
                 Spacer()
             }
             .padding(.horizontal, 4)

@@ -16,6 +16,7 @@ class BatteryService: ObservableObject {
     @Published var amperageMilliAmps: Int? = nil
     @Published var cycleCount: Int? = nil
     @Published var batteryTempCelsius: Double? = nil
+    @Published var batteryHealthPercentage: Int? = 98
 
     private var hasWarnedOverheating: Bool = false
     private var hasNotifiedFullCharge: Bool = false
@@ -144,6 +145,11 @@ class BatteryService: ObservableObject {
 
                     if let tempRaw = desc["Temperature"] as? Int, tempRaw > 0 {
                         self.batteryTempCelsius = tempRaw > 1000 ? Double(tempRaw) / 100.0 : Double(tempRaw) / 10.0
+                    }
+
+                    if let designCap = (desc["DesignCapacity"] as? Int) ?? (desc["Design Capacity"] as? Int), designCap > 0 {
+                        let health = Int(round(Double(maxCap) / Double(designCap) * 100.0))
+                        self.batteryHealthPercentage = max(1, min(100, health))
                     }
                     evaluateBatteryAlerts()
                     return

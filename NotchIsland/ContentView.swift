@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 4.5 • iPhone 11")
+                Text("Dynamic Island 4.6 • iPhone 11")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1081,6 +1081,18 @@ struct ContentView: View {
                 .font(.system(size: 10.5))
                 .foregroundColor(.gray)
 
+            if let health = battery.batteryHealthPercentage {
+                HStack(spacing: 5) {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(.pink)
+                    Text("Battery Health: \(health)% (Maximum Capacity)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                .padding(.vertical, 2)
+            }
+
             Button(action: {
                 BatteryService.shared.updateBattery()
             }) {
@@ -1705,7 +1717,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 4.5 Sheet
+// MARK: - What's New in Dynamic Notch 4.6 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1720,7 +1732,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 4.5")
+                    Text("Dynamic Notch 4.6")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                 }
