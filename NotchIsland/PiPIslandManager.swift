@@ -50,12 +50,14 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         let islandView = FloatingIslandView(state: state)
         let host = UIHostingController(rootView: islandView)
         host.view.backgroundColor = .clear
+        host.view.isOpaque = false
         self.hostingController = host
 
         // Video call view controller for PiP
         let videoCallVC = AVPictureInPictureVideoCallViewController()
         videoCallVC.preferredContentSize = initialSize
-        videoCallVC.view.backgroundColor = .black
+        videoCallVC.view.backgroundColor = .clear
+        videoCallVC.view.isOpaque = false
 
         videoCallVC.addChild(host)
         videoCallVC.view.addSubview(host.view)

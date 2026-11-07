@@ -6,41 +6,50 @@ struct FloatingIslandView: View {
 
     var body: some View {
         ZStack {
-            // True OLED Black fill
-            Color.black
-                .ignoresSafeArea()
+            // The entire excess PiP window margin is 100% transparent
+            Color.clear
 
-            // Dynamic ambient glow border
-            if state.mode == .media, let glowColor = nowPlaying.artworkAccentColor {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(glowColor.opacity(0.40), lineWidth: 1.2)
-                    .shadow(color: glowColor.opacity(0.45), radius: 6, x: 0, y: 0)
-                    .padding(0.5)
-            } else {
-                // Subtle Apple-style gloss border
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                    .padding(0.5)
-            }
+            // The Little Island Pill centered in the middle of the PiP
+            ZStack {
+                // True OLED Black fill for the pill itself
+                Color.black
 
-            // Dynamic Island Content
-            if state.isShowingVolumeHUD {
-                volumeHUDContent
-            } else if state.isExpanded {
-                if state.isShowingNotification {
-                    notificationExpandedContent
+                // Dynamic ambient glow border
+                if state.mode == .media, let glowColor = nowPlaying.artworkAccentColor {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(glowColor.opacity(0.45), lineWidth: 1.2)
+                        .shadow(color: glowColor.opacity(0.50), radius: 6, x: 0, y: 0)
+                        .padding(0.5)
                 } else {
-                    expandedActivityContent
+                    // Subtle Apple-style gloss border
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                        .padding(0.5)
                 }
-            } else {
-                multipurposeCompactContent
+
+                // Dynamic Island Internal Content
+                if state.isShowingVolumeHUD {
+                    volumeHUDContent
+                } else if state.isExpanded {
+                    if state.isShowingNotification {
+                        notificationExpandedContent
+                    } else {
+                        expandedActivityContent
+                    }
+                } else {
+                    multipurposeCompactContent
+                }
+            }
+            .frame(width: state.islandWidth, height: state.islandHeight)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .shadow(color: .black.opacity(0.65), radius: 8, x: 0, y: 3)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                state.toggleExpanded()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            state.toggleExpanded()
-        }
+        .background(Color.clear)
         .animation(.spring(response: 0.35, dampingFraction: 0.72), value: state.isExpanded)
         .animation(.spring(response: 0.35, dampingFraction: 0.72), value: state.isShowingNotification)
         .animation(.spring(response: 0.30, dampingFraction: 0.75), value: state.isShowingVolumeHUD)
@@ -83,7 +92,7 @@ struct FloatingIslandView: View {
     // MARK: - Multipurpose Compact Content (Music + Battery Together)
     private var multipurposeCompactContent: some View {
         HStack(spacing: 6) {
-            // Leading: Song Album Cover Thumbnail
+            // Leading: Song Cover Thumbnail with Playing App Badge
             songCoverThumbnail
 
             // Center: Song Name & Source/Artist
@@ -94,11 +103,13 @@ struct FloatingIslandView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
 
-                Text(state.mode == .call ? state.callerSubtitle : state.mediaArtist)
-                    .font(.system(size: 8.5, weight: .semibold, design: .rounded))
-                    .foregroundColor(subtitleColor)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+                HStack(spacing: 3) {
+                    Text(state.mode == .call ? state.callerSubtitle : state.mediaArtist)
+                        .font(.system(size: 8.5, weight: .semibold, design: .rounded))
+                        .foregroundColor(subtitleColor)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -131,7 +142,7 @@ struct FloatingIslandView: View {
         .padding(.vertical, 4)
     }
 
-    // MARK: - Song Cover Thumbnail
+    // MARK: - Song Cover Thumbnail with App Icon
     @ViewBuilder
     private var songCoverThumbnail: some View {
         if state.mode == .call {
@@ -144,24 +155,24 @@ struct FloatingIslandView: View {
                     .foregroundColor(.white)
             }
         } else if let artwork = nowPlaying.artworkImage {
-            Image(uiImage: artwork)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 22, height: 22)
-                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
-                )
-        } else {
-            ZStack {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(subtitleColor)
+            ZStack(alignment: .bottomTrailing) {
+                Image(uiImage: artwork)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
                     .frame(width: 22, height: 22)
-                Image(systemName: "music.note")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(.black)
+                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                    )
+
+                // Mini Source App Icon Badge
+                AppSourceIconView(source: nowPlaying.sourceAppName, size: 8)
+                    .offset(x: 2, y: 2)
             }
+        } else {
+            // Full App Icon Squircle
+            AppSourceIconView(source: nowPlaying.sourceAppName, size: 22)
         }
     }
 
@@ -227,20 +238,18 @@ struct FloatingIslandView: View {
         VStack(spacing: 6) {
             HStack(spacing: 10) {
                 if let artwork = nowPlaying.artworkImage {
-                    Image(uiImage: artwork)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 32, height: 32)
-                        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                } else {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(subtitleColor)
+                    ZStack(alignment: .bottomTrailing) {
+                        Image(uiImage: artwork)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
                             .frame(width: 32, height: 32)
-                        Image(systemName: "music.note")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.black)
+                            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+
+                        AppSourceIconView(source: nowPlaying.sourceAppName, size: 10)
+                            .offset(x: 2, y: 2)
                     }
+                } else {
+                    AppSourceIconView(source: nowPlaying.sourceAppName, size: 32)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -249,15 +258,20 @@ struct FloatingIslandView: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
 
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Text(state.mediaArtist)
                             .font(.system(size: 10, weight: .medium, design: .rounded))
                             .foregroundColor(subtitleColor)
                             .lineLimit(1)
 
-                        Text("• \(nowPlaying.sourceAppName)")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(.gray)
+                        HStack(spacing: 2) {
+                            Circle()
+                                .fill(subtitleColor)
+                                .frame(width: 3, height: 3)
+                            Text(nowPlaying.sourceAppName)
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -587,6 +601,50 @@ struct FloatingIslandView: View {
         } else {
             return .green
         }
+    }
+}
+
+// MARK: - App Source Icon View (YouTube, Spotify, Safari, Stremio, etc.)
+struct AppSourceIconView: View {
+    let source: String
+    let size: CGFloat
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: max(2, size * 0.28), style: .continuous)
+                .fill(appColor)
+                .frame(width: size, height: size)
+
+            Image(systemName: appIcon)
+                .font(.system(size: size * 0.52, weight: .bold))
+                .foregroundColor(.white)
+        }
+    }
+
+    private var appColor: Color {
+        let lower = source.lowercased()
+        if lower.contains("youtube") { return Color(red: 1.0, green: 0.0, blue: 0.0) } // YouTube Red
+        if lower.contains("spotify") { return Color(red: 0.12, green: 0.84, blue: 0.38) } // Spotify Green
+        if lower.contains("safari") { return Color(red: 0.0, green: 0.48, blue: 1.0) } // Safari Blue
+        if lower.contains("stremio") { return Color(red: 0.45, green: 0.25, blue: 0.75) } // Stremio Purple
+        if lower.contains("music") { return Color(red: 0.98, green: 0.22, blue: 0.38) } // Apple Music Pink
+        if lower.contains("soundcloud") { return Color(red: 1.0, green: 0.45, blue: 0.0) } // SoundCloud Orange
+        if lower.contains("netflix") { return Color(red: 0.89, green: 0.04, blue: 0.08) } // Netflix Red
+        if lower.contains("twitch") { return Color(red: 0.57, green: 0.27, blue: 1.0) } // Twitch Purple
+        return Color(red: 0.18, green: 0.84, blue: 0.38)
+    }
+
+    private var appIcon: String {
+        let lower = source.lowercased()
+        if lower.contains("youtube") { return "play.rectangle.fill" }
+        if lower.contains("spotify") { return "waveform" }
+        if lower.contains("safari") { return "safari.fill" }
+        if lower.contains("stremio") { return "film.fill" }
+        if lower.contains("music") { return "music.note" }
+        if lower.contains("soundcloud") { return "cloud.fill" }
+        if lower.contains("netflix") { return "tv.fill" }
+        if lower.contains("twitch") { return "video.fill" }
+        return "music.note"
     }
 }
 
