@@ -1,0 +1,19 @@
+name: NotchIsland
+options:
+  bundleIdPrefix: com.notchisland
+  deploymentTarget:
+    iOS: 16.0
+targets:
+  NotchIsland:
+    type: application
+    platform: iOS
+    deploymentTarget: 16.0
+    sources:
+      - path: NotchIsland
+    info:
+      path: NotchIsland/Info.plist
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.notchisland.app
+      CODE_SIGN_IDENTITY: ""
+      CODE_SIGNING_REQUIRED: NO
+      CODE_SIGNING_ALLOWED: NO
