@@ -48,4 +48,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload v2.0 DynamicNotch.ipa --clobber || gh release create v2.0 DynamicNotch.ipa --title "Dynamic Notch 2.0" --notes "Dynamic Notch 2.0 for iOS 15+ (iPhone 11 & all notch devices)" || echo "Release upload skipped"
+          gh release upload v3.1 DynamicNotch.ipa --clobber || gh release upload v2.0 DynamicNotch.ipa --clobber || echo "Release upload skipped"
