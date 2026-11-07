@@ -96,10 +96,11 @@ struct FloatingIslandView: View {
             if let accent = nowPlaying.artworkAccentColor {
                 ZStack {
                     Color.black.opacity(state.backgroundOpacity)
-                    LinearGradient(
-                        colors: [accent.opacity(0.48 * state.backgroundOpacity), Color.black.opacity(0.85 * state.backgroundOpacity)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                    RadialGradient(
+                        colors: [accent.opacity(0.55 * state.backgroundOpacity), Color.black.opacity(0.92 * state.backgroundOpacity)],
+                        center: .topLeading,
+                        startRadius: 8,
+                        endRadius: 180
                     )
                 }
             } else {
@@ -978,6 +979,7 @@ struct FloatingIslandView: View {
                                 .onChanged { val in
                                     let pct = max(0.0, min(1.0, Double(val.location.x / geo.size.width)))
                                     nowPlaying.seek(toProgress: pct)
+                                    HapticService.shared.selection()
                                 }
                         )
                     }

@@ -212,6 +212,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
     case toggleTorch = "Toggle Torch"
     case toggleSOS = "Toggle SOS Beacon"
     case toggleSilent = "Toggle Silent"
+    case toggleTimer = "Toggle Focus Timer"
     case testFaceID = "Simulate Face ID"
     case cycleVisualizer = "Cycle Visualizer"
     case stealthMode = "Stealth Mode"
@@ -230,6 +231,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         case .toggleTorch: return "flashlight.on.fill"
         case .toggleSOS: return "exclamationmark.shield.fill"
         case .toggleSilent: return "bell.slash.fill"
+        case .toggleTimer: return "timer"
         case .testFaceID: return "faceid"
         case .cycleVisualizer: return "waveform"
         case .stealthMode: return "eye.slash.fill"
@@ -817,6 +819,8 @@ class IslandState: ObservableObject {
             TorchService.shared.toggleSOS()
         case .toggleSilent:
             toggleSilentMode()
+        case .toggleTimer:
+            toggleTimer()
         case .testFaceID:
             testSimulateFaceID()
         case .cycleVisualizer:

@@ -84,7 +84,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 5.6 • Golden Master")
+                Text("Dynamic Island 5.7 • Golden Master")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -1886,7 +1886,7 @@ struct PiPAnchorRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-// MARK: - What's New in Dynamic Notch 5.6 Sheet
+// MARK: - What's New in Dynamic Notch 5.7 Sheet
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
     let themeColor: Color
@@ -1901,7 +1901,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 5.6")
+                    Text("Dynamic Notch 5.7")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("GOLDEN MASTER EDITION")
@@ -1913,6 +1913,26 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "hand.tap.fill",
+                            color: themeColor,
+                            title: "Scrubber Haptic Tick Feedback",
+                            desc: "Feel delicate physical tick feedback from the Taptic Engine as you drag and seek along the media timeline."
+                        )
+
+                        featureRow(
+                            icon: "timer",
+                            color: .orange,
+                            title: "Double-Tap Focus Timer Shortcut",
+                            desc: "Assign Double-Tap on the collapsed notch to start or pause your Pomodoro focus session instantly."
+                        )
+
+                        featureRow(
+                            icon: "sun.max.fill",
+                            color: Color(red: 0.95, green: 0.40, blue: 0.80),
+                            title: "Radial Artwork Spotlight",
+                            desc: "Dynamic iOS 18 style ambient radial glow radiating from album cover artwork into the notch frame."
+                        )
                         featureRow(
                             icon: "slider.horizontal.3",
                             color: themeColor,
