@@ -10,89 +10,272 @@ struct FloatingIslandView: View {
             // The entire excess PiP window margin is 100% transparent
             Color.clear
 
-            // The Little Island Pill centered in the middle of the PiP
-            ZStack {
-                // Configurable Pill Background (OLED, Frosted Glass, Artwork Adaptive, etc.)
-                pillBackground
-
-                // Dynamic ambient glow border / liquid glass edge
-                if state.backgroundStyle == .liquidWallpaperGlass {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.65),
-                                    Color.white.opacity(0.18),
-                                    Color.cyan.opacity(0.35),
-                                    Color.white.opacity(0.45)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.2
-                        )
-                        .shadow(color: Color.white.opacity(0.25), radius: 4, x: 0, y: 0)
-                        .padding(0.5)
-                } else if state.mode == .media, let glowColor = nowPlaying.artworkAccentColor {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(glowColor.opacity(0.50), lineWidth: 1.2)
-                        .shadow(color: glowColor.opacity(0.55), radius: 6, x: 0, y: 0)
-                        .padding(0.5)
-                } else if state.isCharging {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(Color.green.opacity(0.55), lineWidth: 1.2)
-                        .shadow(color: Color.green.opacity(0.50), radius: 6, x: 0, y: 0)
-                        .padding(0.5)
-                } else if BatteryService.shared.isLowPowerMode {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(Color.yellow.opacity(0.50), lineWidth: 1.0)
-                        .shadow(color: Color.yellow.opacity(0.40), radius: 5, x: 0, y: 0)
-                        .padding(0.5)
-                } else {
-                    // Subtle Apple-style gloss border
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(Color.white.opacity(0.14), lineWidth: 1)
-                        .padding(0.5)
-                }
-
-                // Dynamic Island Internal Content
-                if state.isShowingVolumeHUD {
-                    volumeHUDContent
-                } else if state.isShowingBrightnessHUD {
-                    brightnessHUDContent
-                } else if state.isExpanded {
-                    if state.isShowingNotification {
-                        notificationExpandedContent
-                    } else {
-                        expandedActivityContent
-                    }
-                } else {
-                    multipurposeCompactContent
-                }
-            }
-            .frame(width: state.islandWidth, height: state.islandHeight)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .shadow(color: .black.opacity(0.65), radius: 8, x: 0, y: 3)
-            .contentShape(Rectangle())
-            .onTapGesture(count: 2) {
-                state.handleDoubleTap()
-            }
-            .onTapGesture(count: 1) {
-                if !state.isExpanded {
-                    state.expand()
-                } else {
-                    state.collapse()
-                }
-            }
-            .onLongPressGesture(minimumDuration: 0.6) {
-                state.cycleNextMode()
+            if state.isIslandHidden {
+                // Apple Stealth Tucked Bezel (1-tap restores)
+                stealthTuckedIndicator
+            } else if state.isSplitIslandActive && !state.isExpanded && !state.isShowingNotification && !state.isShowingVolumeHUD && !state.isShowingBrightnessHUD {
+                // True Apple Dynamic Island Split Multi-Item Mode (Major Pill + Detached Orbit Bubble)
+                splitIslandView
+            } else {
+                // Unified Dynamic Island (Compact Pill or Full Expanded Jindo Card)
+                unifiedIslandView
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
         .animation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping), value: state.isExpanded)
+        .animation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping), value: state.isSplitIslandActive)
+        .animation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping), value: state.isIslandHidden)
         .animation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping), value: state.isShowingNotification)
         .animation(.spring(response: state.animationProfile.response * 0.85, dampingFraction: state.animationProfile.damping), value: state.isShowingVolumeHUD)
+    }
+
+    // MARK: - Jindo Split Island Mode (Major Pill + Orbit Bubble)
+    private var splitIslandView: some View {
+        HStack(spacing: 8) {
+            // Major / Primary Island Pill (Left)
+            ZStack {
+                pillBackground
+                pillBorderOverlay(radius: 18)
+                splitPrimaryPillContent
+            }
+            .frame(width: 124, height: 36)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.65), radius: 6, x: 0, y: 2)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                state.expandPrimaryPill()
+            }
+
+            // Minor / Detached Orbit Bubble (Right)
+            ZStack {
+                pillBackground
+                pillBorderOverlay(radius: 18)
+                splitOrbitBubbleContent
+            }
+            .frame(width: 36, height: 36)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.65), radius: 6, x: 0, y: 2)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                state.expandSecondaryBubble()
+            }
+        }
+        .offset(state.dragOffset)
+        .gesture(
+            DragGesture()
+                .onChanged { val in
+                    let hDrag = val.translation.width
+                    let vDrag = val.translation.height
+                    if vDrag > 0 {
+                        state.dragOffset = CGSize(width: 0, height: pow(vDrag, 0.82))
+                    } else if abs(hDrag) > 20 {
+                        state.dragOffset = CGSize(width: hDrag * 0.4, height: 0)
+                    }
+                }
+                .onEnded { val in
+                    if val.translation.height > 25 {
+                        state.expandPrimaryPill()
+                    } else if abs(val.translation.width) > 40 {
+                        state.tuckToStealth()
+                    }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+                        state.dragOffset = .zero
+                    }
+                }
+        )
+    }
+
+    private var splitPrimaryPillContent: some View {
+        HStack(spacing: 5) {
+            songCoverThumbnail
+                .scaleEffect(0.9)
+
+            MarqueeText(
+                text: compactTitleText,
+                font: .system(size: 9.5, weight: .bold, design: .rounded),
+                color: .white
+            )
+            .frame(height: 12)
+
+            Spacer(minLength: 0)
+
+            if state.mode == .call {
+                VoiceWaveformView(color: Color.green)
+                    .scaleEffect(0.8)
+            } else if nowPlaying.isPlaying {
+                audioVisualizer(color: visualizerColor)
+                    .scaleEffect(0.8)
+            } else {
+                Circle()
+                    .fill(Color(red: 0.18, green: 0.84, blue: 0.38))
+                    .frame(width: 4, height: 4)
+            }
+        }
+        .padding(.horizontal, 7)
+    }
+
+    private var splitOrbitBubbleContent: some View {
+        ZStack {
+            switch state.secondaryActivity {
+            case .timer:
+                Image(systemName: "timer")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(.orange)
+            case .stopwatch:
+                Image(systemName: "stopwatch")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+            case .recording:
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 8, height: 8)
+            case .navigation:
+                Image(systemName: "arrow.turn.up.right")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+            case .sports:
+                Text("⚽")
+                    .font(.system(size: 9.5))
+            case .battery:
+                Text("\(state.batteryPercentage)%")
+                    .font(.system(size: 8, weight: .heavy, design: .rounded))
+                    .foregroundColor(batteryColor)
+            case .micPrivacy:
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 7, height: 7)
+                    .shadow(color: .orange.opacity(0.8), radius: 2)
+            case .cameraPrivacy:
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 7, height: 7)
+                    .shadow(color: .green.opacity(0.8), radius: 2)
+            case .hotspot:
+                Image(systemName: "personalhotspot")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+            }
+        }
+    }
+
+    private var stealthTuckedIndicator: some View {
+        Capsule()
+            .fill(Color.white.opacity(0.22))
+            .frame(width: 28, height: 4.5)
+            .shadow(color: .black.opacity(0.6), radius: 2)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                state.restoreFromStealth()
+            }
+    }
+
+    // MARK: - Unified Dynamic Island
+    private var unifiedIslandView: some View {
+        ZStack {
+            pillBackground
+            pillBorderOverlay(radius: cornerRadius)
+
+            if state.isShowingVolumeHUD {
+                volumeHUDContent
+            } else if state.isShowingBrightnessHUD {
+                brightnessHUDContent
+            } else if state.isExpanded {
+                if state.isShowingNotification {
+                    notificationExpandedContent
+                } else {
+                    expandedActivityContent
+                }
+            } else {
+                multipurposeCompactContent
+            }
+        }
+        .frame(width: state.islandWidth, height: state.islandHeight)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .shadow(color: .black.opacity(0.65), radius: 8, x: 0, y: 3)
+        .offset(state.dragOffset)
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            state.handleDoubleTap()
+        }
+        .onTapGesture(count: 1) {
+            if !state.isExpanded {
+                state.expand()
+            } else {
+                state.collapse()
+            }
+        }
+        .onLongPressGesture(minimumDuration: 0.5) {
+            if !state.isExpanded {
+                state.expand()
+            } else {
+                state.cycleNextMode()
+            }
+        }
+        .gesture(
+            DragGesture()
+                .onChanged { val in
+                    let hDrag = val.translation.width
+                    let vDrag = val.translation.height
+                    if vDrag > 0 {
+                        state.dragOffset = CGSize(width: 0, height: pow(vDrag, 0.82))
+                    } else if abs(hDrag) > 20 {
+                        state.dragOffset = CGSize(width: hDrag * 0.4, height: 0)
+                    }
+                }
+                .onEnded { val in
+                    if val.translation.height > 25 {
+                        state.expand()
+                    } else if abs(val.translation.width) > 40 {
+                        state.tuckToStealth()
+                    }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+                        state.dragOffset = .zero
+                    }
+                }
+        )
+    }
+
+    // MARK: - Pill Border Glow Overlay
+    @ViewBuilder
+    private func pillBorderOverlay(radius: CGFloat) -> some View {
+        if state.backgroundStyle == .liquidWallpaperGlass {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.65),
+                            Color.white.opacity(0.18),
+                            Color.cyan.opacity(0.35),
+                            Color.white.opacity(0.45)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.2
+                )
+                .shadow(color: Color.white.opacity(0.25), radius: 4, x: 0, y: 0)
+                .padding(0.5)
+        } else if state.mode == .media, let glowColor = nowPlaying.artworkAccentColor {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .stroke(glowColor.opacity(0.50), lineWidth: 1.2)
+                .shadow(color: glowColor.opacity(0.55), radius: 6, x: 0, y: 0)
+                .padding(0.5)
+        } else if state.isCharging {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .stroke(Color.green.opacity(0.55), lineWidth: 1.2)
+                .shadow(color: Color.green.opacity(0.50), radius: 6, x: 0, y: 0)
+                .padding(0.5)
+        } else if BatteryService.shared.isLowPowerMode {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .stroke(Color.yellow.opacity(0.50), lineWidth: 1.0)
+                .shadow(color: Color.yellow.opacity(0.40), radius: 5, x: 0, y: 0)
+                .padding(0.5)
+        } else {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                .padding(0.5)
+        }
     }
 
     // MARK: - Pill Background Fill
@@ -288,9 +471,46 @@ struct FloatingIslandView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+                // Hardware Privacy Dot Bezel Indicator
+                if state.isMicPrivacyActive {
+                    Circle()
+                        .fill(Color.orange)
+                        .frame(width: 5, height: 5)
+                        .shadow(color: .orange.opacity(0.8), radius: 2)
+                } else if state.isCamPrivacyActive {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 5, height: 5)
+                        .shadow(color: .green.opacity(0.8), radius: 2)
+                }
+
                 // Trailing: Multipurpose Dual-Activity / Equalizer + Route + Exact Battery Together
                 HStack(spacing: 3.5) {
-                    if state.mode == .call {
+                    if state.mode == .applePay {
+                        Image(systemName: state.applePayPhase == .done ? "checkmark.circle.fill" : "wave.3.right")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(state.applePayPhase == .done ? Color(red: 0.18, green: 0.84, blue: 0.38) : Color(red: 0.0, green: 0.85, blue: 1.0))
+                    } else if state.mode == .airPods {
+                        Text("\(state.airPodsCaseBattery)%")
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                    } else if state.mode == .rideshare {
+                        Text("3m")
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                    } else if state.mode == .flight {
+                        Text(state.flightGate)
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                    } else if state.mode == .delivery {
+                        Text("4m")
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
+                            .foregroundColor(.orange)
+                    } else if state.mode == .screenRecording {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 6, height: 6)
+                    } else if state.mode == .call {
                         if state.isCallActive {
                             Circle()
                                 .fill(Color.orange)
@@ -386,7 +606,61 @@ struct FloatingIslandView: View {
     // MARK: - Song Cover Thumbnail with App Icon
     @ViewBuilder
     private var songCoverThumbnail: some View {
-        if state.mode == .navigation {
+        if state.mode == .applePay {
+            ZStack {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color.white)
+                    .frame(width: 20, height: 14)
+                Text("")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.black)
+            }
+        } else if state.mode == .airPods {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.18))
+                    .frame(width: 22, height: 22)
+                Image(systemName: "airpodspro")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        } else if state.mode == .rideshare {
+            ZStack {
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 22, height: 22)
+                Image(systemName: "car.fill")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.black)
+            }
+        } else if state.mode == .flight {
+            ZStack {
+                Circle()
+                    .fill(Color(red: 0.0, green: 0.85, blue: 1.0).opacity(0.2))
+                    .frame(width: 22, height: 22)
+                Image(systemName: "airplane")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+            }
+        } else if state.mode == .delivery {
+            ZStack {
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 22, height: 22)
+                Image(systemName: "bag.fill")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        } else if state.mode == .screenRecording {
+            ZStack {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 22, height: 22)
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 7, height: 7)
+            }
+        } else if state.mode == .navigation {
             ZStack {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(Color(red: 0.12, green: 0.78, blue: 0.38))
@@ -597,40 +871,549 @@ struct FloatingIslandView: View {
     // MARK: - Expanded Activity Content
     @ViewBuilder
     private var expandedActivityContent: some View {
-        switch state.mode {
-        case .blank:
-            expandedBlankContent
+        Group {
+            if state.isSplitBubbleExpanded {
+                expandedSecondaryBubbleContent
+            } else {
+                switch state.mode {
+                case .blank:
+                    expandedBlankContent
 
-        case .media:
-            expandedMediaContent
+                case .media:
+                    expandedMediaContent
 
-        case .flashlight:
-            expandedFlashlightContent
+                case .flashlight:
+                    expandedFlashlightContent
 
-        case .call:
-            expandedCallContent
+                case .call:
+                    expandedCallContent
 
-        case .navigation:
-            expandedNavigationContent
+                case .applePay:
+                    expandedApplePayContent
 
-        case .sports:
-            expandedSportsContent
+                case .airPods:
+                    expandedAirPodsContent
 
-        case .recording:
-            expandedRecordingContent
+                case .rideshare:
+                    expandedRideshareContent
 
-        case .timer:
-            expandedTimerContent
+                case .flight:
+                    expandedFlightContent
 
-        case .stopwatch:
-            expandedStopwatchContent
+                case .delivery:
+                    expandedDeliveryContent
 
-        case .battery:
-            expandedBatteryContent
+                case .screenRecording:
+                    expandedScreenRecordingContent
 
-        case .silent:
-            expandedSilentContent
+                case .navigation:
+                    expandedNavigationContent
+
+                case .sports:
+                    expandedSportsContent
+
+                case .recording:
+                    expandedRecordingContent
+
+                case .timer:
+                    expandedTimerContent
+
+                case .stopwatch:
+                    expandedStopwatchContent
+
+                case .battery:
+                    expandedBatteryContent
+
+                case .silent:
+                    expandedSilentContent
+                }
+            }
         }
+    }
+
+    // MARK: - Expanded Apple Pay / NFC Contactless HUD
+    private var expandedApplePayContent: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(white: 0.95), Color(white: 0.75)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 44, height: 28)
+                    .overlay(
+                        VStack {
+                            HStack {
+                                Circle().fill(Color.orange).frame(width: 5, height: 5)
+                                Spacer()
+                            }
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                Text("Pay")
+                                    .font(.system(size: 6, weight: .bold))
+                                    .foregroundColor(.black)
+                            }
+                        }
+                        .padding(3)
+                    )
+                    .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                if state.applePayPhase == .done {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Done")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    Text("\(state.applePayMerchant) • \(state.applePayAmount)")
+                        .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                        .foregroundColor(.gray)
+                } else if state.applePayPhase == .authenticating {
+                    HStack(spacing: 5) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.65)
+                        Text("Hold Near Reader...")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    Text(state.applePayMerchant)
+                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                        .foregroundColor(.gray)
+                } else {
+                    HStack(spacing: 4) {
+                        Image(systemName: "wave.3.right.circle.fill")
+                            .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                            .font(.system(size: 10, weight: .bold))
+                        Text("Double Click Side Button")
+                            .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    HStack(spacing: 4) {
+                        Text(state.applePayCardName)
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.8))
+                        Text("• \(state.applePayAmount)")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if state.applePayPhase == .ready {
+                Button(action: {
+                    state.authenticateApplePay()
+                }) {
+                    Text("Pay")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(Color.white)
+                        .clipShape(Capsule())
+                }
+            } else if state.applePayPhase == .done {
+                Button(action: {
+                    state.collapse()
+                }) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(5)
+                        .background(Color.green)
+                        .clipShape(Circle())
+                }
+            }
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 6)
+    }
+
+    // MARK: - Expanded AirPods Pro Battery Case HUD
+    private var expandedAirPodsContent: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                Image(systemName: "airpodspro")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+
+                Text(state.airPodsModelName)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                HStack(spacing: 3) {
+                    Image(systemName: "dot.radiowaves.left.and.right")
+                        .font(.system(size: 8))
+                    Text("Spatial")
+                        .font(.system(size: 8, weight: .bold))
+                }
+                .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1.5)
+                .background(Color.cyan.opacity(0.18))
+                .clipShape(Capsule())
+
+                Button(action: { state.collapse() }) {
+                    Image(systemName: "chevron.compact.up")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white.opacity(0.75))
+                        .padding(3)
+                        .background(Color.white.opacity(0.12))
+                        .clipShape(Circle())
+                }
+            }
+
+            HStack(spacing: 12) {
+                HStack(spacing: 4) {
+                    Image(systemName: "airpod.left")
+                        .font(.system(size: 9))
+                        .foregroundColor(.white.opacity(0.85))
+                    Text("L: \(state.airPodsLeftBattery)%")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Capsule())
+
+                HStack(spacing: 4) {
+                    Image(systemName: "airpodspro.chargingcase.wireless.fill")
+                        .font(.system(size: 9))
+                        .foregroundColor(.white.opacity(0.85))
+                    Text("Case: \(state.airPodsCaseBattery)% ⚡")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Capsule())
+
+                HStack(spacing: 4) {
+                    Image(systemName: "airpod.right")
+                        .font(.system(size: 9))
+                        .foregroundColor(.white.opacity(0.85))
+                    Text("R: \(state.airPodsRightBattery)%")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Capsule())
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+    }
+
+    // MARK: - Expanded Uber / Rideshare Live Activity
+    private var expandedRideshareContent: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 22, height: 22)
+                    Image(systemName: "car.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.black)
+                }
+
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack(spacing: 4) {
+                        Text(state.rideshareService)
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                        Text("• \(state.rideshareEta)")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                    }
+                    Text("\(state.rideshareCar) • \(state.rideshareDriver)")
+                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                        .foregroundColor(.gray)
+                }
+
+                Spacer()
+
+                Text(state.ridesharePlate)
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Color(white: 0.9))
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+
+                Button(action: { state.collapse() }) {
+                    Image(systemName: "chevron.compact.up")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white.opacity(0.75))
+                        .padding(3)
+                        .background(Color.white.opacity(0.12))
+                        .clipShape(Circle())
+                }
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.2))
+                        .frame(height: 3)
+
+                    Capsule()
+                        .fill(Color(red: 0.18, green: 0.84, blue: 0.38))
+                        .frame(width: geo.size.width * CGFloat(state.rideshareProgress), height: 3)
+
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 7, height: 7)
+                        .offset(x: max(0, (geo.size.width * CGFloat(state.rideshareProgress)) - 3.5))
+
+                    Image(systemName: "mappin.circle.fill")
+                        .font(.system(size: 8))
+                        .foregroundColor(.red)
+                        .position(x: geo.size.width - 4, y: 1.5)
+                }
+            }
+            .frame(height: 8)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+    }
+
+    // MARK: - Expanded Flight Tracker Live Activity
+    private var expandedFlightContent: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                Image(systemName: "airplane")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack(spacing: 4) {
+                        Text(state.flightNumber)
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                        Text(state.flightStatus)
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(Color.green.opacity(0.2))
+                            .clipShape(Capsule())
+                    }
+                    Text("\(state.flightOrigin) ➔ \(state.flightDestination) • Gate \(state.flightGate)")
+                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                        .foregroundColor(.gray)
+                }
+
+                Spacer()
+
+                Text(state.flightRemainingTime)
+                    .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+
+                Button(action: { state.collapse() }) {
+                    Image(systemName: "chevron.compact.up")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white.opacity(0.75))
+                        .padding(3)
+                        .background(Color.white.opacity(0.12))
+                        .clipShape(Circle())
+                }
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    HStack(spacing: 0) {
+                        Text(state.flightOrigin)
+                            .font(.system(size: 7.5, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
+                        Spacer()
+                        Text(state.flightDestination)
+                            .font(.system(size: 7.5, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+
+                    Rectangle()
+                        .fill(Color.white.opacity(0.2))
+                        .frame(height: 1.5)
+                        .padding(.horizontal, 22)
+
+                    Image(systemName: "airplane")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                        .offset(x: 20 + (geo.size.width - 44) * CGFloat(state.flightProgress))
+                }
+            }
+            .frame(height: 10)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+    }
+
+    // MARK: - Expanded Food Delivery Live Activity
+    private var expandedDeliveryContent: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(Color.orange)
+                        .frame(width: 22, height: 22)
+                    Image(systemName: "bag.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack(spacing: 4) {
+                        Text(state.deliveryRestaurant)
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                        Text("• \(state.deliveryEta)")
+                            .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.orange)
+                    }
+                    Text(state.deliveryCourier)
+                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                        .foregroundColor(.gray)
+                }
+
+                Spacer()
+
+                Button(action: { state.collapse() }) {
+                    Image(systemName: "chevron.compact.up")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white.opacity(0.75))
+                        .padding(3)
+                        .background(Color.white.opacity(0.12))
+                        .clipShape(Circle())
+                }
+            }
+
+            HStack(spacing: 4) {
+                ForEach(1...4, id: \.self) { step in
+                    Capsule()
+                        .fill(step <= state.deliveryStatusStep ? Color.orange : Color.white.opacity(0.2))
+                        .frame(height: 3)
+                }
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+    }
+
+    // MARK: - Expanded Screen Recording HUD
+    private var expandedScreenRecordingContent: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 24, height: 24)
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 8, height: 8)
+            }
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Screen Recording")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                let mins = state.screenRecordingSeconds / 60
+                let secs = state.screenRecordingSeconds % 60
+                Text(String(format: "%02d:%02d • Dynamic Island Bezel", mins, secs))
+                    .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                    .foregroundColor(.red.opacity(0.9))
+            }
+
+            Spacer()
+
+            Button(action: {
+                state.toggleScreenRecording()
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 8, weight: .bold))
+                    Text("Stop")
+                        .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.red)
+                .clipShape(Capsule())
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+    }
+
+    // MARK: - Expanded Detached Orbit Bubble Content
+    private var expandedSecondaryBubbleContent: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(state.secondaryActivity.color.opacity(0.25))
+                    .frame(width: 26, height: 26)
+                Image(systemName: state.secondaryActivity.icon)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(state.secondaryActivity.color)
+            }
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(state.secondaryActivity.rawValue)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                if state.secondaryActivity == .timer {
+                    Text("\(state.timerFormatted) Remaining")
+                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .foregroundColor(.orange)
+                } else if state.secondaryActivity == .stopwatch {
+                    Text("\(state.stopwatchFormatted) Elapsed")
+                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .foregroundColor(.cyan)
+                } else if state.secondaryActivity == .micPrivacy {
+                    Text("Microphone Sensor Active")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.orange)
+                } else if state.secondaryActivity == .cameraPrivacy {
+                    Text("Camera Sensor Active")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.green)
+                } else {
+                    Text("Active Secondary Activity")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.gray)
+                }
+            }
+
+            Spacer()
+
+            Button(action: {
+                state.collapse()
+            }) {
+                Image(systemName: "chevron.compact.up")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white.opacity(0.75))
+                    .padding(4)
+                    .background(Color.white.opacity(0.12))
+                    .clipShape(Circle())
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Expanded Blank / Liquid Glass Quick Actions HUD
@@ -1706,20 +2489,38 @@ struct FloatingIslandView: View {
 
     private var compactTitleText: String {
         switch state.mode {
+        case .blank: return ""
         case .call: return state.callerName
+        case .applePay: return "Apple Pay"
+        case .airPods: return state.airPodsModelName
+        case .rideshare: return "\(state.rideshareService) • \(state.rideshareEta)"
+        case .flight: return "\(state.flightOrigin) ✈ \(state.flightDestination)"
+        case .delivery: return state.deliveryRestaurant
+        case .screenRecording: return "Recording"
         case .navigation: return state.navInstruction
         case .sports: return "\(state.sportsHomeTeam) \(state.sportsHomeScore) - \(state.sportsAwayScore) \(state.sportsAwayTeam)"
         case .recording: return "Voice Memo"
+        case .timer: return "Focus Timer"
+        case .stopwatch: return "Stopwatch"
         default: return state.mediaTitle
         }
     }
 
     private var compactSubtitleText: String {
         switch state.mode {
+        case .blank: return ""
         case .call: return state.callerSubtitle
+        case .applePay: return "Double Click to Pay"
+        case .airPods: return "L: \(state.airPodsLeftBattery)% • R: \(state.airPodsRightBattery)%"
+        case .rideshare: return state.rideshareCar
+        case .flight: return "\(state.flightNumber) • \(state.flightStatus)"
+        case .delivery: return state.deliveryEta
+        case .screenRecording: return String(format: "%02d:%02d", state.screenRecordingSeconds / 60, state.screenRecordingSeconds % 60)
         case .navigation: return state.navETA
         case .sports: return "\(state.sportsMatchTime) • Live"
         case .recording: return state.recordingTimeFormatted
+        case .timer: return state.timerFormatted
+        case .stopwatch: return state.stopwatchFormatted
         default: return state.mediaArtist
         }
     }

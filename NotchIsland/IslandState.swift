@@ -8,6 +8,12 @@ enum IslandMode: String, CaseIterable {
     case media = "Music & Battery"
     case flashlight = "Flashlight"
     case call = "Call HUD"
+    case applePay = "Apple Pay / NFC"
+    case airPods = "AirPods Pro Battery"
+    case rideshare = "Uber / Rideshare"
+    case flight = "Flight Tracker"
+    case delivery = "Food Delivery"
+    case screenRecording = "Screen Recording"
     case navigation = "Apple Maps"
     case sports = "Live Sports"
     case recording = "Voice Memo"
@@ -15,6 +21,54 @@ enum IslandMode: String, CaseIterable {
     case stopwatch = "Stopwatch"
     case battery = "Battery"
     case silent = "Silent HUD"
+}
+
+enum SecondaryIslandActivity: String, CaseIterable, Identifiable {
+    case timer = "Timer Countdown"
+    case stopwatch = "Stopwatch"
+    case recording = "Voice Memo"
+    case navigation = "Next Turn"
+    case sports = "Match Score"
+    case battery = "Battery Level"
+    case micPrivacy = "Microphone Dot"
+    case cameraPrivacy = "Camera Dot"
+    case hotspot = "Hotspot"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .timer: return "timer"
+        case .stopwatch: return "stopwatch"
+        case .recording: return "record.circle"
+        case .navigation: return "arrow.turn.up.right"
+        case .sports: return "sportscourt.fill"
+        case .battery: return "bolt.fill"
+        case .micPrivacy: return "mic.fill"
+        case .cameraPrivacy: return "camera.fill"
+        case .hotspot: return "personalhotspot"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .timer: return .orange
+        case .stopwatch: return Color(red: 0.0, green: 0.85, blue: 1.0)
+        case .recording: return .red
+        case .navigation: return Color(red: 0.18, green: 0.84, blue: 0.38)
+        case .sports: return .green
+        case .battery: return Color(red: 0.18, green: 0.84, blue: 0.38)
+        case .micPrivacy: return .orange
+        case .cameraPrivacy: return .green
+        case .hotspot: return Color(red: 0.18, green: 0.84, blue: 0.38)
+        }
+    }
+}
+
+enum ApplePayPhase: String {
+    case ready
+    case authenticating
+    case done
 }
 
 enum IslandSize: String, CaseIterable {
@@ -219,6 +273,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
     case testFaceID = "Simulate Face ID"
     case cycleVisualizer = "Cycle Visualizer"
     case cycleTheme = "Cycle Theme Accent"
+    case toggleSplit = "Toggle Split Island"
     case stealthMode = "Stealth Mode"
     case expandCollapse = "Expand / Collapse"
 
@@ -240,6 +295,7 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         case .testFaceID: return "faceid"
         case .cycleVisualizer: return "waveform"
         case .cycleTheme: return "paintpalette.fill"
+        case .toggleSplit: return "rectangle.split.2x1.fill"
         case .stealthMode: return "eye.slash.fill"
         case .expandCollapse: return "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left"
         }
@@ -410,17 +466,89 @@ class IslandState: ObservableObject {
     // MARK: - Silent HUD State
     @Published var isSilentOn: Bool = true
 
+    // MARK: - Jindo Split Island Architecture (Dual Multi-Activity)
+    @Published var isSplitIslandActive: Bool = false
+    @Published var secondaryActivity: SecondaryIslandActivity = .timer
+    @Published var isSplitBubbleExpanded: Bool = false
+
+    // MARK: - Gesture Physics & Stealth State
+    @Published var dragOffset: CGSize = .zero
+    @Published var isIslandHidden: Bool = false
+
+    // MARK: - Apple Pay & Wallet State
+    @Published var applePayPhase: ApplePayPhase = .ready
+    @Published var applePayCardName: String = "Apple Card"
+    @Published var applePayMerchant: String = "Apple Park Visitor Center"
+    @Published var applePayAmount: String = "$14.50"
+
+    // MARK: - AirPods Pro HUD State
+    @Published var airPodsModelName: String = "AirPods Pro (2nd gen)"
+    @Published var airPodsLeftBattery: Int = 96
+    @Published var airPodsRightBattery: Int = 92
+    @Published var airPodsCaseBattery: Int = 100
+    @Published var isAirPodsCaseCharging: Bool = true
+    @Published var airPodsNoiseCancellationOn: Bool = true
+
+    // MARK: - Uber / Rideshare Live Activity State
+    @Published var rideshareService: String = "UberX"
+    @Published var rideshareCar: String = "Black Toyota Prius"
+    @Published var ridesharePlate: String = "7XYZ890"
+    @Published var rideshareDriver: String = "David"
+    @Published var rideshareRating: String = "4.98 ★"
+    @Published var rideshareEta: String = "3 min away"
+    @Published var rideshareProgress: Double = 0.72
+
+    // MARK: - Flight Tracker (Flighty) State
+    @Published var flightAirline: String = "United Airlines"
+    @Published var flightNumber: String = "UA 2408"
+    @Published var flightOrigin: String = "SFO"
+    @Published var flightDestination: String = "JFK"
+    @Published var flightStatus: String = "On Time"
+    @Published var flightGate: String = "B22"
+    @Published var flightBaggage: String = "Carousel 4"
+    @Published var flightRemainingTime: String = "1h 45m remaining"
+    @Published var flightProgress: Double = 0.65
+
+    // MARK: - Food Delivery (DoorDash) State
+    @Published var deliveryRestaurant: String = "Shake Shack"
+    @Published var deliveryCourier: String = "Alex (E-Bike)"
+    @Published var deliveryEta: String = "12:35 PM • 4 min"
+    @Published var deliveryProgress: Double = 0.82
+    @Published var deliveryStatusStep: Int = 3
+
+    // MARK: - Screen Recording State
+    @Published var isScreenRecordingActive: Bool = false
+    @Published var screenRecordingSeconds: Int = 14
+    private var screenRecordingTimer: AnyCancellable?
+
+    // MARK: - Hardware Privacy Dots State
+    @Published var isMicPrivacyActive: Bool = false
+    @Published var isCamPrivacyActive: Bool = false
+
     private var timerCancellable: AnyCancellable?
     private var stopwatchCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
 
     var islandWidth: CGFloat {
         if isShowingNotification { return 232 }
+        if isIslandHidden { return 36 }
         if isExpanded {
-            if mode == .call { return 242 }
-            if mode == .media { return 228 }
-            if mode == .blank { return 236 }
-            return 226
+            if isSplitBubbleExpanded { return 184 }
+            switch mode {
+            case .call: return 242
+            case .media: return 232
+            case .applePay: return 246
+            case .airPods: return 242
+            case .rideshare: return 244
+            case .flight: return 248
+            case .delivery: return 242
+            case .screenRecording: return 232
+            case .blank: return 236
+            default: return 228
+            }
+        }
+        if isSplitIslandActive {
+            return 168
         }
         if useCustomSize { return customWidth }
         switch size {
@@ -432,11 +560,21 @@ class IslandState: ObservableObject {
 
     var islandHeight: CGFloat {
         if isShowingNotification { return 66 }
+        if isIslandHidden { return 12 }
         if isExpanded {
-            if mode == .call { return 78 }
-            if mode == .media { return 74 }
-            if mode == .blank { return 72 }
-            return 70
+            if isSplitBubbleExpanded { return 64 }
+            switch mode {
+            case .call: return 78
+            case .media: return 84
+            case .applePay: return 88
+            case .airPods: return 84
+            case .rideshare: return 86
+            case .flight: return 88
+            case .delivery: return 84
+            case .screenRecording: return 72
+            case .blank: return 72
+            default: return 70
+            }
         }
         if useCustomSize { return customHeight }
         switch size {
@@ -791,6 +929,12 @@ class IslandState: ObservableObject {
         case .media: return "music.note"
         case .flashlight: return "flashlight.on.fill"
         case .call: return "phone.fill"
+        case .applePay: return "creditcard.fill"
+        case .airPods: return "airpodspro"
+        case .rideshare: return "car.fill"
+        case .flight: return "airplane"
+        case .delivery: return "bag.fill"
+        case .screenRecording: return "record.circle"
         case .navigation: return "arrow.turn.up.right"
         case .sports: return "sportscourt.fill"
         case .recording: return "record.circle.fill"
@@ -895,6 +1039,8 @@ class IslandState: ObservableObject {
                     color: next.color
                 )
             }
+        case .toggleSplit:
+            toggleSplitIsland()
         case .stealthMode:
             if mode == .blank {
                 setMode(.media)
@@ -1386,6 +1532,194 @@ class IslandState: ObservableObject {
             subtitle: active ? "Yellow Battery Active • Background Throttling" : "Normal Background Refresh",
             icon: "battery.25",
             color: active ? .yellow : .green
+        )
+    }
+
+    // MARK: - Reverse-Engineered System Aperture Methods
+    func triggerApplePay(merchant: String = "Apple Park Visitor Center", amount: String = "$14.50") {
+        self.applePayMerchant = merchant
+        self.applePayAmount = amount
+        self.applePayPhase = .ready
+        self.setMode(.applePay)
+        HapticService.shared.medium()
+        expand()
+    }
+
+    func authenticateApplePay() {
+        guard applePayPhase == .ready else { return }
+        applePayPhase = .authenticating
+        HapticService.shared.light()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak self] in
+            guard let self = self else { return }
+            self.applePayPhase = .done
+            HapticService.shared.applePayDoneHaptic()
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { [weak self] in
+                guard let self = self else { return }
+                self.collapse()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    if self.mode == .applePay {
+                        self.setMode(.media)
+                    }
+                }
+            }
+        }
+    }
+
+    func triggerAirPodsHUD(left: Int = 96, right: Int = 92, caseBat: Int = 100) {
+        self.airPodsLeftBattery = left
+        self.airPodsRightBattery = right
+        self.airPodsCaseBattery = caseBat
+        self.setMode(.airPods)
+        HapticService.shared.light()
+        expand()
+    }
+
+    func triggerRideshareLiveActivity() {
+        self.setMode(.rideshare)
+        HapticService.shared.medium()
+        expand()
+    }
+
+    func triggerFlightLiveActivity() {
+        self.setMode(.flight)
+        HapticService.shared.medium()
+        expand()
+    }
+
+    func triggerDeliveryLiveActivity() {
+        self.setMode(.delivery)
+        HapticService.shared.medium()
+        expand()
+    }
+
+    func toggleScreenRecording() {
+        if isScreenRecordingActive {
+            isScreenRecordingActive = false
+            screenRecordingTimer?.cancel()
+            screenRecordingTimer = nil
+            HapticService.shared.medium()
+            triggerNotification(
+                title: "Screen Recording Saved",
+                subtitle: "Video saved to Photos app",
+                icon: "checkmark.circle.fill",
+                color: Color(red: 0.18, green: 0.84, blue: 0.38)
+            )
+            if mode == .screenRecording {
+                setMode(.media)
+            }
+        } else {
+            isScreenRecordingActive = true
+            screenRecordingSeconds = 0
+            setMode(.screenRecording)
+            HapticService.shared.heavy()
+            screenRecordingTimer = Timer.publish(every: 1.0, on: .main, in: .common)
+                .autoconnect()
+                .sink { [weak self] _ in
+                    guard let self = self, self.isScreenRecordingActive else { return }
+                    self.screenRecordingSeconds += 1
+                }
+            expand()
+        }
+    }
+
+    func toggleMicPrivacy() {
+        isMicPrivacyActive.toggle()
+        HapticService.shared.light()
+        if isMicPrivacyActive {
+            triggerNotification(
+                title: "Microphone Active",
+                subtitle: "DynamicNotch is using your microphone",
+                icon: "mic.fill",
+                color: .orange
+            )
+        }
+    }
+
+    func toggleCamPrivacy() {
+        isCamPrivacyActive.toggle()
+        HapticService.shared.light()
+        if isCamPrivacyActive {
+            triggerNotification(
+                title: "Camera Active",
+                subtitle: "DynamicNotch is using your camera",
+                icon: "camera.fill",
+                color: .green
+            )
+        }
+    }
+
+    func tuckToStealth() {
+        guard !isIslandHidden else { return }
+        HapticService.shared.light()
+        withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
+            self.isIslandHidden = true
+            self.isExpanded = false
+        }
+        PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+    }
+
+    func restoreFromStealth() {
+        guard isIslandHidden else { return }
+        HapticService.shared.medium()
+        withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
+            self.isIslandHidden = false
+        }
+        PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+    }
+
+    func toggleSplitIsland() {
+        isSplitIslandActive.toggle()
+        isSplitBubbleExpanded = false
+        HapticService.shared.medium()
+        if isExpanded {
+            collapse()
+        } else {
+            PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+        }
+    }
+
+    func setSecondaryActivity(_ activity: SecondaryIslandActivity) {
+        self.secondaryActivity = activity
+        HapticService.shared.selection()
+    }
+
+    func expandSecondaryBubble() {
+        isSplitBubbleExpanded = true
+        HapticService.shared.medium()
+        withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
+            self.isExpanded = true
+        }
+        PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+    }
+
+    func expandPrimaryPill() {
+        isSplitBubbleExpanded = false
+        HapticService.shared.medium()
+        withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
+            self.isExpanded = true
+        }
+        PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+    }
+
+    func triggerWatchUnlock() {
+        HapticService.shared.success()
+        triggerNotification(
+            title: "Apple Watch",
+            subtitle: "Unlocked by Apple Watch",
+            icon: "applewatch",
+            color: Color(red: 0.18, green: 0.84, blue: 0.38)
+        )
+    }
+
+    func triggerSIMSwitched() {
+        HapticService.shared.medium()
+        triggerNotification(
+            title: "Cellular Network",
+            subtitle: "Switched to Primary 5G Ultra Wideband",
+            icon: "antenna.radiowaves.left.and.right",
+            color: Color(red: 0.0, green: 0.85, blue: 1.0)
         )
     }
 }

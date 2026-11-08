@@ -31,6 +31,9 @@ struct ContentView: View {
                     // Connected Audio Route & Flashlight Quick Bar
                     quickStatusSection
 
+                    // Apple Jindo Split-Island Architecture
+                    splitIslandControlSection
+
                     // Interactive Test Lab & Dynamic Island Notification Simulator
                     dynamicIslandTestLab
 
@@ -93,7 +96,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 6.1 • Liquid Glass Engine")
+                Text("Dynamic Island 7.0 • Apple Jindo Reverse Engineered")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -296,6 +299,114 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Jindo Split Island Architecture Section
+    private var splitIslandControlSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "rectangle.split.2x1.fill")
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                Text("APPLE JINDO SPLIT-ISLAND ARCHITECTURE")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.2)
+                Spacer()
+                Text(state.isSplitIslandActive ? "DUAL SPLIT ACTIVE" : "SINGLE PILL")
+                    .font(.system(size: 9, weight: .heavy, design: .rounded))
+                    .foregroundColor(state.isSplitIslandActive ? Color(red: 0.18, green: 0.84, blue: 0.38) : .gray)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2.5)
+                    .background((state.isSplitIslandActive ? Color.green : Color.gray).opacity(0.18))
+                    .clipShape(Capsule())
+            }
+
+            Text("Mimics Apple's SpringBoard cutout separation: dynamically divides into Major Pill (Left) and Detached Orbit Bubble (Right) for simultaneous multi-activity tracking.")
+                .font(.system(size: 11))
+                .foregroundColor(.gray)
+
+            // Split Island Mode Toggle
+            Toggle(isOn: Binding(
+                get: { state.isSplitIslandActive },
+                set: { _ in state.toggleSplitIsland() }
+            )) {
+                HStack(spacing: 8) {
+                    Image(systemName: "circle.circle")
+                        .foregroundColor(state.theme.color)
+                    Text("Enable Dual-Island Splitting")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+            }
+            .tint(state.theme.color)
+
+            if state.isSplitIslandActive {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("DETACHED ORBIT BUBBLE ACTIVITY")
+                        .font(.system(size: 9.5, weight: .bold))
+                        .foregroundColor(.gray)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(SecondaryIslandActivity.allCases) { act in
+                                Button(action: {
+                                    state.setSecondaryActivity(act)
+                                }) {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: act.icon)
+                                            .font(.system(size: 10, weight: .bold))
+                                        Text(act.rawValue)
+                                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                    }
+                                    .foregroundColor(state.secondaryActivity == act ? .black : .white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(state.secondaryActivity == act ? act.color : Color.white.opacity(0.1))
+                                    .clipShape(Capsule())
+                                }
+                            }
+                        }
+                    }
+
+                    HStack(spacing: 8) {
+                        Button(action: {
+                            state.expandPrimaryPill()
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                Text("Expand Major Pill")
+                            }
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.white.opacity(0.14))
+                            .clipShape(Capsule())
+                        }
+
+                        Button(action: {
+                            state.expandSecondaryBubble()
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "circle.circle.fill")
+                                Text("Expand Orbit Bubble")
+                            }
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(state.secondaryActivity.color)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(state.secondaryActivity.color.opacity(0.18))
+                            .clipShape(Capsule())
+                        }
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
     // MARK: - Dynamic Island Notification Test Lab
     private var dynamicIslandTestLab: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -314,12 +425,52 @@ struct ContentView: View {
             .padding(.horizontal, 4)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                testTriggerButton(title: "⚡ Fast Charge", color: .green) {
-                    state.testSimulateChargerPlug()
+                testTriggerButton(title: "💳 Apple Pay / NFC", color: Color(red: 0.0, green: 0.85, blue: 1.0)) {
+                    state.triggerApplePay()
                 }
 
-                testTriggerButton(title: "🎧 AirPods Pro", color: state.theme.color) {
-                    state.testSimulateAirPodsConnect()
+                testTriggerButton(title: "🎧 AirPods 3-Way Bat", color: Color(red: 0.18, green: 0.84, blue: 0.38)) {
+                    state.triggerAirPodsHUD()
+                }
+
+                testTriggerButton(title: "🚗 Uber Rideshare", color: .white) {
+                    state.triggerRideshareLiveActivity()
+                }
+
+                testTriggerButton(title: "✈️ Flighty Flight", color: Color(red: 0.0, green: 0.85, blue: 1.0)) {
+                    state.triggerFlightLiveActivity()
+                }
+
+                testTriggerButton(title: "🍕 Food Delivery", color: .orange) {
+                    state.triggerDeliveryLiveActivity()
+                }
+
+                testTriggerButton(title: "⏺️ Screen Recording", color: .red) {
+                    state.toggleScreenRecording()
+                }
+
+                testTriggerButton(title: "🟠 Mic Privacy Dot", color: .orange) {
+                    state.toggleMicPrivacy()
+                }
+
+                testTriggerButton(title: "🟢 Cam Privacy Dot", color: .green) {
+                    state.toggleCamPrivacy()
+                }
+
+                testTriggerButton(title: "⌚ Apple Watch", color: Color(red: 0.18, green: 0.84, blue: 0.38)) {
+                    state.triggerWatchUnlock()
+                }
+
+                testTriggerButton(title: "📶 SIM Switched", color: .cyan) {
+                    state.triggerSIMSwitched()
+                }
+
+                testTriggerButton(title: "🔀 Split Dual-Island", color: state.isSplitIslandActive ? .green : .white) {
+                    state.toggleSplitIsland()
+                }
+
+                testTriggerButton(title: "⚡ Fast Charge", color: .green) {
+                    state.testSimulateChargerPlug()
                 }
 
                 testTriggerButton(title: "🪫 Low Battery (10%)", color: .red) {
@@ -415,6 +566,10 @@ struct ContentView: View {
 
                 testTriggerButton(title: "🪫 Low Power Mode", color: .yellow) {
                     state.testSimulateLowPowerMode()
+                }
+
+                testTriggerButton(title: "🫣 Flick to Stealth", color: .gray) {
+                    state.tuckToStealth()
                 }
             }
         }
@@ -526,6 +681,24 @@ struct ContentView: View {
             case .call:
                 callControls
 
+            case .applePay:
+                applePayControls
+
+            case .airPods:
+                airPodsControls
+
+            case .rideshare:
+                rideshareControls
+
+            case .flight:
+                flightControls
+
+            case .delivery:
+                deliveryControls
+
+            case .screenRecording:
+                screenRecordingControls
+
             case .navigation:
                 navigationControls
 
@@ -555,6 +728,218 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(white: 0.08))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: - Apple Pay Interactive Controls
+    private var applePayControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "creditcard.fill")
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                Text("APPLE PAY & WALLET NFC")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text(state.applePayPhase.rawValue.uppercased())
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundColor(state.applePayPhase == .done ? .green : .cyan)
+            }
+
+            Text("Merchant: \(state.applePayMerchant) • \(state.applePayAmount)")
+                .font(.system(size: 11))
+                .foregroundColor(.gray)
+
+            HStack(spacing: 8) {
+                Button(action: {
+                    state.triggerApplePay()
+                }) {
+                    Text("Summon Apple Pay")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.14))
+                        .clipShape(Capsule())
+                }
+
+                Button(action: {
+                    state.authenticateApplePay()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "touchid")
+                        Text("Simulate NFC Pay")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white)
+                    .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
+    // MARK: - AirPods Pro Interactive Controls
+    private var airPodsControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "airpodspro")
+                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                Text("AIRPODS PRO TRIPLE BATTERY")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text("Active")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.green)
+            }
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Left: \(state.airPodsLeftBattery)%")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.gray)
+                    Slider(value: Binding(
+                        get: { Double(state.airPodsLeftBattery) },
+                        set: { state.airPodsLeftBattery = Int($0) }
+                    ), in: 0...100, step: 1)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Right: \(state.airPodsRightBattery)%")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.gray)
+                    Slider(value: Binding(
+                        get: { Double(state.airPodsRightBattery) },
+                        set: { state.airPodsRightBattery = Int($0) }
+                    ), in: 0...100, step: 1)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Case: \(state.airPodsCaseBattery)%")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.gray)
+                    Slider(value: Binding(
+                        get: { Double(state.airPodsCaseBattery) },
+                        set: { state.airPodsCaseBattery = Int($0) }
+                    ), in: 0...100, step: 1)
+                }
+            }
+        }
+    }
+
+    // MARK: - Rideshare Interactive Controls
+    private var rideshareControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "car.fill")
+                    .foregroundColor(.white)
+                Text("UBER / RIDESHARE LIVE ACTIVITY")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text(state.rideshareEta)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.green)
+            }
+
+            Text("\(state.rideshareCar) • \(state.rideshareDriver) • Plate: \(state.ridesharePlate)")
+                .font(.system(size: 10.5))
+                .foregroundColor(.gray)
+
+            Slider(value: $state.rideshareProgress, in: 0.05...1.0)
+        }
+    }
+
+    // MARK: - Flight Tracker Interactive Controls
+    private var flightControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "airplane")
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                Text("FLIGHT TRACKER LIVE ACTIVITY")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text(state.flightStatus)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.green)
+            }
+
+            Text("\(state.flightAirline) \(state.flightNumber) • \(state.flightOrigin) ➔ \(state.flightDestination) • Gate \(state.flightGate)")
+                .font(.system(size: 10.5))
+                .foregroundColor(.gray)
+
+            Slider(value: $state.flightProgress, in: 0.05...1.0)
+        }
+    }
+
+    // MARK: - Food Delivery Interactive Controls
+    private var deliveryControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "bag.fill")
+                    .foregroundColor(.orange)
+                Text("FOOD DELIVERY LIVE ACTIVITY")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text(state.deliveryEta)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.orange)
+            }
+
+            Text("\(state.deliveryRestaurant) • \(state.deliveryCourier)")
+                .font(.system(size: 10.5))
+                .foregroundColor(.gray)
+
+            Picker("Step", selection: $state.deliveryStatusStep) {
+                Text("Placed").tag(1)
+                Text("Kitchen").tag(2)
+                Text("En Route").tag(3)
+                Text("Arrived").tag(4)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+        }
+    }
+
+    // MARK: - Screen Recording Interactive Controls
+    private var screenRecordingControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "record.circle.fill")
+                    .foregroundColor(.red)
+                Text("SCREEN RECORDING APERTURE")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text(state.isScreenRecordingActive ? "Recording" : "Idle")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(state.isScreenRecordingActive ? .red : .gray)
+            }
+
+            Button(action: {
+                state.toggleScreenRecording()
+            }) {
+                HStack(spacing: 5) {
+                    Image(systemName: state.isScreenRecordingActive ? "stop.fill" : "record.circle")
+                    Text(state.isScreenRecordingActive ? "Stop Screen Recording" : "Start Screen Recording")
+                }
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(state.isScreenRecordingActive ? Color.red : Color(white: 0.16))
+                .clipShape(Capsule())
+            }
+        }
     }
 
     // MARK: - Flashlight Interactive Controls
@@ -2094,10 +2479,10 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 6.1")
+                    Text("Dynamic Notch 7.0")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
-                    Text("LIQUID GLASS & IN-PIP ACTIONS")
+                    Text("APPLE JINDO REVERSE ENGINEERED")
                         .font(.system(size: 10, weight: .black))
                         .foregroundColor(themeColor)
                         .kerning(1.5)
@@ -2106,6 +2491,34 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "rectangle.split.2x1.fill",
+                            color: Color(red: 0.0, green: 0.85, blue: 1.0),
+                            title: "Apple Jindo Dual-Island Splitting",
+                            desc: "Divides seamlessly into Major Pill (Left) and Detached Orbit Bubble (Right) for simultaneous multi-activity tracking with authentic SpringBoard physics."
+                        )
+
+                        featureRow(
+                            icon: "creditcard.fill",
+                            color: themeColor,
+                            title: "16 Authentic System Aperture Elements",
+                            desc: "Reverse-engineered Apple Pay NFC contactless authentication, AirPods Pro 3-way battery case HUD, Uber Rideshare, Flighty, DoorDash, and Screen Recording."
+                        )
+
+                        featureRow(
+                            icon: "hand.draw.fill",
+                            color: .green,
+                            title: "Interactive SpringBoard Gestures & Physics",
+                            desc: "Pull down to stretch with rubberband tension; flick horizontally to tuck into stealth under the notch; tap anywhere to restore."
+                        )
+
+                        featureRow(
+                            icon: "circle.circle.fill",
+                            color: .orange,
+                            title: "Hardware Sensor Privacy Indicators",
+                            desc: "Vibrant orange microphone and green camera dots render in the notch bezel whenever sensors are active."
+                        )
+
                         featureRow(
                             icon: "drop.fill",
                             color: Color(red: 0.0, green: 0.85, blue: 1.0),

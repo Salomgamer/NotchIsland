@@ -2,12 +2,36 @@
 
 [![iOS 15.0+](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Version 6.1](https://img.shields.io/badge/DynamicNotch-v6.1_LiquidGlass-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v6.1)
+[![Version 7.0](https://img.shields.io/badge/DynamicNotch-v7.0_JindoReverseEngineered-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v7.0)
 [![License MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
 **Dynamic Notch** brings the real **Apple Dynamic Island** experience to the iPhone 11, iPhone XR, iPhone 12, iPhone 13, and all notched iOS devices. 
 
-Sitting invisibly flush under the physical camera notch, Dynamic Notch features a **Transparent Liquid Glass Wallpaper Engine**, in-place Picture-in-Picture expansion with interactive controls without ever opening or leaving to full screen, and universal real-time activity adaptation.
+Sitting invisibly flush under the physical camera notch, Dynamic Notch features **Apple Jindo Reverse-Engineered Architecture**: true Dual-Island Splitting (Major Pill + Detached Orbit Bubble), 16 authentic Apple System Apertures (Apple Pay NFC, AirPods Pro 3-way battery case, Uber Rideshare, Flighty Flight Tracker, Food Delivery, Screen Recording, Privacy sensor dots), interactive SpringBoard rubberband pull-down stretch & horizontal flick-to-stealth gestures, and a Transparent Liquid Glass Wallpaper Engine.
+
+---
+
+## What's New in v7.0 (Apple Jindo Reverse Engineered Edition)
+
+* **Apple Jindo True Dual-Island Splitting (Minimal Multi-Item Mode)**:
+  * Dynamically splits into **Two Independent Physical Elements**:
+    * **Major Pill (Left)**: `124 × 36 pt` continuous squircle hosting primary activity (Now Playing artwork + live frequency visualizer, Call elapsed timer, or Turn-by-Turn Navigation).
+    * **Detached Orbit Bubble (Right)**: `36 × 36 pt` circular squircle physically separated by an authentic 8pt gap, hosting secondary activity (Focus Timer countdown, Stopwatch ticker, Voice Memo red pulsing dot, Sports match score, Battery level, Hardware Privacy Dot, or Personal Hotspot).
+  * Independent tap arbitration: tap Major Pill to expand primary activity; tap Orbit Bubble to expand secondary activity with fluid Apple spring physics.
+* **16 Authentic Reverse-Engineered System Apertures**:
+  * **Apple Pay / Wallet NFC**: Authentic Apple Card styling with silver gradient, concentric animated wireless radio waves, 3-phase interactive authentication flow ("Hold Near Reader" -> "Double Click Side Button" -> bold green "Done" checkmark with native Apple Pay double-click chime).
+  * **AirPods Pro 3-Component Battery Case HUD**: 3D-styled Left AirPod (`L: 96%`), Charging Case (`Case: 100% ⚡`), and Right AirPod (`R: 92%`) with Spatial Audio / Noise Control status.
+  * **Uber / Rideshare Live Activity (`ActivityKit`)**: Car en route trajectory track with moving vehicle icon, live ETA, car model ("Black Toyota Prius"), driver rating ("David • 4.98 ★"), and high-contrast license plate badge (`[ 7XYZ890 ]`).
+  * **Flighty Flight Tracker Live Activity**: Route trajectory line (`SFO` ➔ `JFK`) with airplane climbing along trajectory, flight number (`UA 2408`), gate (`B22`), arrival countdown, and green "On Time" status capsule.
+  * **DoorDash Food Delivery Live Activity**: 4-step progress timeline (Placed -> Kitchen -> Out for Delivery -> Arrived), restaurant name (`Shake Shack`), courier info (`Alex on E-Bike`), and live ETA.
+  * **Screen Recording Bezel Aperture**: Animated 3-2-1 countdown, live elapsed recording timer (`00:18`), pulsing red recording indicator, and 1-tap Stop Recording action saving directly to Photos.
+  * **Hardware Sensor Privacy Bezel Indicators**: Authentic vibrant orange microphone and green camera dots placed directly on the notch bezel edge whenever sensors are active.
+  * **Apple Watch & Mac Auto-Unlock HUD**: Watch icon with padlock snapping open and "Unlocked by Apple Watch".
+  * **Cellular SIM Switched HUD**: Dual antenna bars with network band indicator.
+* **SpringBoard Interactive Physics & Gestures**:
+  * **Pull-Down Rubberband Stretch**: Pull down on the island with authentic quadratic rubberband spring resistance; stretch beyond threshold to expand smoothly into interactive HUD.
+  * **Horizontal Flick to Stealth**: Flick left or right to tuck the island flush into the physical notch; a subtle stealth indicator allows instant 1-tap restore.
+  * **Long-Press & Double-Tap Fast Actions**: Long press to deep-expand; double-tap to cycle accent themes, toggle split mode, play/pause, or copy track info.
 
 ---
 

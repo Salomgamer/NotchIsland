@@ -130,6 +130,15 @@ class HapticService: ObservableObject {
         }
     }
 
+    func applePayDoneHaptic() {
+        guard strength != .muted else { return }
+        notificationFeedback.notificationOccurred(.success)
+        AudioServicesPlaySystemSound(1054)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+            self?.medium()
+        }
+    }
+
     func stopCallRingtone() {
         ringtoneTimer?.invalidate()
         ringtoneTimer = nil
