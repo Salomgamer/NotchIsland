@@ -801,6 +801,8 @@ class IslandState: ObservableObject {
         case .call:
             callDuration = 0
             isCallActive = false
+        case .applePay, .airPods, .rideshare, .flight, .delivery, .screenRecording:
+            break
         case .navigation:
             break
         case .sports:
