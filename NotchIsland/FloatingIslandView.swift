@@ -20,6 +20,9 @@ struct FloatingIslandView: View {
                 // Unified Dynamic Island (Compact Pill or Full Expanded Jindo Card)
                 unifiedIslandView
             }
+
+            // Notch Companion / Pixel Pet perched atop the Dynamic Island
+            notchCompanionOverlay
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
@@ -193,6 +196,7 @@ struct FloatingIslandView: View {
         .frame(width: state.islandWidth, height: state.islandHeight)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .shadow(color: .black.opacity(0.65), radius: 8, x: 0, y: 3)
+        .scaleEffect(state.islandSquishScale)
         .offset(state.dragOffset)
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
@@ -510,6 +514,37 @@ struct FloatingIslandView: View {
                         Circle()
                             .fill(Color.red)
                             .frame(width: 6, height: 6)
+                    } else if state.mode == .hotspot {
+                        HStack(spacing: 2.5) {
+                            Circle()
+                                .fill(Color(red: 0.18, green: 0.84, blue: 0.38))
+                                .frame(width: 4.5, height: 4.5)
+                            Text("\(state.hotspotConnectedDevices)")
+                                .font(.system(size: 8, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                        }
+                    } else if state.mode == .airDrop {
+                        if state.isAirDropCompleted {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                        } else {
+                            Text("\(Int(state.airDropProgress * 100))%")
+                                .font(.system(size: 8, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(red: 0.0, green: 0.48, blue: 1.0))
+                        }
+                    } else if state.mode == .cellular {
+                        HStack(spacing: 1.2) {
+                            ForEach(0..<4) { bar in
+                                RoundedRectangle(cornerRadius: 0.8)
+                                    .fill(bar < state.primarySignalBars ? Color.white : Color.gray.opacity(0.4))
+                                    .frame(width: 1.6, height: CGFloat(3 + bar * 2))
+                            }
+                        }
+                    } else if state.mode == .gamePong {
+                        Text("\(state.pongScore)")
+                            .font(.system(size: 9, weight: .black, design: .monospaced))
+                            .foregroundColor(.orange)
                     } else if state.mode == .call {
                         if state.isCallActive {
                             Circle()
@@ -659,6 +694,42 @@ struct FloatingIslandView: View {
                 Circle()
                     .fill(Color.white)
                     .frame(width: 7, height: 7)
+            }
+        } else if state.mode == .hotspot {
+            ZStack {
+                Circle()
+                    .fill(Color(red: 0.18, green: 0.84, blue: 0.38))
+                    .frame(width: 22, height: 22)
+                Image(systemName: "personalhotspot")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        } else if state.mode == .airDrop {
+            ZStack {
+                Circle()
+                    .fill(Color(red: 0.0, green: 0.48, blue: 1.0))
+                    .frame(width: 22, height: 22)
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        } else if state.mode == .cellular {
+            ZStack {
+                Circle()
+                    .fill(Color(white: 0.22))
+                    .frame(width: 22, height: 22)
+                Image(systemName: "simcard.fill")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+            }
+        } else if state.mode == .gamePong {
+            ZStack {
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 22, height: 22)
+                Image(systemName: "circle.and.line.horizontal.fill")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.black)
             }
         } else if state.mode == .navigation {
             ZStack {
@@ -926,6 +997,18 @@ struct FloatingIslandView: View {
 
                 case .silent:
                     expandedSilentContent
+
+                case .hotspot:
+                    expandedHotspotContent
+
+                case .airDrop:
+                    expandedAirDropContent
+
+                case .cellular:
+                    expandedCellularContent
+
+                case .gamePong:
+                    expandedPongGameContent
                 }
             }
         }
@@ -1360,6 +1443,270 @@ struct FloatingIslandView: View {
         .padding(.vertical, 6)
     }
 
+    // MARK: - Notch Companion / Pixel Pet Overlay
+    @ViewBuilder
+    private var notchCompanionOverlay: some View {
+        if state.companionEnabled && !state.isExpanded && !state.isIslandHidden {
+            Text(state.companionType.emoji)
+                .font(.system(size: 15))
+                .offset(x: state.companionOffset, y: (state.companionAction == .jumping ? -14 : -20))
+                .animation(.spring(response: 0.25, dampingFraction: 0.45), value: state.companionAction)
+                .onTapGesture {
+                    state.tapCompanion()
+                }
+                .transition(.scale.combined(with: .opacity))
+        }
+    }
+
+    // MARK: - Expanded Personal Hotspot HUD
+    private var expandedHotspotContent: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.green.opacity(0.2))
+                    .frame(width: 32, height: 32)
+                Image(systemName: "personalhotspot")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Text("Personal Hotspot")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    Circle()
+                        .fill(Color(red: 0.18, green: 0.84, blue: 0.38))
+                        .frame(width: 5, height: 5)
+                }
+
+                HStack(spacing: 8) {
+                    Text("\(state.hotspotConnectedDevices) Connected")
+                        .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                        .foregroundColor(.gray)
+
+                    HStack(spacing: 3) {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 7, weight: .bold))
+                        Text(state.hotspotUploadSpeed)
+                            .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
+                    }
+                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+
+                    HStack(spacing: 3) {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 7, weight: .bold))
+                        Text(state.hotspotDownloadSpeed)
+                            .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
+                    }
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                }
+            }
+
+            Spacer()
+
+            Button(action: {
+                state.collapse()
+            }) {
+                Text("Manage")
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.18))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+    }
+
+    // MARK: - Expanded AirDrop Transfer HUD
+    private var expandedAirDropContent: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.15), lineWidth: 2.5)
+                    .frame(width: 32, height: 32)
+
+                Circle()
+                    .trim(from: 0, to: CGFloat(state.airDropProgress))
+                    .stroke(
+                        Color(red: 0.0, green: 0.48, blue: 1.0),
+                        style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 32, height: 32)
+
+                Image(systemName: state.isAirDropCompleted ? "checkmark" : "antenna.radiowaves.left.and.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(state.isAirDropCompleted ? Color(red: 0.18, green: 0.84, blue: 0.38) : Color(red: 0.0, green: 0.48, blue: 1.0))
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text("AirDrop")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    if state.isAirDropCompleted {
+                        Text("Received")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(Color(red: 0.18, green: 0.84, blue: 0.38))
+                            .clipShape(Capsule())
+                    }
+                }
+
+                Text("\(state.airDropFileCount) Items • \(state.airDropSender)")
+                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                    .foregroundColor(.gray)
+            }
+
+            Spacer()
+
+            Button(action: {
+                HapticService.shared.success()
+                state.collapse()
+            }) {
+                Text(state.isAirDropCompleted ? "Open" : "Accept")
+                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4.5)
+                    .background(Color(red: 0.0, green: 0.48, blue: 1.0))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+    }
+
+    // MARK: - Expanded Dual SIM / Cellular HUD
+    private var expandedCellularContent: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.12))
+                    .frame(width: 32, height: 32)
+                Image(systemName: "simcard.2.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                // Primary SIM row
+                HStack(spacing: 5) {
+                    Text("P:")
+                        .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        .foregroundColor(.cyan)
+                    Text(state.primaryCarrier)
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    HStack(spacing: 1) {
+                        ForEach(0..<4) { bar in
+                            RoundedRectangle(cornerRadius: 0.8)
+                                .fill(bar < state.primarySignalBars ? Color.white : Color.gray.opacity(0.4))
+                                .frame(width: 1.8, height: CGFloat(3 + bar * 2))
+                        }
+                    }
+                }
+
+                // Secondary SIM row
+                HStack(spacing: 5) {
+                    Text("S:")
+                        .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        .foregroundColor(.gray)
+                    Text(state.secondaryCarrier)
+                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                        .foregroundColor(.gray)
+                    HStack(spacing: 1) {
+                        ForEach(0..<4) { bar in
+                            RoundedRectangle(cornerRadius: 0.8)
+                                .fill(bar < state.secondarySignalBars ? Color.gray : Color.gray.opacity(0.4))
+                                .frame(width: 1.8, height: CGFloat(3 + bar * 2))
+                        }
+                    }
+                }
+            }
+
+            Spacer()
+
+            Button(action: {
+                state.triggerSIMSwitched()
+            }) {
+                Text("Switch")
+                    .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3.5)
+                    .background(Color.white.opacity(0.18))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+    }
+
+    // MARK: - Expanded Hit The Island (Pong Game) HUD
+    private var expandedPongGameContent: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.2))
+                    .frame(width: 32, height: 32)
+                Image(systemName: "circle.and.line.horizontal.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.orange)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Text("Hit The Island")
+                        .font(.system(size: 11.5, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                    Text("PONG")
+                        .font(.system(size: 7.5, weight: .black))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 3.5)
+                        .padding(.vertical, 1)
+                        .background(Color.orange)
+                        .clipShape(Capsule())
+                }
+
+                HStack(spacing: 8) {
+                    Text("Score: \(state.pongScore)")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(.orange)
+                    Text("Best: \(state.pongHighScore)")
+                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        .foregroundColor(.gray)
+                }
+            }
+
+            Spacer()
+
+            Button(action: {
+                state.hitPongBall()
+            }) {
+                HStack(spacing: 3) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 9, weight: .bold))
+                    Text("Hit!")
+                        .font(.system(size: 9.5, weight: .heavy, design: .rounded))
+                }
+                .foregroundColor(.black)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4.5)
+                .background(Color.orange)
+                .clipShape(Capsule())
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+    }
+
     // MARK: - Expanded Detached Orbit Bubble Content
     private var expandedSecondaryBubbleContent: some View {
         HStack(spacing: 10) {
@@ -1628,6 +1975,45 @@ struct FloatingIslandView: View {
 
                 Image(systemName: "sun.max.fill")
                     .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(.yellow)
+            }
+
+            // iOS 18 Flashlight Beam Width / Spread Geometry Slider
+            HStack(spacing: 8) {
+                Image(systemName: "arrow.left.and.right")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundColor(.yellow.opacity(0.6))
+
+                GeometryReader { geo in
+                    let fillWidth = max(6, geo.size.width * CGFloat(state.torchBeamWidth))
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.18))
+                            .frame(height: 5)
+
+                        Capsule()
+                            .fill(Color.yellow.opacity(0.85))
+                            .frame(width: fillWidth, height: 5)
+
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 9, height: 9)
+                            .shadow(color: .black.opacity(0.4), radius: 2)
+                            .offset(x: max(0, fillWidth - 4.5))
+                    }
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { val in
+                                let pct = max(0.1, min(1.0, Double(val.location.x / geo.size.width)))
+                                state.torchBeamWidth = pct
+                            }
+                    )
+                }
+                .frame(height: 10)
+
+                Text("\(Int(state.torchBeamWidth * 100))°")
+                    .font(.system(size: 8, weight: .bold, design: .monospaced))
                     .foregroundColor(.yellow)
             }
 
@@ -2497,6 +2883,10 @@ struct FloatingIslandView: View {
         case .flight: return "\(state.flightOrigin) ✈ \(state.flightDestination)"
         case .delivery: return state.deliveryRestaurant
         case .screenRecording: return "Recording"
+        case .hotspot: return "Personal Hotspot"
+        case .airDrop: return "AirDrop"
+        case .cellular: return "Cellular"
+        case .gamePong: return "Hit The Island"
         case .navigation: return state.navInstruction
         case .sports: return "\(state.sportsHomeTeam) \(state.sportsHomeScore) - \(state.sportsAwayScore) \(state.sportsAwayTeam)"
         case .recording: return "Voice Memo"
@@ -2516,6 +2906,10 @@ struct FloatingIslandView: View {
         case .flight: return "\(state.flightNumber) • \(state.flightStatus)"
         case .delivery: return state.deliveryEta
         case .screenRecording: return String(format: "%02d:%02d", state.screenRecordingSeconds / 60, state.screenRecordingSeconds % 60)
+        case .hotspot: return "\(state.hotspotConnectedDevices) Connected • \(state.hotspotDownloadSpeed)"
+        case .airDrop: return state.isAirDropCompleted ? "Received \(state.airDropFileCount) Items" : "\(Int(state.airDropProgress * 100))% • \(state.airDropSender)"
+        case .cellular: return "\(state.primaryCarrier) • 5G"
+        case .gamePong: return "Score: \(state.pongScore) (Best: \(state.pongHighScore))"
         case .navigation: return state.navETA
         case .sports: return "\(state.sportsMatchTime) • Live"
         case .recording: return state.recordingTimeFormatted

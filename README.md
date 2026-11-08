@@ -2,12 +2,35 @@
 
 [![iOS 15.0+](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Version 7.0](https://img.shields.io/badge/DynamicNotch-v7.0_JindoReverseEngineered-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v7.0)
+[![Version 8.0](https://img.shields.io/badge/DynamicNotch-v8.0_JindoMasterpiece-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v8.0)
 [![License MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
 **Dynamic Notch** brings the real **Apple Dynamic Island** experience to the iPhone 11, iPhone XR, iPhone 12, iPhone 13, and all notched iOS devices. 
 
-Sitting invisibly flush under the physical camera notch, Dynamic Notch features **Apple Jindo Reverse-Engineered Architecture**: true Dual-Island Splitting (Major Pill + Detached Orbit Bubble), 16 authentic Apple System Apertures (Apple Pay NFC, AirPods Pro 3-way battery case, Uber Rideshare, Flighty Flight Tracker, Food Delivery, Screen Recording, Privacy sensor dots), interactive SpringBoard rubberband pull-down stretch & horizontal flick-to-stealth gestures, and a Transparent Liquid Glass Wallpaper Engine.
+Sitting invisibly flush under the physical camera notch, Dynamic Notch features **Apple Jindo Reverse-Engineered Architecture**: true Dual-Island Splitting (Major Pill + Detached Orbit Bubble), 20 authentic Apple System Apertures (Apple Pay NFC, AirPods Pro 3-way battery case, AirDrop transfer, Personal Hotspot telemetry, Dual SIM cellular, Uber Rideshare, Flighty Flight Tracker, Food Delivery, Screen Recording, Privacy sensor dots), viral mini-games (Hit The Island Pong with liquid squish physics & Notch Pixel Pet companion), interactive SpringBoard rubberband pull-down stretch & horizontal flick-to-stealth gestures, authentic AudioServices sound chimes, and a Transparent Liquid Glass Wallpaper Engine.
+
+---
+
+## What's New in v8.0 (Apple Jindo Definitive Masterpiece Edition)
+
+* **Hit The Island (Pong Mini-Game) & Liquid Squish Physics**:
+  * Reverse-engineered the viral Dynamic Island Pong game directly into the physical iPhone notch!
+  * Interactive bouncing ball rallies off the notch island with Pong sound effects (`AudioServicesPlaySystemSound(1057)`), medium haptic feedback, and authentic Apple liquid-spring squish bounce (`scaleEffect(1.08 -> 1.0)`).
+  * Real-time score counter and high-score retention.
+* **Dynamic Island Pixel Pet (Notch Companion)**:
+  * An adorable virtual pixel companion perching directly on the top curvature of your physical iPhone notch.
+  * 4 selectable companions: Cat 🐱, Puppy 🐶, Fox 🦊, Axolotl 🦎.
+  * Interactive behaviors: walks along the notch, jumps, dances, and purrs with delicate double-pulse haptics when petted/tapped.
+* **AirDrop File Transfer System Aperture**:
+  * Reverse-engineered iOS AirDrop transfer HUD featuring dynamic circular progress ring (`airDropProgress`), sender identity ("Sarah's iPhone", "MacBook Pro"), item count telemetry ("4 Photos and Videos"), and 1-tap "Accept" or "Open in Photos" action.
+* **Personal Hotspot Telemetry HUD**:
+  * Dynamic Island hotspot aperture tracking active connected tethering devices, real-time upload speed (↑ 1.4 MB/s) and download speed (↓ 5.2 MB/s) throughput telemetry, and network management actions.
+* **Dual SIM & Cellular Network Telemetry**:
+  * Real-time dual SIM status monitoring Primary SIM ("Verizon 5G UW", 4 bars) and Secondary SIM ("T-Mobile LTE", 3 bars), 5G Ultra Wideband badge, and 1-tap active SIM switching.
+* **SpringBoard Dynamic Island Audio Feedback**:
+  * Authentic Apple AudioServices system chimes: `1104` whoosh expand sound on island pull-down, `1105` snap collapse sound on tap/dismiss, `1111` Face ID chime, and `1008` AirPods spatial connection chord.
+* **iOS 18 Flashlight 2D Spread Geometry**:
+  * Complete reverse engineering of iOS 18's Dynamic Island Flashlight HUD: dual 2D controls featuring dynamic beam spread angle slider (10° to 100°) alongside beam brightness intensity.
 
 ---
 

@@ -14,6 +14,10 @@ enum IslandMode: String, CaseIterable {
     case flight = "Flight Tracker"
     case delivery = "Food Delivery"
     case screenRecording = "Screen Recording"
+    case hotspot = "Personal Hotspot"
+    case airDrop = "AirDrop Transfer"
+    case cellular = "Dual SIM / Cellular"
+    case gamePong = "Hit The Island"
     case navigation = "Apple Maps"
     case sports = "Live Sports"
     case recording = "Voice Memo"
@@ -69,6 +73,31 @@ enum ApplePayPhase: String {
     case ready
     case authenticating
     case done
+}
+
+enum CompanionType: String, CaseIterable, Identifiable {
+    case cat = "Pixel Cat"
+    case dog = "Puppy"
+    case fox = "Fox"
+    case axolotl = "Axolotl"
+
+    var id: String { rawValue }
+
+    var emoji: String {
+        switch self {
+        case .cat: return "🐱"
+        case .dog: return "🐶"
+        case .fox: return "🦊"
+        case .axolotl: return "🦎"
+        }
+    }
+}
+
+enum CompanionAction: String {
+    case walking
+    case sleeping
+    case dancing
+    case jumping
 }
 
 enum IslandSize: String, CaseIterable {
@@ -274,6 +303,8 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
     case cycleVisualizer = "Cycle Visualizer"
     case cycleTheme = "Cycle Theme Accent"
     case toggleSplit = "Toggle Split Island"
+    case toggleCompanion = "Toggle Notch Pet"
+    case playPong = "Play Hit The Island"
     case stealthMode = "Stealth Mode"
     case expandCollapse = "Expand / Collapse"
 
@@ -296,6 +327,8 @@ enum DoubleTapAction: String, CaseIterable, Identifiable {
         case .cycleVisualizer: return "waveform"
         case .cycleTheme: return "paintpalette.fill"
         case .toggleSplit: return "rectangle.split.2x1.fill"
+        case .toggleCompanion: return "pawprint.fill"
+        case .playPong: return "circle.and.line.horizontal.fill"
         case .stealthMode: return "eye.slash.fill"
         case .expandCollapse: return "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left"
         }
@@ -525,6 +558,38 @@ class IslandState: ObservableObject {
     @Published var isMicPrivacyActive: Bool = false
     @Published var isCamPrivacyActive: Bool = false
 
+    // MARK: - Notch Companion / Pixel Pet
+    @Published var companionEnabled: Bool = false
+    @Published var companionType: CompanionType = .cat
+    @Published var companionAction: CompanionAction = .walking
+    @Published var companionOffset: CGFloat = 0.0
+
+    // MARK: - iOS 18 Flashlight Beam Geometry
+    @Published var torchBeamWidth: Double = 0.50
+
+    // MARK: - Personal Hotspot Telemetry
+    @Published var hotspotConnectedDevices: Int = 2
+    @Published var hotspotUploadSpeed: String = "1.4 MB/s"
+    @Published var hotspotDownloadSpeed: String = "5.2 MB/s"
+
+    // MARK: - AirDrop Transfer State
+    @Published var airDropSender: String = "Sarah's iPhone"
+    @Published var airDropFileCount: Int = 4
+    @Published var airDropProgress: Double = 0.65
+    @Published var isAirDropCompleted: Bool = false
+
+    // MARK: - Dual SIM Cellular State
+    @Published var primaryCarrier: String = "Verizon 5G UW"
+    @Published var secondaryCarrier: String = "T-Mobile LTE"
+    @Published var primarySignalBars: Int = 4
+    @Published var secondarySignalBars: Int = 3
+
+    // MARK: - Hit The Island (Pong Game) State
+    @Published var pongScore: Int = 0
+    @Published var pongHighScore: Int = 14
+    @Published var isPongPlaying: Bool = false
+    @Published var islandSquishScale: CGFloat = 1.0
+
     private var timerCancellable: AnyCancellable?
     private var stopwatchCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
@@ -543,6 +608,10 @@ class IslandState: ObservableObject {
             case .flight: return 248
             case .delivery: return 242
             case .screenRecording: return 232
+            case .hotspot: return 238
+            case .airDrop: return 240
+            case .cellular: return 236
+            case .gamePong: return 240
             case .blank: return 236
             default: return 228
             }
@@ -572,6 +641,10 @@ class IslandState: ObservableObject {
             case .flight: return 88
             case .delivery: return 84
             case .screenRecording: return 72
+            case .hotspot: return 74
+            case .airDrop: return 76
+            case .cellular: return 72
+            case .gamePong: return 86
             case .blank: return 72
             default: return 70
             }
@@ -801,7 +874,7 @@ class IslandState: ObservableObject {
         case .call:
             callDuration = 0
             isCallActive = false
-        case .applePay, .airPods, .rideshare, .flight, .delivery, .screenRecording:
+        case .applePay, .airPods, .rideshare, .flight, .delivery, .screenRecording, .hotspot, .airDrop, .cellular, .gamePong:
             break
         case .navigation:
             break
@@ -937,6 +1010,10 @@ class IslandState: ObservableObject {
         case .flight: return "airplane"
         case .delivery: return "bag.fill"
         case .screenRecording: return "record.circle"
+        case .hotspot: return "personalhotspot"
+        case .airDrop: return "antenna.radiowaves.left.and.right"
+        case .cellular: return "simcard.fill"
+        case .gamePong: return "circle.and.line.horizontal.fill"
         case .navigation: return "arrow.turn.up.right"
         case .sports: return "sportscourt.fill"
         case .recording: return "record.circle.fill"
@@ -1043,6 +1120,10 @@ class IslandState: ObservableObject {
             }
         case .toggleSplit:
             toggleSplitIsland()
+        case .toggleCompanion:
+            toggleCompanion()
+        case .playPong:
+            startPongGame()
         case .stealthMode:
             if mode == .blank {
                 setMode(.media)
@@ -1132,6 +1213,7 @@ class IslandState: ObservableObject {
     func expand() {
         guard !isExpanded else { return }
         HapticService.shared.medium()
+        HapticService.shared.expandWhooshSound()
         withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
             self.isExpanded = true
         }
@@ -1141,6 +1223,7 @@ class IslandState: ObservableObject {
     func collapse() {
         guard isExpanded || isShowingNotification else { return }
         HapticService.shared.light()
+        HapticService.shared.collapseSnapSound()
         notificationDismissWorkItem?.cancel()
         withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
             self.isExpanded = false
@@ -1723,5 +1806,85 @@ class IslandState: ObservableObject {
             icon: "antenna.radiowaves.left.and.right",
             color: Color(red: 0.0, green: 0.85, blue: 1.0)
         )
+    }
+
+    // MARK: - v8.0 Dynamic Island Apertures & Features
+    func triggerAirDropHUD(sender: String = "Sarah's iPhone", count: Int = 4) {
+        self.airDropSender = sender
+        self.airDropFileCount = count
+        self.airDropProgress = 0.0
+        self.isAirDropCompleted = false
+        setMode(.airDrop)
+        HapticService.shared.success()
+
+        // Progressive simulated transfer
+        for step in 1...10 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(step) * 0.25) { [weak self] in
+                guard let self = self, self.mode == .airDrop else { return }
+                withAnimation(.linear(duration: 0.2)) {
+                    self.airDropProgress = Double(step) / 10.0
+                }
+                if step == 10 {
+                    self.isAirDropCompleted = true
+                    HapticService.shared.success()
+                }
+            }
+        }
+    }
+
+    func triggerHotspotHUD() {
+        setMode(.hotspot)
+        HapticService.shared.medium()
+    }
+
+    func triggerCellularHUD() {
+        setMode(.cellular)
+        HapticService.shared.selection()
+    }
+
+    func startPongGame() {
+        setMode(.gamePong)
+        isPongPlaying = true
+        pongScore = 0
+        HapticService.shared.medium()
+    }
+
+    func hitPongBall() {
+        pongScore += 1
+        if pongScore > pongHighScore {
+            pongHighScore = pongScore
+        }
+        HapticService.shared.pongHitHaptic()
+        withAnimation(.spring(response: 0.15, dampingFraction: 0.35)) {
+            self.islandSquishScale = 1.08
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+                self?.islandSquishScale = 1.0
+            }
+        }
+    }
+
+    func toggleCompanion() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+            companionEnabled.toggle()
+        }
+        if companionEnabled {
+            HapticService.shared.companionPurrHaptic()
+        } else {
+            HapticService.shared.light()
+        }
+    }
+
+    func tapCompanion() {
+        HapticService.shared.companionPurrHaptic()
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
+            companionAction = (companionAction == .jumping) ? .dancing : .jumping
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            withAnimation {
+                self?.companionAction = .walking
+            }
+        }
     }
 }

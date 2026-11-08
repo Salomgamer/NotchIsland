@@ -139,6 +139,40 @@ class HapticService: ObservableObject {
         }
     }
 
+    func expandWhooshSound() {
+        guard strength != .muted else { return }
+        AudioServicesPlaySystemSound(1104)
+    }
+
+    func collapseSnapSound() {
+        guard strength != .muted else { return }
+        AudioServicesPlaySystemSound(1105)
+    }
+
+    func faceIDUnlockSound() {
+        guard strength != .muted else { return }
+        AudioServicesPlaySystemSound(1111)
+    }
+
+    func airPodsConnectedSound() {
+        guard strength != .muted else { return }
+        AudioServicesPlaySystemSound(1008)
+    }
+
+    func pongHitHaptic() {
+        guard strength != .muted else { return }
+        medium()
+        AudioServicesPlaySystemSound(1057)
+    }
+
+    func companionPurrHaptic() {
+        guard strength != .muted else { return }
+        light()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
+            self?.light()
+        }
+    }
+
     func stopCallRingtone() {
         ringtoneTimer?.invalidate()
         ringtoneTimer = nil

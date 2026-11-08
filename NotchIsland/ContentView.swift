@@ -34,6 +34,9 @@ struct ContentView: View {
                     // Apple Jindo Split-Island Architecture
                     splitIslandControlSection
 
+                    // Notch Companion / Pixel Pet Section
+                    notchCompanionSection
+
                     // Interactive Test Lab & Dynamic Island Notification Simulator
                     dynamicIslandTestLab
 
@@ -96,7 +99,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 7.0 • Apple Jindo Reverse Engineered")
+                Text("Dynamic Island 8.0 • Apple Jindo Masterpiece")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -407,6 +410,91 @@ struct ContentView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
+    // MARK: - Notch Companion / Pixel Pet Section
+    private var notchCompanionSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "pawprint.fill")
+                    .foregroundColor(state.theme.color)
+                Text("DYNAMIC ISLAND PIXEL PET")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.2)
+                Spacer()
+                Toggle("", isOn: $state.companionEnabled)
+                    .labelsHidden()
+                    .onChange(of: state.companionEnabled) { val in
+                        if val {
+                            HapticService.shared.companionPurrHaptic()
+                        }
+                    }
+            }
+            .padding(.horizontal, 4)
+
+            Text("A virtual pixel companion perching directly on top of your physical iPhone notch. Walks, jumps, dances, and purrs when tapped!")
+                .font(.system(size: 11))
+                .foregroundColor(.gray)
+
+            HStack(spacing: 8) {
+                ForEach(CompanionType.allCases) { pet in
+                    Button(action: {
+                        state.companionType = pet
+                        HapticService.shared.selection()
+                    }) {
+                        HStack(spacing: 4) {
+                            Text(pet.emoji)
+                            Text(pet.rawValue)
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundColor(state.companionType == pet ? .black : .white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(state.companionType == pet ? state.theme.color : Color(white: 0.14))
+                        .clipShape(Capsule())
+                    }
+                }
+            }
+
+            if state.companionEnabled {
+                HStack(spacing: 8) {
+                    Button(action: {
+                        state.tapCompanion()
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "hand.tap.fill")
+                            Text("Pet / Play")
+                        }
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.white)
+                        .clipShape(Capsule())
+                    }
+
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                            state.companionAction = .dancing
+                        }
+                        HapticService.shared.companionPurrHaptic()
+                    }) {
+                        Text("Dance 💃")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.white.opacity(0.14))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
     // MARK: - Dynamic Island Notification Test Lab
     private var dynamicIslandTestLab: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -425,6 +513,26 @@ struct ContentView: View {
             .padding(.horizontal, 4)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                testTriggerButton(title: "🐾 Notch Pixel Pet", color: state.theme.color) {
+                    state.toggleCompanion()
+                }
+
+                testTriggerButton(title: "🎾 Hit The Island Pong", color: .orange) {
+                    state.startPongGame()
+                }
+
+                testTriggerButton(title: "📡 AirDrop Transfer", color: Color(red: 0.0, green: 0.48, blue: 1.0)) {
+                    state.triggerAirDropHUD()
+                }
+
+                testTriggerButton(title: "📶 Personal Hotspot", color: Color(red: 0.18, green: 0.84, blue: 0.38)) {
+                    state.triggerHotspotHUD()
+                }
+
+                testTriggerButton(title: "📱 Dual SIM Cellular", color: .cyan) {
+                    state.triggerCellularHUD()
+                }
+
                 testTriggerButton(title: "💳 Apple Pay / NFC", color: Color(red: 0.0, green: 0.85, blue: 1.0)) {
                     state.triggerApplePay()
                 }
@@ -722,6 +830,18 @@ struct ContentView: View {
 
             case .flashlight:
                 flashlightInteractiveControls
+
+            case .hotspot:
+                hotspotInteractiveControls
+
+            case .airDrop:
+                airDropInteractiveControls
+
+            case .cellular:
+                cellularInteractiveControls
+
+            case .gamePong:
+                pongGameInteractiveControls
             }
         }
         .padding(14)
@@ -1003,6 +1123,230 @@ struct ContentView: View {
                             )
                             .clipShape(Capsule())
                     }
+                }
+            }
+        }
+    }
+
+    // MARK: - Personal Hotspot Interactive Controls
+    private var hotspotInteractiveControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "personalhotspot")
+                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+                Text("PERSONAL HOTSPOT TELEMETRY")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text("\(state.hotspotConnectedDevices) Connected")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(red: 0.18, green: 0.84, blue: 0.38))
+            }
+
+            Text("Live Data Rate: ↑ \(state.hotspotUploadSpeed)  •  ↓ \(state.hotspotDownloadSpeed)")
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .foregroundColor(.gray)
+
+            HStack(spacing: 8) {
+                Button(action: {
+                    state.hotspotConnectedDevices = max(0, state.hotspotConnectedDevices - 1)
+                    HapticService.shared.selection()
+                }) {
+                    HStack(spacing: 3) {
+                        Image(systemName: "minus.circle")
+                        Text("Device")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.14))
+                    .clipShape(Capsule())
+                }
+
+                Button(action: {
+                    state.hotspotConnectedDevices += 1
+                    HapticService.shared.selection()
+                }) {
+                    HStack(spacing: 3) {
+                        Image(systemName: "plus.circle")
+                        Text("Device")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.14))
+                    .clipShape(Capsule())
+                }
+
+                Button(action: {
+                    state.triggerHotspotHUD()
+                }) {
+                    Text("Trigger HUD")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color(red: 0.18, green: 0.84, blue: 0.38))
+                        .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
+    // MARK: - AirDrop Transfer Interactive Controls
+    private var airDropInteractiveControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .foregroundColor(Color(red: 0.0, green: 0.48, blue: 1.0))
+                Text("AIRDROP TRANSFER HUD")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text("\(Int(state.airDropProgress * 100))%")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+            }
+
+            Text("Sender: \(state.airDropSender) • Files: \(state.airDropFileCount) Photos")
+                .font(.system(size: 11))
+                .foregroundColor(.gray)
+
+            HStack(spacing: 8) {
+                Button(action: {
+                    state.triggerAirDropHUD(sender: "MacBook Pro", count: 8)
+                }) {
+                    Text("MacBook (8 Items)")
+                        .font(.system(size: 10.5, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.14))
+                        .clipShape(Capsule())
+                }
+
+                Button(action: {
+                    state.triggerAirDropHUD(sender: "Sarah's iPhone", count: 4)
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "paperplane.fill")
+                        Text("Simulate AirDrop")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color(red: 0.0, green: 0.48, blue: 1.0))
+                    .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
+    // MARK: - Cellular Dual SIM Interactive Controls
+    private var cellularInteractiveControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "simcard.2.fill")
+                    .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                Text("DUAL SIM / CELLULAR HUD")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text("5G UW")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.cyan)
+            }
+
+            Text("Primary: \(state.primaryCarrier)  |  Secondary: \(state.secondaryCarrier)")
+                .font(.system(size: 11))
+                .foregroundColor(.gray)
+
+            HStack(spacing: 8) {
+                Button(action: {
+                    state.triggerSIMSwitched()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                        Text("Switch Active SIM")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.14))
+                    .clipShape(Capsule())
+                }
+
+                Button(action: {
+                    state.triggerCellularHUD()
+                }) {
+                    Text("Trigger HUD")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.cyan)
+                        .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
+    // MARK: - Hit The Island Pong Game Interactive Controls
+    private var pongGameInteractiveControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "circle.and.line.horizontal.fill")
+                    .foregroundColor(.orange)
+                Text("HIT THE ISLAND (PONG GAME)")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.0)
+                Spacer()
+                Text("Score: \(state.pongScore) (Best: \(state.pongHighScore))")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.orange)
+            }
+
+            Text("The viral game reverse-engineered! Bounce the ball off the physical notch Dynamic Island with authentic audio cues, haptic clicks, and liquid-spring squish physics.")
+                .font(.system(size: 10.5))
+                .foregroundColor(.gray)
+
+            HStack(spacing: 8) {
+                Button(action: {
+                    state.startPongGame()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "play.fill")
+                        Text("Start Pong Game")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.orange)
+                    .clipShape(Capsule())
+                }
+
+                Button(action: {
+                    state.hitPongBall()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.circle.fill")
+                        Text("Hit Notch Island!")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.14))
+                    .clipShape(Capsule())
                 }
             }
         }
@@ -2479,10 +2823,10 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 7.0")
+                    Text("Dynamic Notch 8.0")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
-                    Text("APPLE JINDO REVERSE ENGINEERED")
+                    Text("APPLE JINDO DEFINITIVE MASTERPIECE")
                         .font(.system(size: 10, weight: .black))
                         .foregroundColor(themeColor)
                         .kerning(1.5)
@@ -2491,6 +2835,55 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "circle.and.line.horizontal.fill",
+                            color: .orange,
+                            title: "Hit The Island (Pong Game) & Liquid Squish",
+                            desc: "The viral game reverse-engineered! Tap to rally the bouncing ball into the notch island with Pong sound cues, haptic clicks, and liquid-spring squish physics."
+                        )
+
+                        featureRow(
+                            icon: "pawprint.fill",
+                            color: themeColor,
+                            title: "Dynamic Island Pixel Pet (Notch Companion)",
+                            desc: "An adorable virtual companion (Cat 🐱, Puppy 🐶, Fox 🦊, Axolotl 🦎) perching directly on your notch. Tap to pet, purr, jump, or dance!"
+                        )
+
+                        featureRow(
+                            icon: "antenna.radiowaves.left.and.right",
+                            color: Color(red: 0.0, green: 0.48, blue: 1.0),
+                            title: "AirDrop Transfer System Aperture",
+                            desc: "Real-time circular transfer progress ring, sender identification, file count telemetry, and 1-tap Accept/Open action."
+                        )
+
+                        featureRow(
+                            icon: "personalhotspot",
+                            color: Color(red: 0.18, green: 0.84, blue: 0.38),
+                            title: "Personal Hotspot Telemetry HUD",
+                            desc: "Monitors active connected tethering devices with live upload/download throughput metrics and management actions."
+                        )
+
+                        featureRow(
+                            icon: "simcard.2.fill",
+                            color: Color(red: 0.0, green: 0.85, blue: 1.0),
+                            title: "Dual SIM & Cellular Network Telemetry",
+                            desc: "Primary and secondary carrier telemetry with signal strength indicators, 5G Ultra Wideband badge, and quick SIM line switching."
+                        )
+
+                        featureRow(
+                            icon: "speaker.wave.3.fill",
+                            color: themeColor,
+                            title: "SpringBoard Dynamic Island Audio Feedback",
+                            desc: "Authentic Apple AudioServices system sound effects: 1104 whoosh expand, 1105 snap collapse, 1111 Face ID unlock, and 1057 Pong hit."
+                        )
+
+                        featureRow(
+                            icon: "arrow.left.and.right",
+                            color: .yellow,
+                            title: "iOS 18 Flashlight 2D Spread Geometry",
+                            desc: "Reverse-engineered 2D beam controls: dynamic beam spread angle slider (10° to 100°) combined with beam brightness intensity."
+                        )
+
                         featureRow(
                             icon: "rectangle.split.2x1.fill",
                             color: Color(red: 0.0, green: 0.85, blue: 1.0),
