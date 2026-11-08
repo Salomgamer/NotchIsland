@@ -17,22 +17,28 @@ struct ContentView: View {
             Color(red: 0.04, green: 0.04, blue: 0.05)
                 .ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 16) {
-                    // Header Bar
-                    headerBar
+            if state.isExpandedViaPiPTap {
+                pipExpandedOverlayView
+            } else {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        // Header Bar
+                        headerBar
 
-                    // Live Interactive Preview & Notch Guide
-                    previewSection
+                        // Live Interactive Preview & Notch Guide
+                        previewSection
 
-                    // Primary Launch / Dismiss Button
-                    launchButton
+                        // Primary Launch / Dismiss Button
+                        launchButton
 
-                    // Connected Audio Route & Flashlight Quick Bar
-                    quickStatusSection
+                        // Connected Audio Route & Flashlight Quick Bar
+                        quickStatusSection
 
-                    // Apple Jindo Split-Island Architecture
-                    splitIslandControlSection
+                        // Bubble Touch Action Engine (Expand vs Open App of Thing Happening)
+                        bubbleTouchSection
+
+                        // Apple Jindo Split-Island Architecture
+                        splitIslandControlSection
 
                     // Notch Companion / Pixel Pet Section
                     notchCompanionSection
@@ -80,6 +86,7 @@ struct ContentView: View {
                 .padding(.bottom, 40)
             }
         }
+    }
         .onAppear {
             nowPlaying.checkPermissions()
         }
@@ -99,7 +106,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 8.0 • Apple Jindo Masterpiece")
+                Text("Dynamic Island 8.1 • Apple Jindo Masterpiece")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -300,6 +307,165 @@ struct ContentView: View {
                 .padding(.horizontal, 4)
             }
         }
+    }
+
+    // MARK: - Bubble Touch Behavior Section
+    private var bubbleTouchSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "hand.tap.fill")
+                    .foregroundColor(state.theme.color)
+                Text("BUBBLE TOUCH BEHAVIOR")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.2)
+                Spacer()
+                Text(state.bubbleTouchAction.rawValue.uppercased())
+                    .font(.system(size: 9, weight: .heavy, design: .rounded))
+                    .foregroundColor(state.theme.color)
+            }
+            .padding(.horizontal, 4)
+
+            Text("Controls what happens when you touch the floating island or bubble: expand directly in place, or immediately open the app of whatever is currently playing/happening (Spotify, Clock, Maps, Phone).")
+                .font(.system(size: 11))
+                .foregroundColor(.gray)
+
+            VStack(spacing: 8) {
+                ForEach(BubbleTouchAction.allCases) { action in
+                    Button(action: {
+                        state.bubbleTouchAction = action
+                        HapticService.shared.selection()
+                    }) {
+                        HStack(spacing: 10) {
+                            ZStack {
+                                Circle()
+                                    .fill(state.bubbleTouchAction == action ? state.theme.color : Color(white: 0.16))
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: action.icon)
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(state.bubbleTouchAction == action ? .black : .white)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(action.title)
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .foregroundColor(state.bubbleTouchAction == action ? .white : .gray)
+                                Text(action.subtitle)
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundColor(.gray.opacity(0.8))
+                                    .lineLimit(1)
+                            }
+
+                            Spacer()
+
+                            if state.bubbleTouchAction == action {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(state.theme.color)
+                            }
+                        }
+                        .padding(10)
+                        .background(state.bubbleTouchAction == action ? Color.white.opacity(0.08) : Color(white: 0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                }
+            }
+
+            if state.hasActiveExternalApp {
+                HStack {
+                    Image(systemName: "arrow.up.forward.app.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(state.theme.color)
+                    Text("Currently Active: \(state.activeAppName)")
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Button(action: {
+                        state.openActiveApp()
+                    }) {
+                        Text("Open Now ↗")
+                            .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(state.theme.color)
+                            .clipShape(Capsule())
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: - PiP Expanded Notch Overlay
+    private var pipExpandedOverlayView: some View {
+        ZStack {
+            // Translucent dimming backdrop
+            Color.black.opacity(0.85)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    state.dismissPiPExpansion()
+                }
+
+            VStack(spacing: 0) {
+                // Top Notch Island Card Anchor
+                FloatingIslandView(state: state)
+                    .padding(.top, 8)
+
+                Spacer()
+
+                // Bottom Dismiss & App Switch Bar
+                VStack(spacing: 12) {
+                    if state.hasActiveExternalApp {
+                        Button(action: {
+                            state.openActiveApp()
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.up.forward.app.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("Open in \(state.activeAppName) ↗")
+                                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 10)
+                            .background(Color.white.opacity(0.18))
+                            .clipShape(Capsule())
+                        }
+                    }
+
+                    HStack(spacing: 20) {
+                        Button(action: {
+                            state.dismissPiPExpansion()
+                        }) {
+                            HStack(spacing: 5) {
+                                Image(systemName: "chevron.up")
+                                Text("Collapse to Notch")
+                            }
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.gray)
+                        }
+
+                        Button(action: {
+                            state.isExpandedViaPiPTap = false
+                        }) {
+                            HStack(spacing: 5) {
+                                Image(systemName: "gearshape.fill")
+                                Text("Settings Lab")
+                            }
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(state.theme.color)
+                        }
+                    }
+                }
+                .padding(.bottom, 36)
+            }
+        }
+        .transition(.opacity.combined(with: .scale(scale: 0.98)))
     }
 
     // MARK: - Jindo Split Island Architecture Section
@@ -2823,7 +2989,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 8.0")
+                    Text("Dynamic Notch 8.1")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("APPLE JINDO DEFINITIVE MASTERPIECE")
@@ -2835,6 +3001,13 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
+                        featureRow(
+                            icon: "hand.tap.fill",
+                            color: Color(red: 0.0, green: 0.85, blue: 1.0),
+                            title: "Bubble Touch: Expand or Open Active App",
+                            desc: "Touching the bubble no longer opens the settings app! It now seamlessly expands the Dynamic Island in place at the notch, or immediately launches the app of whatever is currently happening (Spotify, Apple Music, Clock, Maps, Phone) exactly like native Dynamic Island!"
+                        )
+
                         featureRow(
                             icon: "circle.and.line.horizontal.fill",
                             color: .orange,

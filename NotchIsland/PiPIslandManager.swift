@@ -134,21 +134,28 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         _ pictureInPictureController: AVPictureInPictureController,
         restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
     ) {
-        // Intercept tap: DO NOT open app full screen! Always expand/collapse the floating island in-place!
-        completionHandler(false)
+        let state = IslandState.shared
 
-        HapticService.shared.medium()
-        if !IslandState.shared.isExpanded {
-            IslandState.shared.expand()
-        } else {
-            IslandState.shared.collapse()
-        }
+        if state.bubbleTouchAction == .openApp || (state.bubbleTouchAction == .smartAdaptive && state.hasActiveExternalApp) {
+            // Immediately open the app of whatever is currently happening!
+            completionHandler(true)
+            state.openActiveApp()
 
-        // Keep PiP floating continuously
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
-            if self?.isPiPActive == false {
-                self?.pipController?.startPictureInPicture()
+            // Keep PiP floating continuously over the opened active app
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak self] in
+                if self?.isPiPActive == false {
+                    self?.pipController?.startPictureInPicture()
+                }
             }
+        } else {
+            // Expand the Dynamic Island in-place without opening the full settings lab
+            completionHandler(true)
+            HapticService.shared.medium()
+            withAnimation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping)) {
+                state.isExpandedViaPiPTap = true
+                state.isExpanded = true
+            }
+            updateSize(width: state.islandWidth, height: state.islandHeight)
         }
     }
 

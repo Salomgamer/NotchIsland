@@ -17,11 +17,37 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>6.1</string>
+    <string>8.1</string>
     <key>CFBundleVersion</key>
-    <string>6.1</string>
+    <string>8.1</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>spotify</string>
+        <string>youtubemusic</string>
+        <string>youtube</string>
+        <string>music</string>
+        <string>podcasts</string>
+        <string>soundcloud</string>
+        <string>stremio</string>
+        <string>tidal</string>
+        <string>deezer</string>
+        <string>maps</string>
+        <string>tel</string>
+        <string>mobilephone</string>
+        <string>clock-timer</string>
+        <string>clock-stopwatch</string>
+        <string>clock</string>
+        <string>voicememos</string>
+        <string>shoebox</string>
+        <string>photos-redirect</string>
+        <string>uber</string>
+        <string>lyft</string>
+        <string>doordash</string>
+        <string>ubereats</string>
+        <string>flighty</string>
+    </array>
     <key>NSAppleMusicUsageDescription</key>
     <string>Dynamic Notch displays real-time now-playing media titles, artists, and playback status.</string>
     <key>NSCameraUsageDescription</key>

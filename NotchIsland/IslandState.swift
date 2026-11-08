@@ -75,6 +75,38 @@ enum ApplePayPhase: String {
     case done
 }
 
+enum BubbleTouchAction: String, CaseIterable, Identifiable {
+    case smartAdaptive = "Smart Adaptive"
+    case openApp = "Open Active App"
+    case expandOnly = "Expand Island In-Place"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .smartAdaptive: return "Smart Adaptive (Recommended)"
+        case .openApp: return "Open Active App (Apple Native)"
+        case .expandOnly: return "Expand Dynamic Island In-Place"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .smartAdaptive: return "Opens Spotify/Clock/Maps if active; expands island if idle"
+        case .openApp: return "Directly opens the app of whatever is currently happening"
+        case .expandOnly: return "Expands the island into interactive HUD without opening settings"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .smartAdaptive: return "sparkles"
+        case .openApp: return "arrow.up.forward.app.fill"
+        case .expandOnly: return "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left"
+        }
+    }
+}
+
 enum CompanionType: String, CaseIterable, Identifiable {
     case cat = "Pixel Cat"
     case dog = "Puppy"
@@ -589,6 +621,10 @@ class IslandState: ObservableObject {
     @Published var pongHighScore: Int = 14
     @Published var isPongPlaying: Bool = false
     @Published var islandSquishScale: CGFloat = 1.0
+
+    // MARK: - Bubble Touch Behavior (Expand vs Open Active App)
+    @Published var bubbleTouchAction: BubbleTouchAction = .smartAdaptive
+    @Published var isExpandedViaPiPTap: Bool = false
 
     private var timerCancellable: AnyCancellable?
     private var stopwatchCancellable: AnyCancellable?
@@ -1885,6 +1921,242 @@ class IslandState: ObservableObject {
             withAnimation {
                 self?.companionAction = .walking
             }
+        }
+    }
+
+    // MARK: - Bubble Touch & Open Active App Engine
+    var hasActiveExternalApp: Bool {
+        switch mode {
+        case .media:
+            return NowPlayingService.shared.isPlaying || NowPlayingService.shared.title != "No Music Playing"
+        case .call, .timer, .stopwatch, .recording, .navigation, .rideshare, .flight, .delivery, .applePay:
+            return true
+        default:
+            return false
+        }
+    }
+
+    var activeAppName: String {
+        switch mode {
+        case .media:
+            let src = NowPlayingService.shared.sourceAppName
+            return (src.isEmpty || src == "Media" || src == "Media Stream") ? "Music" : src
+        case .call:
+            return "Phone"
+        case .timer:
+            return "Clock (Timer)"
+        case .stopwatch:
+            return "Clock (Stopwatch)"
+        case .recording:
+            return "Voice Memos"
+        case .navigation:
+            return "Apple Maps"
+        case .applePay:
+            return "Wallet"
+        case .screenRecording:
+            return "Photos"
+        case .rideshare:
+            return rideshareService
+        case .delivery:
+            return deliveryRestaurant.isEmpty ? "Food Delivery" : deliveryRestaurant
+        case .flight:
+            return "Flight Tracker"
+        case .hotspot:
+            return "Hotspot Settings"
+        case .cellular:
+            return "Cellular Settings"
+        case .battery:
+            return "Battery Settings"
+        default:
+            return "App"
+        }
+    }
+
+    func handleBubbleTouch() {
+        switch bubbleTouchAction {
+        case .openApp:
+            openActiveApp()
+
+        case .expandOnly:
+            toggleExpanded()
+
+        case .smartAdaptive:
+            if hasActiveExternalApp {
+                openActiveApp()
+            } else {
+                toggleExpanded()
+            }
+        }
+    }
+
+    func handleMajorPillTouch() {
+        switch bubbleTouchAction {
+        case .openApp:
+            openActiveApp()
+
+        case .expandOnly:
+            expandPrimaryPill()
+
+        case .smartAdaptive:
+            if hasActiveExternalApp {
+                openActiveApp()
+            } else {
+                expandPrimaryPill()
+            }
+        }
+    }
+
+    func handleOrbitBubbleTouch() {
+        switch bubbleTouchAction {
+        case .openApp:
+            openSecondaryActiveApp()
+
+        case .expandOnly:
+            expandSecondaryBubble()
+
+        case .smartAdaptive:
+            if hasActiveSecondaryApp {
+                openSecondaryActiveApp()
+            } else {
+                expandSecondaryBubble()
+            }
+        }
+    }
+
+    var hasActiveSecondaryApp: Bool {
+        switch secondaryActivity {
+        case .timer, .stopwatch, .recording, .hotspot:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func openActiveApp() {
+        HapticService.shared.medium()
+
+        switch mode {
+        case .media:
+            openMediaApp()
+
+        case .call:
+            launchAppURL("mobilephone://", fallback: "tel://")
+
+        case .timer:
+            launchAppURL("clock-timer://", fallback: "clock://")
+
+        case .stopwatch:
+            launchAppURL("clock-stopwatch://", fallback: "clock://")
+
+        case .recording:
+            launchAppURL("voicememos://")
+
+        case .navigation:
+            launchAppURL("maps://")
+
+        case .applePay:
+            launchAppURL("shoebox://")
+
+        case .screenRecording:
+            launchAppURL("photos-redirect://")
+
+        case .rideshare:
+            launchAppURL("uber://", fallback: "lyft://")
+
+        case .delivery:
+            launchAppURL("doordash://", fallback: "ubereats://")
+
+        case .flight:
+            launchAppURL("flighty://")
+
+        case .hotspot:
+            launchAppURL("App-Prefs:root=INTERNET_TETHERING", fallback: "prefs:root=INTERNET_TETHERING")
+
+        case .cellular:
+            launchAppURL("App-Prefs:root=MOBILE_DATA_SETTINGS_ID")
+
+        case .battery:
+            launchAppURL("App-Prefs:root=BATTERY")
+
+        case .blank, .flashlight, .silent, .sports, .gamePong:
+            // For internal modes without external apps, expand the island in-place
+            withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
+                self.isExpanded = true
+            }
+            PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+        }
+    }
+
+    func openSecondaryActiveApp() {
+        HapticService.shared.medium()
+
+        switch secondaryActivity {
+        case .timer:
+            launchAppURL("clock-timer://", fallback: "clock://")
+
+        case .stopwatch:
+            launchAppURL("clock-stopwatch://", fallback: "clock://")
+
+        case .recording:
+            launchAppURL("voicememos://")
+
+        case .hotspot:
+            launchAppURL("App-Prefs:root=INTERNET_TETHERING", fallback: "prefs:root=INTERNET_TETHERING")
+
+        case .sports, .battery, .privacyDot:
+            withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
+                self.isSplitBubbleExpanded = true
+                self.isExpanded = true
+            }
+            PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+        }
+    }
+
+    func openMediaApp() {
+        let app = NowPlayingService.shared.sourceAppName.lowercased()
+        if app.contains("spotify") {
+            launchAppURL("spotify://")
+        } else if app.contains("youtube music") {
+            launchAppURL("youtubemusic://", fallback: "youtube://")
+        } else if app.contains("youtube") {
+            launchAppURL("youtube://")
+        } else if app.contains("soundcloud") {
+            launchAppURL("soundcloud://")
+        } else if app.contains("stremio") {
+            launchAppURL("stremio://")
+        } else if app.contains("podcast") {
+            launchAppURL("podcasts://")
+        } else if app.contains("tidal") {
+            launchAppURL("tidal://")
+        } else if app.contains("deezer") {
+            launchAppURL("deezer://")
+        } else if app.contains("music") || app.contains("apple") {
+            launchAppURL("music://")
+        } else {
+            // General media fallback
+            launchAppURL("music://", fallback: "spotify://")
+        }
+    }
+
+    func launchAppURL(_ primary: String, fallback: String? = nil) {
+        if let url = URL(string: primary) {
+            UIApplication.shared.open(url, options: [:]) { success in
+                if !success, let fb = fallback, let fbUrl = URL(string: fb) {
+                    UIApplication.shared.open(fbUrl, options: [:], completionHandler: nil)
+                }
+            }
+        } else if let fb = fallback, let fbUrl = URL(string: fb) {
+            UIApplication.shared.open(fbUrl, options: [:], completionHandler: nil)
+        }
+    }
+
+    func dismissPiPExpansion() {
+        collapse()
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+            self.isExpandedViaPiPTap = false
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            PiPIslandManager.shared.start()
         }
     }
 }

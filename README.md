@@ -2,12 +2,24 @@
 
 [![iOS 15.0+](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Version 8.0](https://img.shields.io/badge/DynamicNotch-v8.0_JindoMasterpiece-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v8.0)
+[![Version 8.1](https://img.shields.io/badge/DynamicNotch-v8.1_BubbleTouchAction-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v8.1)
 [![License MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
 **Dynamic Notch** brings the real **Apple Dynamic Island** experience to the iPhone 11, iPhone XR, iPhone 12, iPhone 13, and all notched iOS devices. 
 
 Sitting invisibly flush under the physical camera notch, Dynamic Notch features **Apple Jindo Reverse-Engineered Architecture**: true Dual-Island Splitting (Major Pill + Detached Orbit Bubble), 20 authentic Apple System Apertures (Apple Pay NFC, AirPods Pro 3-way battery case, AirDrop transfer, Personal Hotspot telemetry, Dual SIM cellular, Uber Rideshare, Flighty Flight Tracker, Food Delivery, Screen Recording, Privacy sensor dots), viral mini-games (Hit The Island Pong with liquid squish physics & Notch Pixel Pet companion), interactive SpringBoard rubberband pull-down stretch & horizontal flick-to-stealth gestures, authentic AudioServices sound chimes, and a Transparent Liquid Glass Wallpaper Engine.
+
+---
+
+## What's New in v8.1 (Bubble Touch: In-Place Expansion & Direct App Launch)
+
+* **Bubble Touch Behavior Engine (No More Accidental App Opening!)**:
+  * Tapping the floating island or bubble **no longer opens the Dynamic Notch settings app**!
+  * **Option 1: Open Active App (Apple Native)**: Touching the bubble directly launches the app corresponding to what is currently happening (Spotify, Apple Music, Clock Timer, Apple Maps, Phone Call, Wallet, Voice Memos, Uber, Food Delivery), exactly 1:1 with Apple's real Dynamic Island on iPhone 14 Pro / 15 / 16!
+  * **Option 2: Expand Dynamic Island In-Place**: Touching the bubble expands the island right at the notch into its full interactive platter with playback scrubber, volume, and control toggles, without displaying the settings dashboard.
+  * **Option 3: Smart Adaptive (Recommended)**: Automatically opens the app if external media, call, timer, or navigation is running; smoothly expands the island in-place if idle or using internal tools (Pong, Pixel Pet, Torch, Battery).
+  * **Dual-Island Independent Bubble Arbitration**: Tapping the Major Pill opens/expands the primary activity (e.g., Spotify), while tapping the Detached Orbit Bubble opens/expands the secondary activity (e.g., Apple Clock Timer).
+  * Registered complete `LSApplicationQueriesSchemes` in `Info.plist` for seamless, instant app launching across all major iOS services.
 
 ---
 

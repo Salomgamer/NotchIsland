@@ -47,6 +47,9 @@ struct FloatingIslandView: View {
             .shadow(color: .black.opacity(0.65), radius: 6, x: 0, y: 2)
             .contentShape(Rectangle())
             .onTapGesture {
+                state.handleMajorPillTouch()
+            }
+            .onLongPressGesture(minimumDuration: 0.4) {
                 state.expandPrimaryPill()
             }
 
@@ -61,6 +64,9 @@ struct FloatingIslandView: View {
             .shadow(color: .black.opacity(0.65), radius: 6, x: 0, y: 2)
             .contentShape(Rectangle())
             .onTapGesture {
+                state.handleOrbitBubbleTouch()
+            }
+            .onLongPressGesture(minimumDuration: 0.4) {
                 state.expandSecondaryBubble()
             }
         }
@@ -203,13 +209,9 @@ struct FloatingIslandView: View {
             state.handleDoubleTap()
         }
         .onTapGesture(count: 1) {
-            if !state.isExpanded {
-                state.expand()
-            } else {
-                state.collapse()
-            }
+            state.handleBubbleTouch()
         }
-        .onLongPressGesture(minimumDuration: 0.5) {
+        .onLongPressGesture(minimumDuration: 0.4) {
             if !state.isExpanded {
                 state.expand()
             } else {
@@ -2152,6 +2154,22 @@ struct FloatingIslandView: View {
                                 Image(systemName: "quote.bubble")
                                     .font(.system(size: 8, weight: .bold))
                                     .foregroundColor(subtitleColor.opacity(0.75))
+                            }
+
+                            Button(action: {
+                                state.openActiveApp()
+                            }) {
+                                HStack(spacing: 2) {
+                                    Image(systemName: "arrow.up.forward.app.fill")
+                                        .font(.system(size: 7.5, weight: .bold))
+                                    Text(state.activeAppName)
+                                        .font(.system(size: 7.5, weight: .bold, design: .rounded))
+                                }
+                                .foregroundColor(subtitleColor)
+                                .padding(.horizontal, 4.5)
+                                .padding(.vertical, 1.5)
+                                .background(Color.white.opacity(0.12))
+                                .clipShape(Capsule())
                             }
                         }
                     }
