@@ -55,13 +55,19 @@ struct FloatingIslandView: View {
 
             // Minor / Detached Orbit Bubble (Right)
             ZStack {
-                pillBackground
-                pillBorderOverlay(radius: 18)
+                if state.isBubbleClear {
+                    // 100% Clear Interior for the bubble itself!
+                    Color.clear
+                    bubbleBorderOverlay(radius: 18)
+                } else {
+                    pillBackground
+                    pillBorderOverlay(radius: 18)
+                }
                 splitOrbitBubbleContent
             }
             .frame(width: 36, height: 36)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .shadow(color: .black.opacity(0.65), radius: 6, x: 0, y: 2)
+            .shadow(color: .black.opacity(state.isBubbleClear ? 0.35 : 0.65), radius: 5, x: 0, y: 1.5)
             .contentShape(Rectangle())
             .onTapGesture {
                 state.handleOrbitBubbleTouch()
@@ -282,6 +288,26 @@ struct FloatingIslandView: View {
                 .stroke(Color.white.opacity(0.14), lineWidth: 1)
                 .padding(0.5)
         }
+    }
+
+    // MARK: - Clear Bubble Border Overlay
+    private func bubbleBorderOverlay(radius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .stroke(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.75),
+                        Color.white.opacity(0.20),
+                        state.secondaryActivity.color.opacity(0.80),
+                        Color.white.opacity(0.45)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                lineWidth: 1.2
+            )
+            .shadow(color: state.secondaryActivity.color.opacity(0.35), radius: 4, x: 0, y: 0)
+            .padding(0.5)
     }
 
     // MARK: - Pill Background Fill

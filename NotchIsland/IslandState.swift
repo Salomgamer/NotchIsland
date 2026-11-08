@@ -625,6 +625,7 @@ class IslandState: ObservableObject {
     // MARK: - Bubble Touch Behavior (Expand vs Open Active App)
     @Published var bubbleTouchAction: BubbleTouchAction = .smartAdaptive
     @Published var isExpandedViaPiPTap: Bool = false
+    @Published var isBubbleClear: Bool = true
 
     private var timerCancellable: AnyCancellable?
     private var stopwatchCancellable: AnyCancellable?
@@ -1929,7 +1930,7 @@ class IslandState: ObservableObject {
         switch mode {
         case .media:
             return NowPlayingService.shared.isPlaying || NowPlayingService.shared.title != "No Music Playing"
-        case .call, .timer, .stopwatch, .recording, .navigation, .rideshare, .flight, .delivery, .applePay:
+        case .call, .timer, .stopwatch, .recording, .navigation, .rideshare, .flight, .delivery, .applePay, .airPods, .airDrop, .hotspot:
             return true
         default:
             return false
@@ -1953,6 +1954,10 @@ class IslandState: ObservableObject {
             return "Apple Maps"
         case .applePay:
             return "Wallet"
+        case .airPods:
+            return "Bluetooth"
+        case .airDrop:
+            return "Photos"
         case .screenRecording:
             return "Photos"
         case .rideshare:
@@ -2057,6 +2062,12 @@ class IslandState: ObservableObject {
         case .applePay:
             launchAppURL("shoebox://")
 
+        case .airPods:
+            launchAppURL("App-Prefs:root=Bluetooth")
+
+        case .airDrop:
+            launchAppURL("photos-redirect://")
+
         case .screenRecording:
             launchAppURL("photos-redirect://")
 
@@ -2103,7 +2114,7 @@ class IslandState: ObservableObject {
         case .hotspot:
             launchAppURL("App-Prefs:root=INTERNET_TETHERING", fallback: "prefs:root=INTERNET_TETHERING")
 
-        case .sports, .battery, .privacyDot:
+        case .sports, .battery, .micPrivacy, .cameraPrivacy, .navigation:
             withAnimation(.spring(response: animationProfile.response, dampingFraction: animationProfile.damping)) {
                 self.isSplitBubbleExpanded = true
                 self.isExpanded = true

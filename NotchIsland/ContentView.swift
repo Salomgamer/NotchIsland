@@ -507,6 +507,23 @@ struct ContentView: View {
             }
             .tint(state.theme.color)
 
+            // Clear Orbit Bubble Toggle
+            Toggle(isOn: $state.isBubbleClear) {
+                HStack(spacing: 8) {
+                    Image(systemName: "circle.dashed")
+                        .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Clear Orbit Bubble (Borders Only)")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+                        Text("Renders the bubble itself with clear glass and illuminated borders, leaving the main pill solid")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            .tint(Color(red: 0.0, green: 0.85, blue: 1.0))
+
             if state.isSplitIslandActive {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("DETACHED ORBIT BUBBLE ACTIVITY")
