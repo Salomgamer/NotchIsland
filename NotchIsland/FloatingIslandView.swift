@@ -546,7 +546,7 @@ struct FloatingIslandView: View {
                     .padding(.horizontal, 6)
 
                     // Center: Album Art Thumbnail or Music Glyph
-                    if let artwork = nowPlaying.nowPlayingArtwork {
+                    if let artwork = nowPlaying.artworkImage {
                         Image(uiImage: artwork)
                             .resizable()
                             .scaledToFill()
