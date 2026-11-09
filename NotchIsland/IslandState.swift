@@ -171,7 +171,30 @@ enum IslandSize: String, CaseIterable {
     case expanded = "Expanded (216×68)"
 }
 
+
+enum IslandShape: String, CaseIterable, Identifiable {
+    case tinySquare = "Tiny Square (1:1 Orbit Squircle)"
+    case pill = "Dynamic Pill (Wide Bar)"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .tinySquare: return "Tiny Square (1:1 Squircle)"
+        case .pill: return "Dynamic Pill (Wide Bar)"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .tinySquare: return "1:1 square PiP with zero black block or letterboxing around it"
+        case .pill: return "Traditional wide pill under the physical camera notch"
+        }
+    }
+}
+
 enum DeviceNotchPreset: String, CaseIterable, Identifiable {
+    case tinySquare = "Tiny Square (1:1 Orbit)"
     case iphone11 = "iPhone 11 / XR"
     case iphone12 = "iPhone 12 / 12 Pro"
     case iphone13 = "iPhone 13 / 14"
@@ -183,6 +206,8 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
 
     var dimensions: (width: CGFloat, height: CGFloat, cornerRadius: CGFloat) {
         switch self {
+        case .tinySquare:
+            return (width: 72, height: 72, cornerRadius: 20)
         case .iphone11:
             return (width: 156, height: 36, cornerRadius: 18)
         case .iphone12:
@@ -200,6 +225,7 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
 
     var badge: String {
         switch self {
+        case .tinySquare: return "72×72"
         case .iphone11: return "156×36"
         case .iphone12: return "150×35"
         case .iphone13: return "138×34"
@@ -476,6 +502,10 @@ class IslandState: ObservableObject {
     // MARK: - Focus & Do Not Disturb State
     @Published var currentFocus: FocusProfile? = nil
 
+    // MARK: - Island Shape & Form Factor
+    @Published var islandShape: IslandShape = .tinySquare
+    @Published var squareSize: CGFloat = 72
+
     // MARK: - Custom Size Calibration & Presets
     @Published var selectedPreset: DeviceNotchPreset = .iphone11
     @Published var useCustomSize: Bool = false
@@ -672,6 +702,9 @@ class IslandState: ObservableObject {
     var islandWidth: CGFloat {
         if isShowingNotification { return 232 }
         if isIslandHidden { return 36 }
+        if islandShape == .tinySquare && !isExpanded {
+            return squareSize
+        }
         if isExpanded {
             if isSplitBubbleExpanded { return 184 }
             switch mode {
@@ -693,6 +726,9 @@ class IslandState: ObservableObject {
         }
         if isSplitIslandActive {
             return 168
+        }
+        if islandShape == .tinySquare && !isExpanded {
+            return squareSize
         }
         if useCustomSize { return customWidth }
         switch size {

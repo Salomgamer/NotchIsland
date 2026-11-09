@@ -201,6 +201,8 @@ struct FloatingIslandView: View {
                 } else {
                     expandedActivityContent
                 }
+            } else if state.islandShape == .tinySquare {
+                tinySquareCompactContent
             } else {
                 multipurposeCompactContent
             }
@@ -472,6 +474,130 @@ struct FloatingIslandView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
+    }
+
+    // MARK: - Tiny Square 1:1 Compact Content
+    @ViewBuilder
+    private var tinySquareCompactContent: some View {
+        ZStack {
+            if state.mode == .timer {
+                // Circular Timer Arc & Digital Countdown
+                VStack(spacing: 2) {
+                    Image(systemName: "timer")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.orange)
+                    Text(state.timerFormatted)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+            } else if state.mode == .stopwatch {
+                VStack(spacing: 2) {
+                    Image(systemName: "stopwatch")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                    Text(state.stopwatchFormatted)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+            } else if state.mode == .battery {
+                VStack(spacing: 2) {
+                    Image(systemName: BatteryService.shared.isCharging ? "bolt.fill" : "battery.100")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(BatteryService.shared.percentage <= 20 ? .red : (BatteryService.shared.isCharging ? Color(red: 0.18, green: 0.84, blue: 0.38) : .white))
+                    Text("\(BatteryService.shared.percentage)%")
+                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                }
+            } else if state.mode == .call {
+                VStack(spacing: 3) {
+                    Image(systemName: "phone.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.green)
+                    EqualizerWaveformView(
+                        color: .green,
+                        style: .equalizer,
+                        speed: .energetic,
+                        barCount: 4,
+                        maxHeight: 12
+                    )
+                }
+            } else if state.mode == .flashlight {
+                VStack(spacing: 2) {
+                    Image(systemName: state.isFlashlightOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(state.isFlashlightOn ? .yellow : .gray)
+                    Text(state.isFlashlightOn ? "ON" : "OFF")
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .foregroundColor(.gray)
+                }
+            } else if state.mode == .blank {
+                // Sleek OLED Minimalist Dot
+                Circle()
+                    .fill(Color.white.opacity(0.15))
+                    .frame(width: 8, height: 8)
+            } else {
+                // Default: Music & Media with App Badge & Animated Audio Wave
+                VStack(spacing: 3) {
+                    // Top: App Icon / Route + Battery
+                    HStack(spacing: 3) {
+                        AppSourceIconView(source: nowPlaying.activeApp, size: 10)
+                        Spacer()
+                        HStack(spacing: 1.5) {
+                            Text("\(BatteryService.shared.percentage)%")
+                                .font(.system(size: 8, weight: .bold, design: .rounded))
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding(.horizontal, 6)
+
+                    // Center: Album Art Thumbnail or Music Glyph
+                    if let artwork = nowPlaying.nowPlayingArtwork {
+                        Image(uiImage: artwork)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 26, height: 26)
+                            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 0.8)
+                            )
+                    } else {
+                        ZStack {
+                            Circle()
+                                .fill(state.theme.color.opacity(0.2))
+                                .frame(width: 26, height: 26)
+                            Image(systemName: state.isMediaPlaying ? "music.note" : "waveform")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(state.theme.color)
+                        }
+                    }
+
+                    // Bottom: Live Equalizer Waveform
+                    EqualizerWaveformView(
+                        color: state.theme.color,
+                        style: state.visualizerStyle,
+                        speed: state.visualizerSpeed,
+                        barCount: 4,
+                        maxHeight: 8
+                    )
+                }
+                .padding(.vertical, 4)
+            }
+
+            // Hardware Privacy Dot Bezel Indicator
+            if state.isMicPrivacyActive {
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 4.5, height: 4.5)
+                    .offset(x: 22, y: -22)
+            } else if state.isCamPrivacyActive {
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 4.5, height: 4.5)
+                    .offset(x: 22, y: -22)
+            }
+        }
+        .frame(width: state.squareSize, height: state.squareSize)
     }
 
     // MARK: - Multipurpose Compact Content (Music + Battery Together)

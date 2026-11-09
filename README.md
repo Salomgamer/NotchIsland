@@ -2,12 +2,27 @@
 
 [![iOS 15.0+](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Version 8.1](https://img.shields.io/badge/DynamicNotch-v8.2_ZeroWasteShadowRemoval-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v8.2)
+[![Version 8.1](https://img.shields.io/badge/DynamicNotch-v8.3_TinySquarePiP-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v8.3)
 [![License MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
 **Dynamic Notch** brings the real **Apple Dynamic Island** experience to the iPhone 11, iPhone XR, iPhone 12, iPhone 13, and all notched iOS devices. 
 
 Sitting invisibly flush under the physical camera notch, Dynamic Notch features **Apple Jindo Reverse-Engineered Architecture**: true Dual-Island Splitting (Major Pill + Detached Orbit Bubble), 20 authentic Apple System Apertures (Apple Pay NFC, AirPods Pro 3-way battery case, AirDrop transfer, Personal Hotspot telemetry, Dual SIM cellular, Uber Rideshare, Flighty Flight Tracker, Food Delivery, Screen Recording, Privacy sensor dots), viral mini-games (Hit The Island Pong with liquid squish physics & Notch Pixel Pet companion), interactive SpringBoard rubberband pull-down stretch & horizontal flick-to-stealth gestures, authentic AudioServices sound chimes, and a Transparent Liquid Glass Wallpaper Engine.
+
+---
+
+## What's New in v8.3 (Tiny Square 1:1 PiP Engine)
+
+* **Tiny Square Form Factor (No More Block Around PiP!)**:
+  * Added a dedicated **Island Form Factor** selector: choose between **Dynamic Pill (Wide Bar)** and **Tiny Square (1:1 Orbit Squircle)**.
+  * **1:1 Native Aspect Ratio**: Configured with equal width and height (`72 × 72 pt`, customizable from `56pt` to `92pt`).
+  * Because 1:1 is natively within Apple Pegasus's aspect ratio bounds, **iOS adds zero empty letterboxing padding**. The entire floating PiP window is literally the tiny square!
+  * **Rich Mini Square Content**:
+    * **Media / Music**: Miniature album art, active source badge (Spotify, Apple Music, YouTube), live animated equalizer waveform, and battery percentage.
+    * **Battery & Charging**: Clear battery level with charging bolt.
+    * **Timer / Stopwatch**: Digital countdown and active timer glyph.
+    * **Call & Flashlight**: Instant 1-tap controls.
+  * **Interactive Tap-to-Expand**: Tapping the tiny square smoothly expands it into the full Dynamic Island platter or launches the active app.
 
 ---
 

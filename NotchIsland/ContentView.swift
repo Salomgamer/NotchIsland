@@ -67,6 +67,9 @@ struct ContentView: View {
                     // Gesture Actions (Double-Tap & Long-Press)
                     gesturesSection
 
+                    // Island Shape & Form Factor (Tiny Square vs Wide Pill)
+                    shapeSelectorSection
+
                     // Device Notch Sizing Presets
                     notchPresetsSection
 
@@ -106,7 +109,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 8.2 • Zero-Waste PiP & Shadow Removal")
+                Text("Dynamic Island 8.3 • Tiny Square 1:1 PiP Engine")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -2692,6 +2695,92 @@ struct ContentView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
+    // MARK: - Island Shape & Form Factor Section
+    private var shapeSelectorSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "square.dashed")
+                    .foregroundColor(state.theme.color)
+                Text("ISLAND FORM FACTOR (SHAPE)")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .kerning(1.2)
+                Spacer()
+                Text(state.islandShape == .tinySquare ? "1:1 Tiny Square" : "Wide Notch Pill")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(state.theme.color)
+            }
+
+            VStack(spacing: 8) {
+                ForEach(IslandShape.allCases) { shape in
+                    Button(action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                            state.setShape(shape)
+                        }
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: shape == .tinySquare ? "square.fill" : "capsule.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(state.islandShape == shape ? state.theme.color : .gray)
+                            VStack(alignment: .leading, spacing: 1.5) {
+                                Text(shape.title)
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(state.islandShape == shape ? .white : .gray)
+                                Text(shape.subtitle)
+                                    .font(.system(size: 8.5, weight: .medium))
+                                    .foregroundColor(.gray.opacity(0.8))
+                                    .lineLimit(2)
+                            }
+                            Spacer()
+                            if state.islandShape == shape {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(state.theme.color)
+                            }
+                        }
+                        .padding(10)
+                        .background(Color(white: state.islandShape == shape ? 0.13 : 0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(state.islandShape == shape ? state.theme.color.opacity(0.8) : Color.clear, lineWidth: 1)
+                        )
+                    }
+                }
+            }
+
+            if state.islandShape == .tinySquare {
+                VStack(spacing: 6) {
+                    HStack {
+                        Text("Square Dimension: \(Int(state.squareSize))×\(Int(state.squareSize)) pt")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Slider(value: $state.squareSize, in: 56...92, step: 2)
+                            .frame(width: 170)
+                            .onChange(of: state.squareSize) { s in
+                                state.customWidth = s
+                                state.customHeight = s
+                                PiPIslandManager.shared.updateSize(width: s, height: s)
+                            }
+                    }
+
+                    Text("✨ 1:1 Aspect Ratio matches Apple's native PiP framework — NO black block, NO padding, NO wasted screen!")
+                        .font(.system(size: 9.5, weight: .medium))
+                        .foregroundColor(state.theme.color)
+                        .padding(.top, 2)
+                }
+                .padding(8)
+                .background(Color(white: 0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(white: 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
     // MARK: - Device Notch Presets
     private var notchPresetsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -3107,7 +3196,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 8.2")
+                    Text("Dynamic Notch 8.3")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("APPLE JINDO DEFINITIVE MASTERPIECE")
@@ -3119,7 +3208,14 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
-                                                featureRow(
+                                                                        featureRow(
+                            icon: "square.fill",
+                            color: Color(red: 0.0, green: 0.85, blue: 1.0),
+                            title: "Tiny Square (1:1 Orbit Squircle)",
+                            desc: "Eliminates the block around PiP completely! Uses a native 1:1 aspect ratio square (72×72) with zero letterboxing margins. Features mini album art, animated waveforms, battery percentage, and smooth tap-to-expand."
+                        )
+
+featureRow(
                             icon: "shadow",
                             color: Color(red: 0.18, green: 0.84, blue: 0.38),
                             title: "Shadow Removal & Zero-Waste PiP Geometry",
