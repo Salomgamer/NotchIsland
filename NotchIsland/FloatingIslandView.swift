@@ -513,13 +513,8 @@ struct FloatingIslandView: View {
                     Image(systemName: "phone.fill")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.green)
-                    EqualizerWaveformView(
-                        color: .green,
-                        style: .equalizer,
-                        speed: .energetic,
-                        barCount: 4,
-                        maxHeight: 12
-                    )
+                    EqualizerWaveformView(color: .green)
+                        .frame(width: 18, height: 10)
                 }
             } else if state.mode == .flashlight {
                 VStack(spacing: 2) {
@@ -573,13 +568,8 @@ struct FloatingIslandView: View {
                     }
 
                     // Bottom: Live Equalizer Waveform
-                    EqualizerWaveformView(
-                        color: state.theme.color,
-                        style: state.visualizerStyle,
-                        speed: state.visualizerSpeed,
-                        barCount: 4,
-                        maxHeight: 8
-                    )
+                    EqualizerWaveformView(color: state.theme.color)
+                        .frame(width: 18, height: 8)
                 }
                 .padding(.vertical, 4)
             }

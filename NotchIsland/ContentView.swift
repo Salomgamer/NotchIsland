@@ -2696,6 +2696,43 @@ struct ContentView: View {
     }
 
     // MARK: - Island Shape & Form Factor Section
+    private func shapeButton(for shape: IslandShape) -> some View {
+        let isSelected = state.islandShape == shape
+        return Button(action: {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                state.setShape(shape)
+            }
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: shape == .tinySquare ? "square.fill" : "capsule.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(isSelected ? state.theme.color : .gray)
+                VStack(alignment: .leading, spacing: 1.5) {
+                    Text(shape.title)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(isSelected ? .white : .gray)
+                    Text(shape.subtitle)
+                        .font(.system(size: 8.5, weight: .medium))
+                        .foregroundColor(.gray.opacity(0.8))
+                        .lineLimit(2)
+                }
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(state.theme.color)
+                }
+            }
+            .padding(10)
+            .background(Color(white: isSelected ? 0.13 : 0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isSelected ? state.theme.color.opacity(0.8) : Color.clear, lineWidth: 1)
+            )
+        }
+    }
+
     private var shapeSelectorSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -2713,39 +2750,7 @@ struct ContentView: View {
 
             VStack(spacing: 8) {
                 ForEach(IslandShape.allCases) { shape in
-                    Button(action: {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
-                            state.setShape(shape)
-                        }
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: shape == .tinySquare ? "square.fill" : "capsule.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(state.islandShape == shape ? state.theme.color : .gray)
-                            VStack(alignment: .leading, spacing: 1.5) {
-                                Text(shape.title)
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(state.islandShape == shape ? .white : .gray)
-                                Text(shape.subtitle)
-                                    .font(.system(size: 8.5, weight: .medium))
-                                    .foregroundColor(.gray.opacity(0.8))
-                                    .lineLimit(2)
-                            }
-                            Spacer()
-                            if state.islandShape == shape {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(state.theme.color)
-                            }
-                        }
-                        .padding(10)
-                        .background(Color(white: state.islandShape == shape ? 0.13 : 0.05))
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(state.islandShape == shape ? state.theme.color.opacity(0.8) : Color.clear, lineWidth: 1)
-                        )
-                    }
+                    shapeButton(for: shape)
                 }
             }
 
