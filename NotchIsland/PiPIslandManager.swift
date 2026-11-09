@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Dynamic Notch PiP View Controller Subclass
 class DynamicNotchPipViewController: AVPictureInPictureVideoCallViewController {
-    var targetContentSize: CGSize = CGSize(width: 96, height: 96) {
+    var targetContentSize: CGSize = CGSize(width: 192, height: 112) {
         didSet {
             preferredContentSize = targetContentSize
         }
@@ -149,6 +149,16 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
     }
 
     func updateSize(width: CGFloat, height: CGFloat) {
+        let state = IslandState.shared
+        if state.islandShape == .tinySquare && state.isSquareLocked {
+            let fixedSize = CGSize(width: state.squareSize, height: state.squareSize)
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.pipVideoCallVC?.targetContentSize = fixedSize
+                self.pipVideoCallVC?.preferredContentSize = fixedSize
+            }
+            return
+        }
         let newSize = CGSize(width: width, height: height)
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
@@ -183,8 +193,18 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
     }
 
     @objc private func handlePiPTap() {
-        if !IslandState.shared.isExpanded {
-            IslandState.shared.expand()
+        let state = IslandState.shared
+        if (state.islandShape == .tinySquare || state.islandShape == .compactRect) && state.isSquareLocked {
+            // Keep window size strictly fixed; toggle playback or open app
+            if state.bubbleTouchAction == .openApp || (state.bubbleTouchAction == .smartAdaptive && state.hasActiveExternalApp) {
+                state.openActiveApp()
+            } else {
+                state.toggleMediaPlayback()
+            }
+            return
+        }
+        if !state.isExpanded {
+            state.expand()
         }
     }
 
@@ -194,6 +214,18 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
     ) {
         let state = IslandState.shared
+
+        if (state.islandShape == .tinySquare || state.islandShape == .compactRect) && state.isSquareLocked {
+            completionHandler(true)
+            if state.bubbleTouchAction == .openApp || (state.bubbleTouchAction == .smartAdaptive && state.hasActiveExternalApp) {
+                state.openActiveApp()
+            } else {
+                HapticService.shared.medium()
+                state.toggleMediaPlayback()
+            }
+            updateSize(width: state.islandWidth, height: state.islandHeight)
+            return
+        }
 
         if state.bubbleTouchAction == .openApp || (state.bubbleTouchAction == .smartAdaptive && state.hasActiveExternalApp) {
             // Immediately open the app of whatever is currently happening!

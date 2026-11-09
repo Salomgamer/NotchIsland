@@ -6,8 +6,11 @@ struct FloatingIslandView: View {
     @ObservedObject var nowPlaying = NowPlayingService.shared
 
     var body: some View {
-        ZStack(alignment: state.islandShape == .tinySquare ? .center : state.pipDockAlignment.verticalAlignment) {
-            if state.islandShape == .tinySquare && !state.isExpanded {
+        ZStack(alignment: (state.islandShape == .compactRect || state.islandShape == .tinySquare) ? .center : state.pipDockAlignment.verticalAlignment) {
+            if state.islandShape == .compactRect && !state.isExpanded {
+                // True Native 16:9 Compact Rectangle PiP Mode (Locked to Left Side)
+                compactRectView
+            } else if state.islandShape == .tinySquare && !state.isExpanded {
                 // True Native 1:1 Square PiP Mode (Zero black void, fills entire PiP window)
                 tinySquareView
             } else {
@@ -30,7 +33,7 @@ struct FloatingIslandView: View {
                 notchCompanionOverlay
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: state.islandShape == .tinySquare ? .center : state.pipDockAlignment.verticalAlignment)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: (state.islandShape == .compactRect || state.islandShape == .tinySquare) ? .center : state.pipDockAlignment.verticalAlignment)
         .background(Color.clear)
         .animation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping), value: state.isExpanded)
         .animation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping), value: state.isSplitIslandActive)
@@ -191,9 +194,30 @@ struct FloatingIslandView: View {
             }
     }
 
+    // MARK: - Compact Rectangular Native PiP View (Locked to Left Side)
+    private var compactRectView: some View {
+        let radius: CGFloat = 22
+        return ZStack {
+            pillBackground
+            pillBorderOverlay(radius: radius)
+
+            compactRectContent
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 8 : 0, x: 0, y: state.enableShadow ? 2 : 0)
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            state.handleDoubleTap()
+        }
+        .onTapGesture(count: 1) {
+            state.handleBubbleTouch()
+        }
+    }
+
     // MARK: - Tiny Square 1:1 Native PiP View
     private var tinySquareView: some View {
-        let radius = min(state.squareSize * 0.22, 22)
+        let radius: CGFloat = 28
         return ZStack {
             pillBackground
             pillBorderOverlay(radius: radius)
@@ -202,22 +226,13 @@ struct FloatingIslandView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-        .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 6 : 0, x: 0, y: state.enableShadow ? 2 : 0)
-        .scaleEffect(state.islandSquishScale)
-        .offset(state.dragOffset)
+        .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 8 : 0, x: 0, y: state.enableShadow ? 2 : 0)
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
             state.handleDoubleTap()
         }
         .onTapGesture(count: 1) {
             state.handleBubbleTouch()
-        }
-        .onLongPressGesture(minimumDuration: 0.4) {
-            if !state.isExpanded {
-                state.expand()
-            } else {
-                state.collapse()
-            }
         }
     }
 
@@ -508,6 +523,204 @@ struct FloatingIslandView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
+    }
+
+    // MARK: - Compact Rectangular Content (192×112 pt)
+    @ViewBuilder
+    private var compactRectContent: some View {
+        ZStack {
+            if state.mode == .timer {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.orange.opacity(0.18))
+                            .frame(width: 52, height: 52)
+                        Image(systemName: "timer")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(.orange)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("TIMER")
+                            .font(.system(size: 9.5, weight: .black))
+                            .foregroundColor(.orange)
+                            .kerning(1.2)
+                        Text(state.timerFormatted)
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+            } else if state.mode == .stopwatch {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(red: 0.0, green: 0.85, blue: 1.0).opacity(0.18))
+                            .frame(width: 52, height: 52)
+                        Image(systemName: "stopwatch")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("STOPWATCH")
+                            .font(.system(size: 9.5, weight: .black))
+                            .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
+                            .kerning(1.2)
+                        Text(state.stopwatchFormatted)
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+            } else if state.mode == .battery {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(batteryColor.opacity(0.18))
+                            .frame(width: 52, height: 52)
+                        Image(systemName: BatteryService.shared.isCharging ? "bolt.fill" : "battery.100")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(batteryColor)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(BatteryService.shared.isCharging ? "CHARGING" : "BATTERY")
+                            .font(.system(size: 9.5, weight: .black))
+                            .foregroundColor(batteryColor)
+                            .kerning(1.2)
+                        Text("\(BatteryService.shared.percentage)%")
+                            .font(.system(size: 24, weight: .heavy, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+            } else if state.mode == .call {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.green.opacity(0.2))
+                            .frame(width: 52, height: 52)
+                        Image(systemName: "phone.fill")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.green)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Active Call")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                        EqualizerWaveformView(color: .green)
+                            .frame(width: 38, height: 12)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+            } else if state.mode == .flashlight {
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill((TorchService.shared.isTorchOn ? Color.yellow : Color.gray).opacity(0.2))
+                            .frame(width: 52, height: 52)
+                        Image(systemName: TorchService.shared.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(TorchService.shared.isTorchOn ? .yellow : .gray)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("TORCH")
+                            .font(.system(size: 9.5, weight: .black))
+                            .foregroundColor(TorchService.shared.isTorchOn ? .yellow : .gray)
+                            .kerning(1.2)
+                        Text(TorchService.shared.isTorchOn ? "ON" : "OFF")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+            } else {
+                // Default: Music & Media with App Badge, Album Artwork & Animated Equalizer
+                HStack(spacing: 10) {
+                    // Left: Album Art or App Glyph (56×56 rounded squircle)
+                    if let artwork = nowPlaying.artworkImage {
+                        Image(uiImage: artwork)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 56, height: 56)
+                            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 0.8)
+                            )
+                            .shadow(color: .black.opacity(0.4), radius: 3, x: 0, y: 1.5)
+                    } else {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                .fill(state.theme.color.opacity(0.22))
+                                .frame(width: 56, height: 56)
+                            Image(systemName: state.isMediaPlaying ? "music.note" : "sparkles")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(state.theme.color)
+                        }
+                    }
+
+                    // Right: Top status bar + Track title + Equalizer
+                    VStack(alignment: .leading, spacing: 4) {
+                        // Top bar: App Icon + Battery %
+                        HStack(spacing: 4) {
+                            AppSourceIconView(source: nowPlaying.sourceAppName, size: 12)
+                            Spacer()
+                            HStack(spacing: 2) {
+                                Text("\(BatteryService.shared.percentage)%")
+                                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                                    .foregroundColor(batteryColor)
+                                Image(systemName: BatteryService.shared.isCharging ? "bolt.fill" : "battery.100")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(batteryColor)
+                            }
+                        }
+
+                        // Track Title
+                        MarqueeText(
+                            text: compactTitleText,
+                            font: .system(size: 11, weight: .bold, design: .rounded),
+                            color: .white
+                        )
+                        .frame(height: 14)
+
+                        // Bottom: Equalizer or Ready dot
+                        HStack(spacing: 4) {
+                            if nowPlaying.isPlaying {
+                                EqualizerWaveformView(color: state.theme.color)
+                                    .frame(width: 32, height: 10)
+                            } else {
+                                Circle()
+                                    .fill(Color(red: 0.18, green: 0.84, blue: 0.38))
+                                    .frame(width: 4.5, height: 4.5)
+                                Text("Ready")
+                                    .font(.system(size: 9, weight: .medium, design: .rounded))
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            }
+
+            // Hardware Privacy Dot Bezel Indicator
+            if state.isMicPrivacyActive {
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 5, height: 5)
+                    .offset(x: 78, y: -42)
+            } else if state.isCamPrivacyActive {
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 5, height: 5)
+                    .offset(x: 78, y: -42)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Tiny Square 1:1 Compact Content

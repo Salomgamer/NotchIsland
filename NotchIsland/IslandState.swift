@@ -173,27 +173,38 @@ enum IslandSize: String, CaseIterable {
 
 
 enum IslandShape: String, CaseIterable, Identifiable {
-    case tinySquare = "Tiny Square (1:1 Orbit Squircle)"
+    case compactRect = "Compact Rectangle (192×112)"
+    case tinySquare = "Tiny Square (1:1 Orbit)"
     case pill = "Dynamic Pill (Wide Bar)"
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .tinySquare: return "Tiny Square (1:1 Squircle)"
+        case .compactRect: return "Compact Rectangle (Left Locked)"
+        case .tinySquare: return "Tiny Square (1:1)"
         case .pill: return "Dynamic Pill (Wide Bar)"
         }
     }
 
     var subtitle: String {
         switch self {
-        case .tinySquare: return "1:1 square PiP with zero black block or letterboxing around it"
+        case .compactRect: return "192×112 pt rectangular PiP locked flush to left side, unchangeable"
+        case .tinySquare: return "192×192 pt square PiP locked to left side"
         case .pill: return "Traditional wide pill under the physical camera notch"
         }
     }
 }
 
+enum DockSide: String, CaseIterable, Identifiable {
+    case left = "Left Side"
+    case right = "Right Side"
+
+    var id: String { rawValue }
+}
+
 enum DeviceNotchPreset: String, CaseIterable, Identifiable {
+    case compactRect = "Compact Rectangle (192×112)"
     case tinySquare = "Tiny Square (1:1 Orbit)"
     case iphone11 = "iPhone 11 / XR"
     case iphone12 = "iPhone 12 / 12 Pro"
@@ -206,8 +217,10 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
 
     var dimensions: (width: CGFloat, height: CGFloat, cornerRadius: CGFloat) {
         switch self {
+        case .compactRect:
+            return (width: 192, height: 112, cornerRadius: 22)
         case .tinySquare:
-            return (width: 96, height: 96, cornerRadius: 20)
+            return (width: 192, height: 192, cornerRadius: 28)
         case .iphone11:
             return (width: 156, height: 36, cornerRadius: 18)
         case .iphone12:
@@ -503,8 +516,12 @@ class IslandState: ObservableObject {
     @Published var currentFocus: FocusProfile? = nil
 
     // MARK: - Island Shape & Form Factor
-    @Published var islandShape: IslandShape = .tinySquare
-    @Published var squareSize: CGFloat = 96
+    @Published var islandShape: IslandShape = .compactRect
+    @Published var rectWidth: CGFloat = 192
+    @Published var rectHeight: CGFloat = 112
+    @Published var squareSize: CGFloat = 192
+    @Published var isSquareLocked: Bool = true
+    @Published var squareDockSide: DockSide = .left
 
     // MARK: - Custom Size Calibration & Presets
     @Published var selectedPreset: DeviceNotchPreset = .iphone11
@@ -702,6 +719,9 @@ class IslandState: ObservableObject {
     var islandWidth: CGFloat {
         if isShowingNotification { return 232 }
         if isIslandHidden { return 36 }
+        if islandShape == .compactRect && !isExpanded {
+            return rectWidth
+        }
         if islandShape == .tinySquare && !isExpanded {
             return squareSize
         }
@@ -741,6 +761,9 @@ class IslandState: ObservableObject {
     var islandHeight: CGFloat {
         if isShowingNotification { return 66 }
         if isIslandHidden { return 12 }
+        if islandShape == .compactRect && !isExpanded {
+            return rectHeight
+        }
         if islandShape == .tinySquare && !isExpanded {
             return squareSize
         }
@@ -1152,7 +1175,9 @@ class IslandState: ObservableObject {
         self.customHeight = dims.height
         self.customCornerRadius = dims.cornerRadius
         self.useCustomSize = true
-        if preset == .tinySquare {
+        if preset == .compactRect {
+            self.islandShape = .compactRect
+        } else if preset == .tinySquare {
             self.islandShape = .tinySquare
         } else {
             self.islandShape = .pill
@@ -1163,11 +1188,16 @@ class IslandState: ObservableObject {
 
     func setShape(_ shape: IslandShape) {
         self.islandShape = shape
-        if shape == .tinySquare {
+        if shape == .compactRect {
+            self.selectedPreset = .compactRect
+            self.customWidth = rectWidth
+            self.customHeight = rectHeight
+            self.customCornerRadius = 22
+        } else if shape == .tinySquare {
             self.selectedPreset = .tinySquare
             self.customWidth = squareSize
             self.customHeight = squareSize
-            self.customCornerRadius = min(squareSize * 0.22, 22)
+            self.customCornerRadius = 28
         } else {
             self.selectedPreset = .iphone11
             self.customWidth = 156

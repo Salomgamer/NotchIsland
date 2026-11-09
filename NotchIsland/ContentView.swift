@@ -157,10 +157,11 @@ struct ContentView: View {
 
     // MARK: - Live Preview Section
     private var previewSection: some View {
-        ZStack {
+        let isLeftDocked = (state.islandShape == .compactRect || state.islandShape == .tinySquare)
+        return ZStack {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color(white: 0.09))
-                .frame(height: state.islandShape == .tinySquare ? max(130, state.squareSize + 36) : (state.isExpanded ? 140 : 125))
+                .frame(height: state.islandShape == .compactRect ? 155 : (state.islandShape == .tinySquare ? 230 : (state.isExpanded ? 140 : 125)))
 
             VStack(spacing: 0) {
                 if state.islandShape == .pill {
@@ -178,20 +179,32 @@ struct ContentView: View {
                 Spacer()
 
                 // Floating Island in Preview & Active PiP Anchor
-                ZStack {
-                    PiPAnchorRepresentable()
-                        .frame(width: state.islandWidth, height: state.islandHeight)
-                        .allowsHitTesting(false)
+                HStack {
+                    if isLeftDocked && state.squareDockSide == .right {
+                        Spacer()
+                    }
 
-                    FloatingIslandView(state: state)
-                        .frame(width: state.islandWidth, height: state.islandHeight)
-                        .clipShape(RoundedRectangle(cornerRadius: state.islandShape == .tinySquare ? min(state.squareSize * 0.22, 22) : (state.isExpanded ? 24 : 18), style: .continuous))
-                        .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 10 : 0, x: 0, y: state.enableShadow ? 3 : 0)
+                    ZStack {
+                        PiPAnchorRepresentable()
+                            .frame(width: state.islandWidth, height: state.islandHeight)
+                            .allowsHitTesting(false)
+
+                        FloatingIslandView(state: state)
+                            .frame(width: state.islandWidth, height: state.islandHeight)
+                            .clipShape(RoundedRectangle(cornerRadius: state.islandShape == .compactRect ? 22 : (state.islandShape == .tinySquare ? 28 : (state.isExpanded ? 24 : 18)), style: .continuous))
+                            .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 10 : 0, x: 0, y: state.enableShadow ? 3 : 0)
+                    }
+                    .padding(.leading, isLeftDocked && state.squareDockSide == .left ? 16 : 0)
+                    .padding(.trailing, isLeftDocked && state.squareDockSide == .right ? 16 : 0)
+
+                    if isLeftDocked && state.squareDockSide == .left {
+                        Spacer()
+                    }
                 }
 
                 Spacer()
 
-                Text(state.islandShape == .tinySquare ? "Native 1:1 Square PiP (Zero Black Void)" : "Tap pill to expand / collapse in place")
+                Text(state.islandShape == .compactRect ? "Compact Rectangle 192×112 pt (Locked to Left Side)" : (state.islandShape == .tinySquare ? "Square 192×192 pt (Locked to Left Side)" : "Tap pill to expand / collapse in place"))
                     .font(.system(size: 9.5, weight: .medium))
                     .foregroundColor(.gray.opacity(0.6))
                     .padding(.bottom, 6)
@@ -2706,7 +2719,7 @@ struct ContentView: View {
             }
         }) {
             HStack(spacing: 8) {
-                Image(systemName: shape == .tinySquare ? "square.fill" : "capsule.fill")
+                Image(systemName: shape == .compactRect ? "rectangle.fill" : (shape == .tinySquare ? "square.fill" : "capsule.fill"))
                     .font(.system(size: 14))
                     .foregroundColor(isSelected ? state.theme.color : .gray)
                 VStack(alignment: .leading, spacing: 1.5) {
@@ -2745,7 +2758,7 @@ struct ContentView: View {
                     .foregroundColor(.white)
                     .kerning(1.2)
                 Spacer()
-                Text(state.islandShape == .tinySquare ? "1:1 Tiny Square PiP" : "Wide Notch Pill")
+                Text(state.islandShape == .compactRect ? "Rectangle (192×112)" : (state.islandShape == .tinySquare ? "Square (192×192)" : "Wide Notch Pill"))
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(state.theme.color)
             }
@@ -2756,53 +2769,63 @@ struct ContentView: View {
                 }
             }
 
-            if state.islandShape == .tinySquare {
-                VStack(spacing: 8) {
+            if state.islandShape == .compactRect || state.islandShape == .tinySquare {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("Square Frame Size: \(Int(state.squareSize))×\(Int(state.squareSize)) pt")
+                        Image(systemName: "lock.shield.fill")
+                            .foregroundColor(state.theme.color)
+                        Text("Locked Dimensions: \(Int(state.islandWidth))×\(Int(state.islandHeight)) pt")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.white)
                         Spacer()
-                        Slider(value: $state.squareSize, in: 68...140, step: 2)
-                            .frame(width: 145)
-                            .onChange(of: state.squareSize) { s in
-                                state.customWidth = s
-                                state.customHeight = s
-                                PiPIslandManager.shared.updateSize(width: s, height: s)
-                            }
+                        Text("Unchangeable")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(.green)
                     }
 
-                    // Quick Frame Presets (Ultra Mini 80, Compact 92, Medium 104, Standard 120)
-                    HStack(spacing: 5) {
-                        ForEach([80, 92, 104, 120], id: \.self) { size in
-                            Button(action: {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                                    state.squareSize = CGFloat(size)
-                                    state.customWidth = CGFloat(size)
-                                    state.customHeight = CGFloat(size)
-                                    PiPIslandManager.shared.updateSize(width: CGFloat(size), height: CGFloat(size))
-                                    HapticService.shared.selection()
-                                }
-                            }) {
-                                Text("\(size)pt\(size == 80 ? " (Ultra)" : (size == 92 ? " (Mini)" : ""))")
-                                    .font(.system(size: 8.5, weight: .bold))
-                                    .foregroundColor(Int(state.squareSize) == size ? .black : .white)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 4)
-                                    .background(Int(state.squareSize) == size ? state.theme.color : Color(white: 0.12))
-                                    .clipShape(Capsule())
+                    // Screen Edge Docking: Lock to Left Side vs Lock to Right Side
+                    HStack(spacing: 8) {
+                        Button(action: {
+                            state.squareDockSide = .left
+                            HapticService.shared.selection()
+                        }) {
+                            HStack(spacing: 5) {
+                                Image(systemName: "arrow.left.to.line.compact")
+                                Text("Lock to Left Side (Active)")
+                                    .font(.system(size: 10, weight: .bold))
                             }
+                            .foregroundColor(state.squareDockSide == .left ? .black : .white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(state.squareDockSide == .left ? state.theme.color : Color(white: 0.12))
+                            .clipShape(Capsule())
+                        }
+
+                        Button(action: {
+                            state.squareDockSide = .right
+                            HapticService.shared.selection()
+                        }) {
+                            HStack(spacing: 5) {
+                                Image(systemName: "arrow.right.to.line.compact")
+                                Text("Right Side")
+                                    .font(.system(size: 10, weight: .bold))
+                            }
+                            .foregroundColor(state.squareDockSide == .right ? .black : .white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(state.squareDockSide == .right ? state.theme.color : Color(white: 0.12))
+                            .clipShape(Capsule())
                         }
                     }
 
-                    Text("✨ Native 1:1 Square PiP: Direct iOS PiP window resizing with zero black void, letterboxing, or wasted screen margin!")
+                    Text("🔒 PiP Window is locked and unchangeable. Tap gestures trigger actions without resizing or shifting the window. Starts docked flush to the \(state.squareDockSide == .left ? "left" : "right") screen edge.")
                         .font(.system(size: 9.5, weight: .medium))
                         .foregroundColor(state.theme.color)
                         .padding(.top, 2)
                 }
-                .padding(8)
+                .padding(10)
                 .background(Color(white: 0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
         }
         .padding(13)
