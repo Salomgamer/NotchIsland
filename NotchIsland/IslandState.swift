@@ -166,6 +166,7 @@ enum CompanionAction: String {
 }
 
 enum IslandSize: String, CaseIterable {
+    case half = "Half Size / Mini (80×28)"
     case slim = "Slim (144×32)"
     case compact = "Compact (156×36)"
     case expanded = "Expanded (216×68)"
@@ -173,7 +174,7 @@ enum IslandSize: String, CaseIterable {
 
 
 enum IslandShape: String, CaseIterable, Identifiable {
-    case compactRect = "Compact Rectangle (192×112)"
+    case compactRect = "Compact Rectangle (96×56)"
     case tinySquare = "Tiny Square (1:1 Orbit)"
     case pill = "Dynamic Pill (Wide Bar)"
 
@@ -181,7 +182,7 @@ enum IslandShape: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .compactRect: return "Compact Rectangle (Left Locked)"
+        case .compactRect: return "Compact Rectangle (Half Size - Default)"
         case .tinySquare: return "Tiny Square (1:1)"
         case .pill: return "Dynamic Pill (Wide Bar)"
         }
@@ -189,8 +190,8 @@ enum IslandShape: String, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .compactRect: return "192×112 pt rectangular PiP locked flush to left side, unchangeable"
-        case .tinySquare: return "192×192 pt square PiP locked to left side"
+        case .compactRect: return "96×56 pt half-size rectangular PiP locked flush to left side"
+        case .tinySquare: return "96×96 pt square PiP locked to left side"
         case .pill: return "Traditional wide pill under the physical camera notch"
         }
     }
@@ -204,7 +205,8 @@ enum DockSide: String, CaseIterable, Identifiable {
 }
 
 enum DeviceNotchPreset: String, CaseIterable, Identifiable {
-    case compactRect = "Compact Rectangle (192×112)"
+    case compactRect = "Compact Rectangle (96×56)"
+    case halfPill = "Half Size Pill (80×28)"
     case tinySquare = "Tiny Square (1:1 Orbit)"
     case iphone11 = "iPhone 11 / XR"
     case iphone12 = "iPhone 12 / 12 Pro"
@@ -218,9 +220,11 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
     var dimensions: (width: CGFloat, height: CGFloat, cornerRadius: CGFloat) {
         switch self {
         case .compactRect:
-            return (width: 192, height: 112, cornerRadius: 22)
+            return (width: 96, height: 56, cornerRadius: 14)
+        case .halfPill:
+            return (width: 80, height: 28, cornerRadius: 14)
         case .tinySquare:
-            return (width: 192, height: 192, cornerRadius: 28)
+            return (width: 96, height: 96, cornerRadius: 20)
         case .iphone11:
             return (width: 156, height: 36, cornerRadius: 18)
         case .iphone12:
@@ -232,14 +236,15 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
         case .compactSE:
             return (width: 132, height: 32, cornerRadius: 16)
         case .custom:
-            return (width: 156, height: 36, cornerRadius: 18)
+            return (width: 96, height: 56, cornerRadius: 14)
         }
     }
 
     var badge: String {
         switch self {
-        case .compactRect: return "192×112"
-        case .tinySquare: return "72×72"
+        case .compactRect: return "96×56"
+        case .halfPill: return "80×28"
+        case .tinySquare: return "96×96"
         case .iphone11: return "156×36"
         case .iphone12: return "150×35"
         case .iphone13: return "138×34"
@@ -486,11 +491,13 @@ class IslandState: ObservableObject {
     static let shared = IslandState()
 
     @Published var mode: IslandMode = .media
-    @Published var size: IslandSize = .compact
+    @Published var size: IslandSize = .half
     @Published var theme: AccentTheme = .spotifyGreen
     @Published var isExpanded: Bool = false
     @Published var isMultipurpose: Bool = true
     @Published var autoSwitchModes: Bool = true
+    @Published var callSoundsEnabled: Bool = false
+    @Published var notificationSoundsEnabled: Bool = false
 
     // MARK: - Visualizer & Multi-Activity
     @Published var visualizerStyle: VisualizerStyle = .equalizer
@@ -518,18 +525,18 @@ class IslandState: ObservableObject {
 
     // MARK: - Island Shape & Form Factor
     @Published var islandShape: IslandShape = .compactRect
-    @Published var rectWidth: CGFloat = 192
-    @Published var rectHeight: CGFloat = 112
-    @Published var squareSize: CGFloat = 192
+    @Published var rectWidth: CGFloat = 96
+    @Published var rectHeight: CGFloat = 56
+    @Published var squareSize: CGFloat = 96
     @Published var isSquareLocked: Bool = true
     @Published var squareDockSide: DockSide = .left
 
     // MARK: - Custom Size Calibration & Presets
-    @Published var selectedPreset: DeviceNotchPreset = .iphone11
+    @Published var selectedPreset: DeviceNotchPreset = .compactRect
     @Published var useCustomSize: Bool = false
-    @Published var customWidth: CGFloat = 156
-    @Published var customHeight: CGFloat = 36
-        @Published var customCornerRadius: CGFloat = 18
+    @Published var customWidth: CGFloat = 96
+    @Published var customHeight: CGFloat = 56
+    @Published var customCornerRadius: CGFloat = 14
 
     // MARK: - PiP Window Frame, Docking & Shadow Engine
     @Published var pipDockAlignment: PiPDockAlignment = .topFlush
@@ -753,6 +760,7 @@ class IslandState: ObservableObject {
         }
         if useCustomSize { return customWidth }
         switch size {
+        case .half: return 80
         case .slim: return 144
         case .compact: return 156
         case .expanded: return 186
@@ -790,6 +798,7 @@ class IslandState: ObservableObject {
         }
         if useCustomSize { return customHeight }
         switch size {
+        case .half: return 28
         case .slim: return 32
         case .compact: return 36
         case .expanded: return 48
@@ -811,7 +820,16 @@ class IslandState: ObservableObject {
 
     init() {
         self.mode = .media
-        self.size = .compact
+        self.size = .half
+        self.islandShape = .compactRect
+        self.rectWidth = 96
+        self.rectHeight = 56
+        self.squareSize = 96
+        self.selectedPreset = .compactRect
+        self.customWidth = 96
+        self.customHeight = 56
+        self.customCornerRadius = 14
+        self.useCustomSize = false
         self.theme = .spotifyGreen
         self.isMultipurpose = true
 
@@ -1178,8 +1196,15 @@ class IslandState: ObservableObject {
         self.useCustomSize = true
         if preset == .compactRect {
             self.islandShape = .compactRect
+            self.rectWidth = dims.width
+            self.rectHeight = dims.height
+        } else if preset == .halfPill {
+            self.islandShape = .pill
+            self.size = .half
+            self.useCustomSize = false
         } else if preset == .tinySquare {
             self.islandShape = .tinySquare
+            self.squareSize = dims.width
         } else {
             self.islandShape = .pill
         }
@@ -1191,19 +1216,22 @@ class IslandState: ObservableObject {
         self.islandShape = shape
         if shape == .compactRect {
             self.selectedPreset = .compactRect
-            self.customWidth = rectWidth
-            self.customHeight = rectHeight
-            self.customCornerRadius = 22
+            self.rectWidth = 96
+            self.rectHeight = 56
+            self.customWidth = 96
+            self.customHeight = 56
+            self.customCornerRadius = 14
         } else if shape == .tinySquare {
             self.selectedPreset = .tinySquare
             self.customWidth = squareSize
             self.customHeight = squareSize
-            self.customCornerRadius = 28
+            self.customCornerRadius = 20
         } else {
-            self.selectedPreset = .iphone11
-            self.customWidth = 156
-            self.customHeight = 36
-            self.customCornerRadius = 18
+            self.selectedPreset = .halfPill
+            self.size = .half
+            self.customWidth = 80
+            self.customHeight = 28
+            self.customCornerRadius = 14
         }
         HapticService.shared.selection()
         PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
@@ -1481,7 +1509,9 @@ class IslandState: ObservableObject {
                     self.remainingSeconds -= 1
                 } else {
                     self.isTimerRunning = false
-                    AudioServicesPlayAlertSound(1005)
+                    if self.notificationSoundsEnabled {
+                        AudioServicesPlayAlertSound(1005)
+                    }
                     AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
                     self.triggerNotification(
                         title: "Focus Complete",
@@ -1672,7 +1702,9 @@ class IslandState: ObservableObject {
 
     func testSimulateTimerFinish() {
         HapticService.shared.heavy()
-        AudioServicesPlayAlertSound(1005)
+        if notificationSoundsEnabled {
+            AudioServicesPlayAlertSound(1005)
+        }
         triggerNotification(
             title: "Focus Complete",
             subtitle: "25:00 Session finished!",

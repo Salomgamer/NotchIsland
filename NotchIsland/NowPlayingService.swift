@@ -318,7 +318,11 @@ class NowPlayingService: ObservableObject {
                         }
                     }
 
-                    if let t = trackTitle, !t.isEmpty {
+                    let resolvedTitle = (trackTitle?.isEmpty == false ? trackTitle : nil)
+                        ?? (trackArtist?.isEmpty == false ? trackArtist : nil)
+                        ?? (detectedApp != "Media" ? detectedApp : nil)
+
+                    if let t = resolvedTitle, !t.isEmpty {
                         let isNewTrack = (self.previousTrackTitle != t) && !self.previousTrackTitle.isEmpty
                         self.previousTrackTitle = t
 
@@ -349,9 +353,8 @@ class NowPlayingService: ObservableObject {
                 // If media metadata is not exposed, but audio is streaming (YouTube, Safari, Stremio)
                 if isAudioActive {
                     if self.title == "No Music Playing" || self.title.isEmpty {
-                        self.title = "Live Audio Playing"
-                        self.artist = "YouTube / Stremio / Safari"
-                        self.sourceAppName = "Media Stream"
+                        self.title = self.sourceAppName != "Media" ? "\(self.sourceAppName)" : "Now Playing"
+                        self.artist = self.sourceAppName
                     }
                     self.isPlaying = true
                     return
@@ -429,9 +432,8 @@ class NowPlayingService: ObservableObject {
             }
         } else if isAudioActive {
             if self.title == "No Music Playing" || self.title.isEmpty {
-                self.title = "Live Audio Playing"
-                self.artist = "YouTube / Stremio / Safari"
-                self.sourceAppName = "Media Stream"
+                self.title = self.sourceAppName != "Media" ? "\(self.sourceAppName)" : "Now Playing"
+                self.artist = self.sourceAppName
             }
             self.isPlaying = true
         } else {

@@ -9,6 +9,22 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func applicationDidFinishLaunching(_ application: UIApplication) {
         _ = BackgroundEngine.shared
     }
+
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        BackgroundEngine.shared.ensureKeepAlive()
+        let pip = PiPIslandManager.shared
+        if pip.persistentKeepAlive && !pip.userExplicitlyDismissed && !pip.isPiPActive {
+            pip.start()
+        }
+    }
+
+    func applicationWillResignActive(_ application: UIApplication) {
+        BackgroundEngine.shared.ensureKeepAlive()
+    }
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        BackgroundEngine.shared.ensureKeepAlive()
+    }
 }
 
 @main

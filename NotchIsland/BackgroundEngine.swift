@@ -6,24 +6,88 @@ class BackgroundEngine: ObservableObject {
 
     private var audioPlayer: AVAudioPlayer?
     private var bgTaskID: UIBackgroundTaskIdentifier = .invalid
+    private var watchdogTimer: Timer?
 
     @Published var isAlwaysOnActive: Bool = false
+    @Published var keepAliveWhenClosed: Bool = true
 
     init() {
         startAlwaysOnEngine()
+        setupLifecycleObservers()
     }
 
     func startAlwaysOnEngine() {
         configureAudioSession()
         playSilentAudioLoop()
-        beginBackgroundTask()
+        renewBackgroundTask()
+        startWatchdog()
         isAlwaysOnActive = true
+    }
+
+    private func setupLifecycleObservers() {
+        // Recover when audio session is interrupted (e.g. phone call, Siri, alarm)
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notif in
+            guard let userInfo = notif.userInfo,
+                  let typeVal = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: typeVal) else { return }
+            if type == .ended {
+                self?.ensureKeepAlive()
+            }
+        }
+
+        // Recover on audio route changes
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.ensureKeepAlive()
+        }
+
+        // When app enters background or when container window minimizes
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.ensureKeepAlive()
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.ensureKeepAlive()
+        }
+    }
+
+    private func startWatchdog() {
+        watchdogTimer?.invalidate()
+        watchdogTimer = Timer.scheduledTimer(withTimeInterval: 12.0, repeats: true) { [weak self] _ in
+            self?.ensureKeepAlive()
+        }
+    }
+
+    func ensureKeepAlive() {
+        guard keepAliveWhenClosed else { return }
+        configureAudioSession()
+        if audioPlayer?.isPlaying != true {
+            playSilentAudioLoop()
+        }
+        if bgTaskID == .invalid {
+            renewBackgroundTask()
+        }
     }
 
     private func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers, .duckOthers])
             try session.setActive(true)
         } catch {
             print("[BackgroundEngine] Audio session error: \(error.localizedDescription)")
@@ -35,7 +99,7 @@ class BackgroundEngine: ObservableObject {
         do {
             audioPlayer = try AVAudioPlayer(data: silentData)
             audioPlayer?.numberOfLoops = -1 // Infinite loop
-            audioPlayer?.volume = 0.01 // Inaudible, mixes with music
+            audioPlayer?.volume = 0.001 // Inaudible, mixes seamlessly with active music
             audioPlayer?.prepareToPlay()
             audioPlayer?.play()
         } catch {
@@ -43,12 +107,13 @@ class BackgroundEngine: ObservableObject {
         }
     }
 
-    private func beginBackgroundTask() {
-        bgTaskID = UIApplication.shared.beginBackgroundTask(withName: "NotchIslandAlwaysOn") { [weak self] in
-            guard let self = self else { return }
-            self.playSilentAudioLoop()
-            UIApplication.shared.endBackgroundTask(self.bgTaskID)
-            self.bgTaskID = .invalid
+    func renewBackgroundTask() {
+        let oldTask = bgTaskID
+        bgTaskID = UIApplication.shared.beginBackgroundTask(withName: "NotchIslandPersistentAlwaysOn") { [weak self] in
+            self?.renewBackgroundTask()
+        }
+        if oldTask != .invalid {
+            UIApplication.shared.endBackgroundTask(oldTask)
         }
     }
 

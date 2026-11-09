@@ -131,7 +131,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 8.3 • Tiny Square 1:1 PiP Engine")
+                Text("Dynamic Island 8.7 • Half-Size Default & zContainer Always-On")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -220,7 +220,7 @@ struct ContentView: View {
 
                 Spacer()
 
-                Text(state.islandShape == .compactRect ? "Compact Rectangle 192×112 pt (Locked to Left Side)" : (state.islandShape == .tinySquare ? "Square 192×192 pt (Locked to Left Side)" : "Tap pill to expand / collapse in place"))
+                Text(state.islandShape == .compactRect ? "Compact Rectangle 96×56 pt (Half Size • Locked to Left Side)" : (state.islandShape == .tinySquare ? "Square 96×96 pt (Locked to Left Side)" : "Tap pill to expand / collapse in place"))
                     .font(.system(size: 9.5, weight: .medium))
                     .foregroundColor(.gray.opacity(0.6))
                     .padding(.bottom, 6)
@@ -2709,6 +2709,41 @@ struct ContentView: View {
             }
             .padding(.top, 2)
 
+            // Sound Effects for Calls & Notifs
+            Toggle(isOn: $state.callSoundsEnabled) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Sounds for Calls & Notifications")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                    Text(state.callSoundsEnabled ? "Audible chimes enabled" : "Muted (Haptic pulses only • Zero Sounds)")
+                        .font(.system(size: 9.5))
+                        .foregroundColor(.gray)
+                }
+            }
+            .onChange(of: state.callSoundsEnabled) { val in
+                HapticService.shared.callSoundsEnabled = val
+                HapticService.shared.notificationSoundsEnabled = val
+                state.notificationSoundsEnabled = val
+            }
+            .padding(.top, 4)
+
+            // zContainer / Background Always-On Keep-Alive
+            Toggle(isOn: $pip.persistentKeepAlive) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Keep Active When App Closed (zContainer)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("Dynamic Island stays active even when app is fully closed or minimized in zContainer")
+                        .font(.system(size: 9.5))
+                        .foregroundColor(pip.persistentKeepAlive ? Color(red: 0.18, green: 0.84, blue: 0.38) : .gray)
+                }
+            }
+            .onChange(of: pip.persistentKeepAlive) { val in
+                BackgroundEngine.shared.keepAliveWhenClosed = val
+                HapticService.shared.selection()
+            }
+            .padding(.top, 4)
+
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("• Single Tap: Expand / Collapse Island")
@@ -2774,7 +2809,7 @@ struct ContentView: View {
                     .foregroundColor(.white)
                     .kerning(1.2)
                 Spacer()
-                Text(state.islandShape == .compactRect ? "Rectangle (192×112)" : (state.islandShape == .tinySquare ? "Square (192×192)" : "Wide Notch Pill"))
+                Text(state.islandShape == .compactRect ? "Rectangle (96×56)" : (state.islandShape == .tinySquare ? "Square (96×96)" : "Wide Notch Pill"))
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(state.theme.color)
             }
@@ -3265,10 +3300,10 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 8.3")
+                    Text("Dynamic Notch 8.7")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
-                    Text("APPLE JINDO DEFINITIVE MASTERPIECE")
+                    Text("HALF SIZE DEFAULT & ZCONTAINER PERSISTENCE")
                         .font(.system(size: 10, weight: .black))
                         .foregroundColor(themeColor)
                         .kerning(1.5)
@@ -3277,11 +3312,32 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
-                                                                        featureRow(
-                            icon: "square.fill",
+                        featureRow(
+                            icon: "arrow.down.right.and.arrow.up.left",
+                            color: themeColor,
+                            title: "Half-Size by Default (96×56 / 80×28)",
+                            desc: "Compact rectangular PiP is now exactly half size (96×56 pt) by default, taking half the screen space and resting unobtrusively on the left side."
+                        )
+
+                        featureRow(
+                            icon: "music.note",
+                            color: Color(red: 0.18, green: 0.84, blue: 0.38),
+                            title: "Now-Playing Track Title Display",
+                            desc: "Prominently displays and auto-scrolls the name of the song, audio stream, or video currently playing with live animated equalizer waveform bars."
+                        )
+
+                        featureRow(
+                            icon: "bell.slash.fill",
+                            color: .red,
+                            title: "Muted Telephone & Notification Sounds",
+                            desc: "Incoming phone call ringtones and notification alert chimes are silenced by default, using only subtle haptic vibrations."
+                        )
+
+                        featureRow(
+                            icon: "shield.lefthalf.filled",
                             color: Color(red: 0.0, green: 0.85, blue: 1.0),
-                            title: "Tiny Square (1:1 Orbit Squircle)",
-                            desc: "Eliminates the block around PiP completely! Uses a native 1:1 aspect ratio square (130×130 pt) with zero letterboxing margins. Features mini album art, animated waveforms, battery percentage, and smooth tap-to-expand."
+                            title: "zContainer & Closed App Keep-Alive",
+                            desc: "Enhanced background engine with chained task renewal and audio recovery keeps the floating island continuously active even when the app is swiped away or closed in zContainer."
                         )
 
 featureRow(

@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Dynamic Notch PiP View Controller Subclass
 class DynamicNotchPipViewController: AVPictureInPictureVideoCallViewController {
-    var targetContentSize: CGSize = CGSize(width: 192, height: 112) {
+    var targetContentSize: CGSize = CGSize(width: 96, height: 56) {
         didSet {
             preferredContentSize = targetContentSize
         }
@@ -52,6 +52,9 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
 
     @Published var isPiPActive: Bool = false
     @Published var isPossible: Bool = false
+    @Published var persistentKeepAlive: Bool = true
+    @Published var autoStartOnLaunch: Bool = true
+    var userExplicitlyDismissed: Bool = false
 
     override init() {
         super.init()
@@ -132,7 +135,11 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         self.pipController = controller
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.isPossible = controller.isPictureInPicturePossible
+            guard let self = self else { return }
+            self.isPossible = controller.isPictureInPicturePossible
+            if self.autoStartOnLaunch && !self.isPiPActive {
+                self.start()
+            }
         }
     }
 
@@ -183,6 +190,7 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
     }
 
     func start() {
+        userExplicitlyDismissed = false
         configureAudioSession()
         guard let controller = pipController else {
             print("PiP controller not initialized.")
@@ -196,6 +204,7 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
     }
 
     func stop() {
+        userExplicitlyDismissed = true
         pipController?.stopPictureInPicture()
     }
 
@@ -273,6 +282,17 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        DispatchQueue.main.async { self.isPiPActive = false }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.isPiPActive = false
+            if self.persistentKeepAlive && !self.userExplicitlyDismissed {
+                // Auto-relaunch PiP to keep island active continuously even if app is closed or minimized in zContainer
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    if !self.isPiPActive && !self.userExplicitlyDismissed {
+                        self.start()
+                    }
+                }
+            }
+        }
     }
 }

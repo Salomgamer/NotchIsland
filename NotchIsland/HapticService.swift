@@ -14,6 +14,8 @@ class HapticService: ObservableObject {
     static let shared = HapticService()
 
     @Published var strength: HapticFeedbackStrength = .standard
+    @Published var callSoundsEnabled: Bool = false
+    @Published var notificationSoundsEnabled: Bool = false
 
     private let lightImpact = UIImpactFeedbackGenerator(style: .light)
     private let mediumImpact = UIImpactFeedbackGenerator(style: .medium)
@@ -124,7 +126,9 @@ class HapticService: ObservableObject {
     private func playRingPulse() {
         guard strength != .muted else { return }
         heavy()
-        AudioServicesPlaySystemSound(1005) // Standard incoming telephone chime
+        if callSoundsEnabled {
+            AudioServicesPlaySystemSound(1005) // Standard incoming telephone chime (silent by default)
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
             self?.medium()
         }
