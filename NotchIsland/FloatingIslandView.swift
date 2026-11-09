@@ -535,7 +535,7 @@ struct FloatingIslandView: View {
                 VStack(spacing: 3) {
                     // Top: App Icon / Route + Battery
                     HStack(spacing: 3) {
-                        AppSourceIconView(source: nowPlaying.activeApp, size: 10)
+                        AppSourceIconView(source: nowPlaying.sourceAppName, size: 10)
                         Spacer()
                         HStack(spacing: 1.5) {
                             Text("\(BatteryService.shared.percentage)%")
