@@ -1153,6 +1153,24 @@ class IslandState: ObservableObject {
         PiPIslandManager.shared.updateSize(width: dims.width, height: dims.height)
     }
 
+    func setShape(_ shape: IslandShape) {
+        self.islandShape = shape
+        if shape == .tinySquare {
+            self.selectedPreset = .tinySquare
+            self.customWidth = squareSize
+            self.customHeight = squareSize
+            self.customCornerRadius = 20
+        } else {
+            self.selectedPreset = .iphone11
+            self.customWidth = 156
+            self.customHeight = 36
+            self.customCornerRadius = 18
+        }
+        HapticService.shared.selection()
+        PiPIslandManager.shared.updateSize(width: islandWidth, height: islandHeight)
+    }
+
+
     func updateCustomCalibration(width: CGFloat, height: CGFloat, cornerRadius: CGFloat) {
         self.customWidth = width
         self.customHeight = height

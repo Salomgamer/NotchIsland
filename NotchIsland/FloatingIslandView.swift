@@ -518,10 +518,10 @@ struct FloatingIslandView: View {
                 }
             } else if state.mode == .flashlight {
                 VStack(spacing: 2) {
-                    Image(systemName: state.isFlashlightOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                    Image(systemName: TorchService.shared.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(state.isFlashlightOn ? .yellow : .gray)
-                    Text(state.isFlashlightOn ? "ON" : "OFF")
+                        .foregroundColor(TorchService.shared.isTorchOn ? .yellow : .gray)
+                    Text(TorchService.shared.isTorchOn ? "ON" : "OFF")
                         .font(.system(size: 9, weight: .bold, design: .rounded))
                         .foregroundColor(.gray)
                 }
