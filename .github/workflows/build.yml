@@ -9,6 +9,8 @@ jobs:
   build:
     name: Build iOS IPA & Upload
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
