@@ -207,7 +207,7 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
     var dimensions: (width: CGFloat, height: CGFloat, cornerRadius: CGFloat) {
         switch self {
         case .tinySquare:
-            return (width: 130, height: 130, cornerRadius: 24)
+            return (width: 96, height: 96, cornerRadius: 20)
         case .iphone11:
             return (width: 156, height: 36, cornerRadius: 18)
         case .iphone12:
@@ -504,7 +504,7 @@ class IslandState: ObservableObject {
 
     // MARK: - Island Shape & Form Factor
     @Published var islandShape: IslandShape = .tinySquare
-    @Published var squareSize: CGFloat = 130
+    @Published var squareSize: CGFloat = 96
 
     // MARK: - Custom Size Calibration & Presets
     @Published var selectedPreset: DeviceNotchPreset = .iphone11
@@ -1167,7 +1167,7 @@ class IslandState: ObservableObject {
             self.selectedPreset = .tinySquare
             self.customWidth = squareSize
             self.customHeight = squareSize
-            self.customCornerRadius = 24
+            self.customCornerRadius = min(squareSize * 0.22, 22)
         } else {
             self.selectedPreset = .iphone11
             self.customWidth = 156

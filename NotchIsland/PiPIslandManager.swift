@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Dynamic Notch PiP View Controller Subclass
 class DynamicNotchPipViewController: AVPictureInPictureVideoCallViewController {
-    var targetContentSize: CGSize = CGSize(width: 130, height: 130) {
+    var targetContentSize: CGSize = CGSize(width: 96, height: 96) {
         didSet {
             preferredContentSize = targetContentSize
         }

@@ -160,7 +160,7 @@ struct ContentView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color(white: 0.09))
-                .frame(height: state.islandShape == .tinySquare ? 175 : (state.isExpanded ? 140 : 125))
+                .frame(height: state.islandShape == .tinySquare ? max(130, state.squareSize + 36) : (state.isExpanded ? 140 : 125))
 
             VStack(spacing: 0) {
                 if state.islandShape == .pill {
@@ -185,7 +185,7 @@ struct ContentView: View {
 
                     FloatingIslandView(state: state)
                         .frame(width: state.islandWidth, height: state.islandHeight)
-                        .clipShape(RoundedRectangle(cornerRadius: state.islandShape == .tinySquare ? 24 : (state.isExpanded ? 24 : 18), style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: state.islandShape == .tinySquare ? min(state.squareSize * 0.22, 22) : (state.isExpanded ? 24 : 18), style: .continuous))
                         .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 10 : 0, x: 0, y: state.enableShadow ? 3 : 0)
                 }
 
@@ -2757,19 +2757,42 @@ struct ContentView: View {
             }
 
             if state.islandShape == .tinySquare {
-                VStack(spacing: 6) {
+                VStack(spacing: 8) {
                     HStack {
-                        Text("Square PiP Dimension: \(Int(state.squareSize))×\(Int(state.squareSize)) pt")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.gray)
+                        Text("Square Frame Size: \(Int(state.squareSize))×\(Int(state.squareSize)) pt")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
                         Spacer()
-                        Slider(value: $state.squareSize, in: 110...160, step: 2)
-                            .frame(width: 170)
+                        Slider(value: $state.squareSize, in: 68...140, step: 2)
+                            .frame(width: 145)
                             .onChange(of: state.squareSize) { s in
                                 state.customWidth = s
                                 state.customHeight = s
                                 PiPIslandManager.shared.updateSize(width: s, height: s)
                             }
+                    }
+
+                    // Quick Frame Presets (Ultra Mini 80, Compact 92, Medium 104, Standard 120)
+                    HStack(spacing: 5) {
+                        ForEach([80, 92, 104, 120], id: \.self) { size in
+                            Button(action: {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                    state.squareSize = CGFloat(size)
+                                    state.customWidth = CGFloat(size)
+                                    state.customHeight = CGFloat(size)
+                                    PiPIslandManager.shared.updateSize(width: CGFloat(size), height: CGFloat(size))
+                                    HapticService.shared.selection()
+                                }
+                            }) {
+                                Text("\(size)pt\(size == 80 ? " (Ultra)" : (size == 92 ? " (Mini)" : ""))")
+                                    .font(.system(size: 8.5, weight: .bold))
+                                    .foregroundColor(Int(state.squareSize) == size ? .black : .white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 4)
+                                    .background(Int(state.squareSize) == size ? state.theme.color : Color(white: 0.12))
+                                    .clipShape(Capsule())
+                            }
+                        }
                     }
 
                     Text("✨ Native 1:1 Square PiP: Direct iOS PiP window resizing with zero black void, letterboxing, or wasted screen margin!")

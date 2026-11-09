@@ -193,15 +193,16 @@ struct FloatingIslandView: View {
 
     // MARK: - Tiny Square 1:1 Native PiP View
     private var tinySquareView: some View {
-        ZStack {
+        let radius = min(state.squareSize * 0.22, 22)
+        return ZStack {
             pillBackground
-            pillBorderOverlay(radius: 24)
+            pillBorderOverlay(radius: radius)
 
             tinySquareCompactContent
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 8 : 0, x: 0, y: state.enableShadow ? 2 : 0)
+        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 6 : 0, x: 0, y: state.enableShadow ? 2 : 0)
         .scaleEffect(state.islandSquishScale)
         .offset(state.dragOffset)
         .contentShape(Rectangle())
@@ -512,112 +513,121 @@ struct FloatingIslandView: View {
     // MARK: - Tiny Square 1:1 Compact Content
     @ViewBuilder
     private var tinySquareCompactContent: some View {
+        let artSize = max(24, min(42, state.squareSize * 0.36))
+        let privacyOffset = max(24, (state.squareSize / 2) - 8)
+        let spacing = max(1.5, min(4, state.squareSize * 0.03))
+        let iconSize = max(9, min(12, state.squareSize * 0.11))
+        let batteryFont = max(8, min(10, state.squareSize * 0.09))
+        let titleFont = max(8.5, min(10.5, state.squareSize * 0.1))
+        let waveWidth = max(18, min(26, state.squareSize * 0.25))
+        let waveHeight = max(6, min(9, state.squareSize * 0.08))
+
         ZStack {
             if state.mode == .timer {
                 // Circular Timer Arc & Digital Countdown
-                VStack(spacing: 4) {
+                VStack(spacing: spacing) {
                     Image(systemName: "timer")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: max(12, state.squareSize * 0.14), weight: .bold))
                         .foregroundColor(.orange)
                     Text(state.timerFormatted)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: max(12, state.squareSize * 0.15), weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     Text("TIMER")
-                        .font(.system(size: 8.5, weight: .black))
+                        .font(.system(size: max(7, state.squareSize * 0.08), weight: .black))
                         .foregroundColor(.orange)
                         .kerning(1.2)
                 }
             } else if state.mode == .stopwatch {
-                VStack(spacing: 4) {
+                VStack(spacing: spacing) {
                     Image(systemName: "stopwatch")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: max(12, state.squareSize * 0.14), weight: .bold))
                         .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
                     Text(state.stopwatchFormatted)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: max(12, state.squareSize * 0.15), weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     Text("LAP")
-                        .font(.system(size: 8.5, weight: .black))
+                        .font(.system(size: max(7, state.squareSize * 0.08), weight: .black))
                         .foregroundColor(Color(red: 0.0, green: 0.85, blue: 1.0))
                         .kerning(1.2)
                 }
             } else if state.mode == .battery {
-                VStack(spacing: 4) {
+                VStack(spacing: spacing) {
                     Image(systemName: BatteryService.shared.isCharging ? "bolt.fill" : "battery.100")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: max(14, state.squareSize * 0.16), weight: .bold))
                         .foregroundColor(batteryColor)
                     Text("\(BatteryService.shared.percentage)%")
-                        .font(.system(size: 18, weight: .heavy, design: .rounded))
+                        .font(.system(size: max(14, state.squareSize * 0.16), weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text(BatteryService.shared.isCharging ? "CHARGING" : "BATTERY")
-                        .font(.system(size: 8.5, weight: .black))
+                        .font(.system(size: max(7, state.squareSize * 0.08), weight: .black))
                         .foregroundColor(batteryColor)
                         .kerning(1.2)
                 }
             } else if state.mode == .call {
-                VStack(spacing: 5) {
+                VStack(spacing: spacing) {
                     Image(systemName: "phone.fill")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: max(13, state.squareSize * 0.15), weight: .bold))
                         .foregroundColor(.green)
                     Text("Active Call")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: max(9, state.squareSize * 0.1), weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     EqualizerWaveformView(color: .green)
-                        .frame(width: 28, height: 10)
+                        .frame(width: waveWidth, height: waveHeight)
                 }
             } else if state.mode == .flashlight {
-                VStack(spacing: 4) {
+                VStack(spacing: spacing) {
                     Image(systemName: TorchService.shared.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.system(size: max(18, state.squareSize * 0.22), weight: .bold))
                         .foregroundColor(TorchService.shared.isTorchOn ? .yellow : .gray)
                     Text(TorchService.shared.isTorchOn ? "TORCH ON" : "TORCH OFF")
-                        .font(.system(size: 10, weight: .black, design: .rounded))
+                        .font(.system(size: max(8, state.squareSize * 0.09), weight: .black, design: .rounded))
                         .foregroundColor(TorchService.shared.isTorchOn ? .yellow : .gray)
                 }
             } else if state.mode == .blank {
                 // Sleek OLED Minimalist Dot
                 Circle()
                     .fill(Color.white.opacity(0.18))
-                    .frame(width: 12, height: 12)
+                    .frame(width: max(8, state.squareSize * 0.1), height: max(8, state.squareSize * 0.1))
             } else {
                 // Default: Music & Media with App Badge, Album Artwork & Animated Equalizer
-                VStack(spacing: 4) {
+                VStack(spacing: spacing) {
                     // Top: App Icon + Battery %
-                    HStack(alignment: .center, spacing: 4) {
-                        AppSourceIconView(source: nowPlaying.sourceAppName, size: 12)
+                    HStack(alignment: .center, spacing: 3) {
+                        AppSourceIconView(source: nowPlaying.sourceAppName, size: iconSize)
                         
                         Spacer()
                         
-                        HStack(spacing: 2) {
+                        HStack(spacing: 1.5) {
                             Text("\(BatteryService.shared.percentage)%")
-                                .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                                .font(.system(size: batteryFont, weight: .bold, design: .rounded))
                                 .foregroundColor(batteryColor)
                             Image(systemName: BatteryService.shared.isCharging ? "bolt.fill" : "battery.100")
-                                .font(.system(size: 9))
+                                .font(.system(size: batteryFont - 1))
                                 .foregroundColor(batteryColor)
                         }
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.top, 6)
+                    .padding(.horizontal, max(6, state.squareSize * 0.08))
+                    .padding(.top, max(4, state.squareSize * 0.05))
 
                     // Center: Album Art Thumbnail
                     if let artwork = nowPlaying.artworkImage {
                         Image(uiImage: artwork)
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 44, height: 44)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .frame(width: artSize, height: artSize)
+                            .clipShape(RoundedRectangle(cornerRadius: max(6, artSize * 0.22), style: .continuous))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                RoundedRectangle(cornerRadius: max(6, artSize * 0.22), style: .continuous)
                                     .stroke(Color.white.opacity(0.2), lineWidth: 0.8)
                             )
-                            .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 1.5)
+                            .shadow(color: .black.opacity(0.35), radius: 2.5, x: 0, y: 1)
                     } else {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            RoundedRectangle(cornerRadius: max(6, artSize * 0.22), style: .continuous)
                                 .fill(state.theme.color.opacity(0.18))
-                                .frame(width: 44, height: 44)
+                                .frame(width: artSize, height: artSize)
                             Image(systemName: state.isMediaPlaying ? "music.note" : "sparkles")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.system(size: artSize * 0.42, weight: .bold))
                                 .foregroundColor(state.theme.color)
                         }
                     }
@@ -625,22 +635,22 @@ struct FloatingIslandView: View {
                     // Song Title / Compact Title
                     MarqueeText(
                         text: compactTitleText,
-                        font: .system(size: 10, weight: .bold, design: .rounded),
+                        font: .system(size: titleFont, weight: .bold, design: .rounded),
                         color: .white
                     )
-                    .frame(height: 12)
-                    .padding(.horizontal, 8)
+                    .frame(height: max(10, titleFont + 2))
+                    .padding(.horizontal, max(6, state.squareSize * 0.07))
 
                     // Bottom: Live Equalizer Waveform
                     if nowPlaying.isPlaying {
                         EqualizerWaveformView(color: state.theme.color)
-                            .frame(width: 26, height: 9)
-                            .padding(.bottom, 4)
+                            .frame(width: waveWidth, height: waveHeight)
+                            .padding(.bottom, max(2, state.squareSize * 0.03))
                     } else {
                         Circle()
                             .fill(Color(red: 0.18, green: 0.84, blue: 0.38))
-                            .frame(width: 4, height: 4)
-                            .padding(.bottom, 4)
+                            .frame(width: max(3.5, state.squareSize * 0.04), height: max(3.5, state.squareSize * 0.04))
+                            .padding(.bottom, max(2, state.squareSize * 0.03))
                     }
                 }
             }
@@ -649,13 +659,13 @@ struct FloatingIslandView: View {
             if state.isMicPrivacyActive {
                 Circle()
                     .fill(Color.orange)
-                    .frame(width: 5, height: 5)
-                    .offset(x: 42, y: -42)
+                    .frame(width: 4.5, height: 4.5)
+                    .offset(x: privacyOffset, y: -privacyOffset)
             } else if state.isCamPrivacyActive {
                 Circle()
                     .fill(Color.green)
-                    .frame(width: 5, height: 5)
-                    .offset(x: 42, y: -42)
+                    .frame(width: 4.5, height: 4.5)
+                    .offset(x: privacyOffset, y: -privacyOffset)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
