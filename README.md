@@ -2,7 +2,7 @@
 
 [![iOS 15.0+](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Version 8.1](https://img.shields.io/badge/DynamicNotch-v8.3_TinySquarePiP-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v8.3)
+[![Version 8.4](https://img.shields.io/badge/DynamicNotch-v8.4_SquarePiP-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v8.4)
 [![License MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
 **Dynamic Notch** brings the real **Apple Dynamic Island** experience to the iPhone 11, iPhone XR, iPhone 12, iPhone 13, and all notched iOS devices. 
@@ -11,18 +11,17 @@ Sitting invisibly flush under the physical camera notch, Dynamic Notch features 
 
 ---
 
-## What's New in v8.3 (Tiny Square 1:1 PiP Engine)
+## What's New in v8.4 (Native 1:1 Square PiP Window Engine)
 
-* **Tiny Square Form Factor (No More Block Around PiP!)**:
-  * Added a dedicated **Island Form Factor** selector: choose between **Dynamic Pill (Wide Bar)** and **Tiny Square (1:1 Orbit Squircle)**.
-  * **1:1 Native Aspect Ratio**: Configured with equal width and height (`72 × 72 pt`, customizable from `56pt` to `92pt`).
-  * Because 1:1 is natively within Apple Pegasus's aspect ratio bounds, **iOS adds zero empty letterboxing padding**. The entire floating PiP window is literally the tiny square!
-  * **Rich Mini Square Content**:
-    * **Media / Music**: Miniature album art, active source badge (Spotify, Apple Music, YouTube), live animated equalizer waveform, and battery percentage.
-    * **Battery & Charging**: Clear battery level with charging bolt.
-    * **Timer / Stopwatch**: Digital countdown and active timer glyph.
-    * **Call & Flashlight**: Instant 1-tap controls.
-  * **Interactive Tap-to-Expand**: Tapping the tiny square smoothly expands it into the full Dynamic Island platter or launches the active app.
+* **Subclassed `DynamicNotchPipViewController`**:
+  * Overrides `preferredContentSize` directly on the `AVPictureInPictureVideoCallViewController` subsystem, forcing iOS Pegasus window manager to respect the 1:1 square geometry.
+  * Direct synchronization of the PiP anchor source view and controller target size right before PiP launch.
+* **Zero Black Block / Void Elimination**:
+  * In Tiny Square PiP mode, the widget fills the entire view bounds (`maxWidth: .infinity, maxHeight: .infinity`) with continuous squircle corners (`cornerRadius: 24`), eliminating any unfilled margin that iOS Pegasus renders as black.
+  * Configured with native 1:1 square dimensions (`130 × 130 pt`, customizable `110–160 pt`).
+* **Preserved Dynamic Notch Pill**:
+  * The physical notch pill and calibration remains completely intact with full dimensions (iPhone 11: 156×36, Custom Notch: 220×28) when in Notch Pill mode.
+  * Rich, balanced square controls: 44×44 continuous album artwork, scrolling song title, live equalizer waveform, exact battery badge, and instant touch-to-expand.
 
 ---
 

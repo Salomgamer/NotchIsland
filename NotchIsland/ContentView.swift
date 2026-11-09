@@ -160,18 +160,20 @@ struct ContentView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color(white: 0.09))
-                .frame(height: state.isExpanded ? 140 : 125)
+                .frame(height: state.islandShape == .tinySquare ? 175 : (state.isExpanded ? 140 : 125))
 
             VStack(spacing: 0) {
-                // Physical Notch Silhouette
-                Path { path in
-                    path.move(to: CGPoint(x: 100, y: 0))
-                    path.addLine(to: CGPoint(x: 125, y: 24))
-                    path.addLine(to: CGPoint(x: 275, y: 24))
-                    path.addLine(to: CGPoint(x: 300, y: 0))
+                if state.islandShape == .pill {
+                    // Physical Notch Silhouette
+                    Path { path in
+                        path.move(to: CGPoint(x: 100, y: 0))
+                        path.addLine(to: CGPoint(x: 125, y: 24))
+                        path.addLine(to: CGPoint(x: 275, y: 24))
+                        path.addLine(to: CGPoint(x: 300, y: 0))
+                    }
+                    .fill(Color.black)
+                    .frame(height: 24)
                 }
-                .fill(Color.black)
-                .frame(height: 24)
 
                 Spacer()
 
@@ -183,13 +185,13 @@ struct ContentView: View {
 
                     FloatingIslandView(state: state)
                         .frame(width: state.islandWidth, height: state.islandHeight)
-                        .clipShape(RoundedRectangle(cornerRadius: state.isExpanded ? 24 : 18, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: state.islandShape == .tinySquare ? 24 : (state.isExpanded ? 24 : 18), style: .continuous))
                         .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 10 : 0, x: 0, y: state.enableShadow ? 3 : 0)
                 }
 
                 Spacer()
 
-                Text("Tap pill to expand / collapse in place")
+                Text(state.islandShape == .tinySquare ? "Native 1:1 Square PiP (Zero Black Void)" : "Tap pill to expand / collapse in place")
                     .font(.system(size: 9.5, weight: .medium))
                     .foregroundColor(.gray.opacity(0.6))
                     .padding(.bottom, 6)
@@ -2738,12 +2740,12 @@ struct ContentView: View {
             HStack {
                 Image(systemName: "square.dashed")
                     .foregroundColor(state.theme.color)
-                Text("ISLAND FORM FACTOR (SHAPE)")
+                Text("PIP WINDOW FORM FACTOR (SHAPE)")
                     .font(.system(size: 10.5, weight: .bold))
                     .foregroundColor(.white)
                     .kerning(1.2)
                 Spacer()
-                Text(state.islandShape == .tinySquare ? "1:1 Tiny Square" : "Wide Notch Pill")
+                Text(state.islandShape == .tinySquare ? "1:1 Tiny Square PiP" : "Wide Notch Pill")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(state.theme.color)
             }
@@ -2757,11 +2759,11 @@ struct ContentView: View {
             if state.islandShape == .tinySquare {
                 VStack(spacing: 6) {
                     HStack {
-                        Text("Square Dimension: \(Int(state.squareSize))×\(Int(state.squareSize)) pt")
+                        Text("Square PiP Dimension: \(Int(state.squareSize))×\(Int(state.squareSize)) pt")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(.gray)
                         Spacer()
-                        Slider(value: $state.squareSize, in: 56...92, step: 2)
+                        Slider(value: $state.squareSize, in: 110...160, step: 2)
                             .frame(width: 170)
                             .onChange(of: state.squareSize) { s in
                                 state.customWidth = s
@@ -2770,7 +2772,7 @@ struct ContentView: View {
                             }
                     }
 
-                    Text("✨ 1:1 Aspect Ratio matches Apple's native PiP framework — NO black block, NO padding, NO wasted screen!")
+                    Text("✨ Native 1:1 Square PiP: Direct iOS PiP window resizing with zero black void, letterboxing, or wasted screen margin!")
                         .font(.system(size: 9.5, weight: .medium))
                         .foregroundColor(state.theme.color)
                         .padding(.top, 2)
@@ -3217,7 +3219,7 @@ struct WhatsNewView: View {
                             icon: "square.fill",
                             color: Color(red: 0.0, green: 0.85, blue: 1.0),
                             title: "Tiny Square (1:1 Orbit Squircle)",
-                            desc: "Eliminates the block around PiP completely! Uses a native 1:1 aspect ratio square (72×72) with zero letterboxing margins. Features mini album art, animated waveforms, battery percentage, and smooth tap-to-expand."
+                            desc: "Eliminates the block around PiP completely! Uses a native 1:1 aspect ratio square (130×130 pt) with zero letterboxing margins. Features mini album art, animated waveforms, battery percentage, and smooth tap-to-expand."
                         )
 
 featureRow(

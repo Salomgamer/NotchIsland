@@ -207,7 +207,7 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
     var dimensions: (width: CGFloat, height: CGFloat, cornerRadius: CGFloat) {
         switch self {
         case .tinySquare:
-            return (width: 72, height: 72, cornerRadius: 20)
+            return (width: 130, height: 130, cornerRadius: 24)
         case .iphone11:
             return (width: 156, height: 36, cornerRadius: 18)
         case .iphone12:
@@ -504,7 +504,7 @@ class IslandState: ObservableObject {
 
     // MARK: - Island Shape & Form Factor
     @Published var islandShape: IslandShape = .tinySquare
-    @Published var squareSize: CGFloat = 72
+    @Published var squareSize: CGFloat = 130
 
     // MARK: - Custom Size Calibration & Presets
     @Published var selectedPreset: DeviceNotchPreset = .iphone11
@@ -741,6 +741,9 @@ class IslandState: ObservableObject {
     var islandHeight: CGFloat {
         if isShowingNotification { return 66 }
         if isIslandHidden { return 12 }
+        if islandShape == .tinySquare && !isExpanded {
+            return squareSize
+        }
         if pipDockAlignment == .fillPlatter && !isExpanded { return 74 }
         if isExpanded {
             if isSplitBubbleExpanded { return 64 }
@@ -1149,6 +1152,11 @@ class IslandState: ObservableObject {
         self.customHeight = dims.height
         self.customCornerRadius = dims.cornerRadius
         self.useCustomSize = true
+        if preset == .tinySquare {
+            self.islandShape = .tinySquare
+        } else {
+            self.islandShape = .pill
+        }
         HapticService.shared.selection()
         PiPIslandManager.shared.updateSize(width: dims.width, height: dims.height)
     }
@@ -1159,7 +1167,7 @@ class IslandState: ObservableObject {
             self.selectedPreset = .tinySquare
             self.customWidth = squareSize
             self.customHeight = squareSize
-            self.customCornerRadius = 20
+            self.customCornerRadius = 24
         } else {
             self.selectedPreset = .iphone11
             self.customWidth = 156

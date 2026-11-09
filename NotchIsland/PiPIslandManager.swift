@@ -1,11 +1,37 @@
 import AVKit
 import SwiftUI
 
+// MARK: - Dynamic Notch PiP View Controller Subclass
+class DynamicNotchPipViewController: AVPictureInPictureVideoCallViewController {
+    var targetContentSize: CGSize = CGSize(width: 130, height: 130) {
+        didSet {
+            preferredContentSize = targetContentSize
+        }
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .clear
+        view.isOpaque = false
+        preferredContentSize = targetContentSize
+    }
+
+    override var preferredContentSize: CGSize {
+        get { targetContentSize }
+        set {
+            super.preferredContentSize = newValue
+            if targetContentSize != newValue {
+                targetContentSize = newValue
+            }
+        }
+    }
+}
+
 class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureControllerDelegate {
     static let shared = PiPIslandManager()
 
     var pipController: AVPictureInPictureController?
-    var pipVideoCallVC: AVPictureInPictureVideoCallViewController?
+    var pipVideoCallVC: DynamicNotchPipViewController?
     var hostingController: UIHostingController<FloatingIslandView>?
     let anchorSourceView = UIView()
 
@@ -54,8 +80,9 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         host.view.isUserInteractionEnabled = true
         self.hostingController = host
 
-        // Video call view controller for PiP
-        let videoCallVC = AVPictureInPictureVideoCallViewController()
+        // Subclassed Video call view controller for PiP
+        let videoCallVC = DynamicNotchPipViewController()
+        videoCallVC.targetContentSize = initialSize
         videoCallVC.preferredContentSize = initialSize
         videoCallVC.view.backgroundColor = .clear
         videoCallVC.view.isOpaque = false
@@ -94,7 +121,6 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         }
     }
 
-
     func purgeBackdropAndShadows() {
         guard let videoCallVC = pipVideoCallVC else { return }
         videoCallVC.view.backgroundColor = .clear
@@ -126,6 +152,7 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         let newSize = CGSize(width: width, height: height)
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
+            self.pipVideoCallVC?.targetContentSize = newSize
             self.pipVideoCallVC?.preferredContentSize = newSize
         }
     }
@@ -136,6 +163,10 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
             print("PiP controller not initialized.")
             return
         }
+        let state = IslandState.shared
+        let targetSize = CGSize(width: state.islandWidth, height: state.islandHeight)
+        self.pipVideoCallVC?.targetContentSize = targetSize
+        self.pipVideoCallVC?.preferredContentSize = targetSize
         controller.startPictureInPicture()
     }
 
@@ -188,7 +219,10 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
     }
 
     func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        DispatchQueue.main.async { self.isPiPActive = true }
+        DispatchQueue.main.async {
+            self.isPiPActive = true
+            self.purgeBackdropAndShadows()
+        }
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
