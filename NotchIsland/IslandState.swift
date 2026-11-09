@@ -238,6 +238,7 @@ enum DeviceNotchPreset: String, CaseIterable, Identifiable {
 
     var badge: String {
         switch self {
+        case .compactRect: return "192×112"
         case .tinySquare: return "72×72"
         case .iphone11: return "156×36"
         case .iphone12: return "150×35"
@@ -1392,6 +1393,9 @@ class IslandState: ObservableObject {
     private var lastToggleTime: Date = Date.distantPast
 
     func expand() {
+        if (islandShape == .compactRect || islandShape == .tinySquare) && isSquareLocked {
+            return
+        }
         guard !isExpanded else { return }
         HapticService.shared.medium()
         HapticService.shared.expandWhooshSound()
@@ -1414,6 +1418,9 @@ class IslandState: ObservableObject {
     }
 
     func toggleExpanded() {
+        if (islandShape == .compactRect || islandShape == .tinySquare) && isSquareLocked {
+            return
+        }
         let now = Date()
         guard now.timeIntervalSince(lastToggleTime) > 0.25 else { return }
         lastToggleTime = now
@@ -1423,6 +1430,10 @@ class IslandState: ObservableObject {
         } else {
             expand()
         }
+    }
+
+    func toggleMediaPlayback() {
+        NowPlayingService.shared.togglePlayPause()
     }
 
     // MARK: - Live Notification Auto-Expansion
@@ -2122,6 +2133,14 @@ class IslandState: ObservableObject {
     }
 
     func handleBubbleTouch() {
+        if (islandShape == .compactRect || islandShape == .tinySquare) && isSquareLocked {
+            if bubbleTouchAction == .openApp || (bubbleTouchAction == .smartAdaptive && hasActiveExternalApp) {
+                openActiveApp()
+            } else {
+                toggleMediaPlayback()
+            }
+            return
+        }
         switch bubbleTouchAction {
         case .openApp:
             openActiveApp()

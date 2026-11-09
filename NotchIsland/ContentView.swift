@@ -17,6 +17,28 @@ struct ContentView: View {
             Color(red: 0.04, green: 0.04, blue: 0.05)
                 .ignoresSafeArea()
 
+            // Persistent Root Screen Anchor for PiP (Flush to Left Side)
+            VStack {
+                HStack {
+                    if state.squareDockSide == .right && state.islandShape != .compactRect {
+                        Spacer()
+                    }
+
+                    PiPAnchorRepresentable()
+                        .frame(width: state.islandWidth, height: state.islandHeight)
+                        .padding(.leading, (state.squareDockSide == .left || state.islandShape == .compactRect) ? 8 : 0)
+                        .padding(.trailing, state.squareDockSide == .right && state.islandShape != .compactRect ? 8 : 0)
+                        .padding(.top, 4)
+
+                    if state.squareDockSide == .left || state.islandShape == .compactRect {
+                        Spacer()
+                    }
+                }
+                Spacer()
+            }
+            .allowsHitTesting(false)
+            .opacity(0.01)
+
             if state.isExpandedViaPiPTap {
                 pipExpandedOverlayView
             } else {
@@ -178,24 +200,18 @@ struct ContentView: View {
 
                 Spacer()
 
-                // Floating Island in Preview & Active PiP Anchor
+                // Floating Island in Preview
                 HStack {
                     if isLeftDocked && state.squareDockSide == .right {
                         Spacer()
                     }
 
-                    ZStack {
-                        PiPAnchorRepresentable()
-                            .frame(width: state.islandWidth, height: state.islandHeight)
-                            .allowsHitTesting(false)
-
-                        FloatingIslandView(state: state)
-                            .frame(width: state.islandWidth, height: state.islandHeight)
-                            .clipShape(RoundedRectangle(cornerRadius: state.islandShape == .compactRect ? 22 : (state.islandShape == .tinySquare ? 28 : (state.isExpanded ? 24 : 18)), style: .continuous))
-                            .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 10 : 0, x: 0, y: state.enableShadow ? 3 : 0)
-                    }
-                    .padding(.leading, isLeftDocked && state.squareDockSide == .left ? 16 : 0)
-                    .padding(.trailing, isLeftDocked && state.squareDockSide == .right ? 16 : 0)
+                    FloatingIslandView(state: state)
+                        .frame(width: state.islandWidth, height: state.islandHeight)
+                        .clipShape(RoundedRectangle(cornerRadius: state.islandShape == .compactRect ? 22 : (state.islandShape == .tinySquare ? 28 : (state.isExpanded ? 24 : 18)), style: .continuous))
+                        .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 10 : 0, x: 0, y: state.enableShadow ? 3 : 0)
+                        .padding(.leading, isLeftDocked && state.squareDockSide == .left ? 16 : 0)
+                        .padding(.trailing, isLeftDocked && state.squareDockSide == .right ? 16 : 0)
 
                     if isLeftDocked && state.squareDockSide == .left {
                         Spacer()

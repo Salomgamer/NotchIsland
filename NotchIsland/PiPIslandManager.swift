@@ -19,9 +19,24 @@ class DynamicNotchPipViewController: AVPictureInPictureVideoCallViewController {
     override var preferredContentSize: CGSize {
         get { targetContentSize }
         set {
-            super.preferredContentSize = newValue
-            if targetContentSize != newValue {
-                targetContentSize = newValue
+            let state = IslandState.shared
+            if (state.islandShape == .compactRect || state.islandShape == .tinySquare) && state.isSquareLocked {
+                super.preferredContentSize = targetContentSize
+            } else {
+                super.preferredContentSize = newValue
+                if targetContentSize != newValue {
+                    targetContentSize = newValue
+                }
+            }
+        }
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        let state = IslandState.shared
+        if (state.islandShape == .compactRect || state.islandShape == .tinySquare) && state.isSquareLocked {
+            if preferredContentSize != targetContentSize {
+                super.preferredContentSize = targetContentSize
             }
         }
     }
@@ -150,8 +165,8 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
 
     func updateSize(width: CGFloat, height: CGFloat) {
         let state = IslandState.shared
-        if state.islandShape == .tinySquare && state.isSquareLocked {
-            let fixedSize = CGSize(width: state.squareSize, height: state.squareSize)
+        if (state.islandShape == .compactRect || state.islandShape == .tinySquare) && state.isSquareLocked {
+            let fixedSize = CGSize(width: state.islandWidth, height: state.islandHeight)
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.pipVideoCallVC?.targetContentSize = fixedSize
