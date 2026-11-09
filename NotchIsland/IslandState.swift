@@ -107,6 +107,39 @@ enum BubbleTouchAction: String, CaseIterable, Identifiable {
     }
 }
 
+
+enum PiPDockAlignment: String, CaseIterable, Identifiable {
+    case topFlush = "Top Flush (Lock Under Notch)"
+    case center = "Centered (Floating)"
+    case fillPlatter = "Smart Platter (Fill Height)"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .topFlush: return "Top Flush (Under Notch)"
+        case .center: return "Centered (Floating)"
+        case .fillPlatter: return "Smart Platter (Fill Height)"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .topFlush: return "Pins pill flush against top bezel with zero wasted top margin"
+        case .center: return "Traditional centered floating island inside the PiP frame"
+        case .fillPlatter: return "Expands to 74pt to fill native PiP window with zero letterbox shadow"
+        }
+    }
+
+    var verticalAlignment: Alignment {
+        switch self {
+        case .topFlush: return .top
+        case .center: return .center
+        case .fillPlatter: return .center
+        }
+    }
+}
+
 enum CompanionType: String, CaseIterable, Identifiable {
     case cat = "Pixel Cat"
     case dog = "Puppy"
@@ -448,7 +481,12 @@ class IslandState: ObservableObject {
     @Published var useCustomSize: Bool = false
     @Published var customWidth: CGFloat = 156
     @Published var customHeight: CGFloat = 36
-    @Published var customCornerRadius: CGFloat = 18
+        @Published var customCornerRadius: CGFloat = 18
+
+    // MARK: - PiP Window Frame, Docking & Shadow Engine
+    @Published var pipDockAlignment: PiPDockAlignment = .topFlush
+    @Published var enableShadow: Bool = false
+    @Published var shadowOpacity: Double = 0.0
 
     // MARK: - Notification Banner State
     @Published var activeNotificationTitle: String = ""
@@ -667,6 +705,7 @@ class IslandState: ObservableObject {
     var islandHeight: CGFloat {
         if isShowingNotification { return 66 }
         if isIslandHidden { return 12 }
+        if pipDockAlignment == .fillPlatter && !isExpanded { return 74 }
         if isExpanded {
             if isSplitBubbleExpanded { return 64 }
             switch mode {
@@ -1086,6 +1125,19 @@ class IslandState: ObservableObject {
         self.selectedPreset = .custom
         PiPIslandManager.shared.updateSize(width: width, height: height)
     }
+
+    func autoFitPiPRatio() {
+        self.customWidth = 176
+        self.customHeight = 74
+        self.customCornerRadius = 22
+        self.useCustomSize = true
+        self.selectedPreset = .custom
+        self.enableShadow = false
+        self.shadowOpacity = 0.0
+        HapticService.shared.success()
+        PiPIslandManager.shared.updateSize(width: 176, height: 74)
+    }
+
 
     func toggleSilentMode() {
         self.isSilentOn.toggle()

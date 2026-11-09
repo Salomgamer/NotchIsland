@@ -6,7 +6,7 @@ struct FloatingIslandView: View {
     @ObservedObject var nowPlaying = NowPlayingService.shared
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: state.pipDockAlignment.verticalAlignment) {
             // The entire excess PiP window margin is 100% transparent
             Color.clear
 
@@ -24,7 +24,7 @@ struct FloatingIslandView: View {
             // Notch Companion / Pixel Pet perched atop the Dynamic Island
             notchCompanionOverlay
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: state.pipDockAlignment.verticalAlignment)
         .background(Color.clear)
         .animation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping), value: state.isExpanded)
         .animation(.spring(response: state.animationProfile.response, dampingFraction: state.animationProfile.damping), value: state.isSplitIslandActive)
@@ -42,9 +42,9 @@ struct FloatingIslandView: View {
                 pillBorderOverlay(radius: 18)
                 splitPrimaryPillContent
             }
-            .frame(width: 124, height: 36)
+            .frame(width: 124, height: state.pipDockAlignment == .fillPlatter ? 64 : 36)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .shadow(color: .black.opacity(0.65), radius: 6, x: 0, y: 2)
+            .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 6 : 0, x: 0, y: state.enableShadow ? 2 : 0)
             .contentShape(Rectangle())
             .onTapGesture {
                 state.handleMajorPillTouch()
@@ -67,7 +67,7 @@ struct FloatingIslandView: View {
             }
             .frame(width: 36, height: 36)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .shadow(color: .black.opacity(state.isBubbleClear ? 0.35 : 0.65), radius: 5, x: 0, y: 1.5)
+            .shadow(color: state.enableShadow ? Color.black.opacity(state.isBubbleClear ? 0.35 : state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 5 : 0, x: 0, y: state.enableShadow ? 1.5 : 0)
             .contentShape(Rectangle())
             .onTapGesture {
                 state.handleOrbitBubbleTouch()
@@ -207,7 +207,7 @@ struct FloatingIslandView: View {
         }
         .frame(width: state.islandWidth, height: state.islandHeight)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .shadow(color: .black.opacity(0.65), radius: 8, x: 0, y: 3)
+        .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 8 : 0, x: 0, y: state.enableShadow ? 3 : 0)
         .scaleEffect(state.islandSquishScale)
         .offset(state.dragOffset)
         .contentShape(Rectangle())

@@ -94,6 +94,34 @@ class PiPIslandManager: NSObject, ObservableObject, AVPictureInPictureController
         }
     }
 
+
+    func purgeBackdropAndShadows() {
+        guard let videoCallVC = pipVideoCallVC else { return }
+        videoCallVC.view.backgroundColor = .clear
+        videoCallVC.view.isOpaque = false
+        videoCallVC.view.layer.backgroundColor = UIColor.clear.cgColor
+
+        hostingController?.view.backgroundColor = .clear
+        hostingController?.view.isOpaque = false
+        hostingController?.view.layer.backgroundColor = UIColor.clear.cgColor
+
+        var current: UIView? = videoCallVC.view
+        while let parent = current?.superview {
+            parent.backgroundColor = .clear
+            parent.isOpaque = false
+            parent.layer.backgroundColor = UIColor.clear.cgColor
+            parent.clipsToBounds = false
+
+            for subview in parent.subviews {
+                if let visualEffect = subview as? UIVisualEffectView {
+                    visualEffect.isHidden = true
+                    visualEffect.alpha = 0
+                }
+            }
+            current = parent
+        }
+    }
+
     func updateSize(width: CGFloat, height: CGFloat) {
         let newSize = CGSize(width: width, height: height)
         DispatchQueue.main.async { [weak self] in

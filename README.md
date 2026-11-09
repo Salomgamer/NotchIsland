@@ -2,12 +2,26 @@
 
 [![iOS 15.0+](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Version 8.1](https://img.shields.io/badge/DynamicNotch-v8.1_BubbleTouchAction-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v8.1)
+[![Version 8.1](https://img.shields.io/badge/DynamicNotch-v8.2_ZeroWasteShadowRemoval-green.svg)](https://github.com/Salomgamer/NotchIsland/releases/tag/v8.2)
 [![License MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
 **Dynamic Notch** brings the real **Apple Dynamic Island** experience to the iPhone 11, iPhone XR, iPhone 12, iPhone 13, and all notched iOS devices. 
 
 Sitting invisibly flush under the physical camera notch, Dynamic Notch features **Apple Jindo Reverse-Engineered Architecture**: true Dual-Island Splitting (Major Pill + Detached Orbit Bubble), 20 authentic Apple System Apertures (Apple Pay NFC, AirPods Pro 3-way battery case, AirDrop transfer, Personal Hotspot telemetry, Dual SIM cellular, Uber Rideshare, Flighty Flight Tracker, Food Delivery, Screen Recording, Privacy sensor dots), viral mini-games (Hit The Island Pong with liquid squish physics & Notch Pixel Pet companion), interactive SpringBoard rubberband pull-down stretch & horizontal flick-to-stealth gestures, authentic AudioServices sound chimes, and a Transparent Liquid Glass Wallpaper Engine.
+
+---
+
+## What's New in v8.2 (Shadow Removal & Zero-Waste PiP Geometry)
+
+* **Shadow Removal & Clean Edge Floating**:
+  * Added a dedicated outer shadow toggle and opacity slider in Pixel Calibrator. Set to 0% to completely eliminate the black drop shadow around the pill for ultra-clean edge floating.
+  * Deep container backdrop clearance: automatically purges system visual effect backdrops and sets container hierarchies to 100% transparent.
+* **Top-Flush Notch Docking**:
+  * Eliminated the annoying top margin! The pill now snaps directly to the top edge of the Picture-in-Picture window (`topFlush` alignment), docking flush right beneath the physical camera notch without floating awkwardly into the middle of the screen.
+* **Smart Platter (Fill Height)**:
+  * Option to gracefully expand the island to 74pt to cleanly utilize the native PiP window dimensions without any empty, letterboxed black card wasting screen space.
+* **1-Tap Auto-Fit iOS PiP Aspect Ratio**:
+  * One-click calibrator button that synchronizes width and height to Apple Pegasus's native 2.39:1 aspect ratio constraint, preventing iOS from adding unwanted vertical letterbox padding.
 
 ---
 

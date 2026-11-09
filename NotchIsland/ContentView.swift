@@ -106,7 +106,7 @@ struct ContentView: View {
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Dynamic Island 8.1 • Apple Jindo Masterpiece")
+                Text("Dynamic Island 8.2 • Zero-Waste PiP & Shadow Removal")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -181,7 +181,7 @@ struct ContentView: View {
                     FloatingIslandView(state: state)
                         .frame(width: state.islandWidth, height: state.islandHeight)
                         .clipShape(RoundedRectangle(cornerRadius: state.isExpanded ? 24 : 18, style: .continuous))
-                        .shadow(color: .black.opacity(0.7), radius: 10, x: 0, y: 3)
+                        .shadow(color: state.enableShadow ? Color.black.opacity(state.shadowOpacity) : Color.clear, radius: state.enableShadow ? 10 : 0, x: 0, y: state.enableShadow ? 3 : 0)
                 }
 
                 Spacer()
@@ -2760,6 +2760,88 @@ struct ContentView: View {
                     }
             }
 
+            // PiP Docking & Screen Fit Mode
+            VStack(alignment: .leading, spacing: 6) {
+                Text("PIP WINDOW DOCKING & SCREEN FIT")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(.gray)
+                    .kerning(1.0)
+
+                VStack(spacing: 5) {
+                    ForEach(PiPDockAlignment.allCases) { dock in
+                        Button(action: {
+                            HapticService.shared.selection()
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                state.pipDockAlignment = dock
+                            }
+                            PiPIslandManager.shared.updateSize(width: state.islandWidth, height: state.islandHeight)
+                        }) {
+                            HStack {
+                                Circle()
+                                    .fill(state.pipDockAlignment == dock ? state.theme.color : Color.gray.opacity(0.3))
+                                    .frame(width: 7, height: 7)
+                                VStack(alignment: .leading, spacing: 1.5) {
+                                    Text(dock.title)
+                                        .font(.system(size: 10.5, weight: .semibold))
+                                        .foregroundColor(state.pipDockAlignment == dock ? .white : .gray)
+                                    Text(dock.subtitle)
+                                        .font(.system(size: 8.5, weight: .medium))
+                                        .foregroundColor(.gray.opacity(0.8))
+                                }
+                                Spacer()
+                                if state.pipDockAlignment == dock {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(state.theme.color)
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(Color(white: state.pipDockAlignment == dock ? 0.13 : 0.05))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+                    }
+                }
+            }
+            .padding(.top, 2)
+
+            // Pill Shadow & Glow Removal Engine
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: "shadow")
+                        .foregroundColor(state.theme.color)
+                        .font(.system(size: 11))
+                    Text("Pill Outer Shadow")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Toggle("", isOn: $state.enableShadow)
+                        .labelsHidden()
+                        .onChange(of: state.enableShadow) { _ in
+                            HapticService.shared.selection()
+                            PiPIslandManager.shared.purgeBackdropAndShadows()
+                        }
+                }
+
+                if state.enableShadow {
+                    HStack {
+                        Text("Shadow Opacity: \(Int(state.shadowOpacity * 100))%")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Slider(value: $state.shadowOpacity, in: 0.0...1.0, step: 0.05)
+                            .frame(width: 170)
+                    }
+                } else {
+                    Text("Shadow completely removed. Island floats with clean, zero-waste edges.")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.gray.opacity(0.7))
+                }
+            }
+            .padding(9)
+            .background(Color(white: 0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
             if state.useCustomSize {
                 VStack(spacing: 8) {
                     HStack {
@@ -2779,7 +2861,7 @@ struct ContentView: View {
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(.gray)
                         Spacer()
-                        Slider(value: $state.customHeight, in: 28...46, step: 2)
+                        Slider(value: $state.customHeight, in: 28...84, step: 2)
                             .frame(width: 180)
                             .onChange(of: state.customHeight) { h in
                                 state.updateCustomCalibration(width: state.customWidth, height: h, cornerRadius: state.customCornerRadius)
@@ -2791,21 +2873,40 @@ struct ContentView: View {
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(.gray)
                         Spacer()
-                        Slider(value: $state.customCornerRadius, in: 12...24, step: 1)
+                        Slider(value: $state.customCornerRadius, in: 12...28, step: 1)
                             .frame(width: 180)
                             .onChange(of: state.customCornerRadius) { r in
                                 state.updateCustomCalibration(width: state.customWidth, height: state.customHeight, cornerRadius: r)
                             }
                     }
 
-                    Button(action: {
-                        HapticService.shared.light()
-                        state.updateCustomCalibration(width: 156, height: 36, cornerRadius: 18)
-                    }) {
-                        Text("Reset to iPhone 11 Standard (156×36)")
-                            .font(.system(size: 10.5, weight: .semibold))
-                            .foregroundColor(state.theme.color)
-                            .padding(.vertical, 4)
+                    HStack(spacing: 10) {
+                        Button(action: {
+                            HapticService.shared.light()
+                            state.updateCustomCalibration(width: 156, height: 36, cornerRadius: 18)
+                        }) {
+                            Text("Reset Standard (156×36)")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(state.theme.color)
+                                .padding(.vertical, 4)
+                        }
+
+                        Spacer()
+
+                        Button(action: {
+                            state.autoFitPiPRatio()
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "sparkles")
+                                Text("Auto-Fit iOS PiP (Zero Waste)")
+                            }
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 5)
+                            .background(state.theme.color)
+                            .clipShape(Capsule())
+                        }
                     }
                 }
                 .padding(.top, 4)
@@ -3006,7 +3107,7 @@ struct WhatsNewView: View {
                     Text("What's New in")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.gray)
-                    Text("Dynamic Notch 8.1")
+                    Text("Dynamic Notch 8.2")
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("APPLE JINDO DEFINITIVE MASTERPIECE")
@@ -3018,7 +3119,14 @@ struct WhatsNewView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {
-                        featureRow(
+                                                featureRow(
+                            icon: "shadow",
+                            color: Color(red: 0.18, green: 0.84, blue: 0.38),
+                            title: "Shadow Removal & Zero-Waste PiP Geometry",
+                            desc: "Removed the black shadow behind the pill! PiP window now features Top-Flush notch docking, deep backdrop clearance, and 1-tap Auto-Fit PiP aspect ratio matching so zero screen space is wasted."
+                        )
+
+featureRow(
                             icon: "hand.tap.fill",
                             color: Color(red: 0.0, green: 0.85, blue: 1.0),
                             title: "Bubble Touch: Expand or Open Active App",
